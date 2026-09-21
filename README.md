@@ -2,6 +2,7 @@
 ### Key Dates
 
 | To-do's | Date | Activities | Status |
+| --- | ---- | --- | ---|
 | **Track and Problem Statement Selection** | By 21/09 | Review problem statement selection from Track 1: Agentic Cyber Defense | Pending |
 | **Pre-mentor ideas refinement** | 22/09 - 25/09 | Refine the shortlisted ideas, identify technical requirements and prepare questions for the mentor | Pending |
 | **Mentor Consultation** | 26/09 | Present the proposed direction, obtain feedback and challenge the project scope | Pending |
