@@ -13,7 +13,7 @@
 | **Finalization Buffer** | 9/10 - 14/10 | Conduct final testing, improve usability, complete documentation, record and edit the demo video, verify links and prepare submission files | Pending |
 | **Official Submission** | 15/10 | Upload all deliverables early and verify successful submission | Pending |
 
-##Hackathon Requirements
+## Hackathon Requirements
 | #      | Requirement                             | What we need for the hackathon                                                                                                                                                                                                        |
 | ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **1**  | **Track Alignment**                     | Project must clearly fit **Track 1: Agentic Cyber Defense**.                                                                                                                                                                          |
@@ -38,8 +38,6 @@
 | **20** | **Demo Video**                          | Prepare and edit the demo video mentioned in your timeline, showing the problem and the working solution.                                                                                                                             |
 | **21** | **Submission Files & Links**            | Make sure all required project files, documentation, demo links and other submission links work before submission.                                                                                                                    |
 | **22** | **Final Submission**                    | Complete and verify the submission by **15 October 2026** according to your timeline.                                                                                                                                                 |
-
-
 
 ## Security/Testing requirements and constraints
 | #      | Requirement from HackAI                                | What it means for our project                                                                                                                                                               |
