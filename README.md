@@ -14,32 +14,32 @@
 | **Official Submission** | 15/10 | Upload all deliverables early and verify successful submission | Pending |
 
 ## Hackathon Requirements
-| #      | Requirement                             | What we need for the hackathon                                                                                                                                                                                                        |
-| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1**  | **Track Alignment**                     | Project must clearly fit **Track 1: Agentic Cyber Defense**.                                                                                                                                                                          |
-| **2**  | **Clear Problem Statement**             | Define one specific cybersecurity problem that the project solves. Avoid trying to solve cybersecurity as a whole.                                                                                                                    |
-| **3**  | **Target User**                         | Clearly state who uses it, e.g. SOC analyst, security engineer, incident responder, SME security team, etc.                                                                                                                           |
-| **4**  | **Clear Use Case / Scenario**           | Have one strong scenario that can be demonstrated from beginning to end.                                                                                                                                                              |
-| **5**  | **Agentic AI Component**                | The system should use an AI agent/agents that can **reason, make decisions, plan steps and perform cybersecurity-related tasks**, rather than simply functioning as a chatbot.                                                        |
-| **6**  | **Agent Workflow**                      | Show how information flows through the agents/system: **input → analysis → reasoning → decision → action/recommendation → result**.                                                                                                   |
-| **7**  | **Evidence / Security Data Processing** | The prototype needs some cybersecurity evidence or data to analyse, such as logs, alerts, events, threat intelligence, vulnerabilities, simulated incidents, or another dataset appropriate to the chosen problem.                    |
-| **8**  | **Architecture**                        | Have a clear technical architecture showing the UI, agents, AI/model layer, tools, data sources and other major components.                                                                                                           |
-| **9**  | **Working MVP**                         | Build the smallest version that proves the idea actually works. It does **not** need production-scale infrastructure.                                                                                                                 |
-| **10** | **User Interface**                      | Provide enough UI for judges to understand and interact with the system during the demo.                                                                                                                                              |
-| **11** | **Agent Reasoning / Decision Support**  | The system should demonstrate why it reached an outcome rather than only outputting an unexplained answer.                                                                                                                            |
-| **12** | **Planning / Action Component**         | Where applicable, the agent should generate or execute a sequence of defensive steps based on what it detects.                                                                                                                        |
-| **13** | **Human Oversight**                     | High-impact actions should have appropriate controls, such as analyst review/approval instead of unrestricted autonomous execution.                                                                                                   |
-| **14** | **Safeguards**                          | Define boundaries preventing unsafe, unsupported or inappropriate agent behaviour.                                                                                                                                                    |
-| **15** | **Success Metrics**                     | Establish measurable criteria for whether the prototype works. These depend on the final idea but could include detection accuracy, task completion, response time, evidence quality, false positives, analyst effort reduction, etc. |
-| **16** | **Evaluation / Testing**                | Test the system using your main scenario and document whether it produced the intended result.                                                                                                                                        |
-| **17** | **Failure Handling**                    | Demonstrate sensible behaviour when information is missing, confidence is low, an agent fails, or a recommendation cannot be verified.                                                                                                |
-| **18** | **Demo-Ready Prototype**                | The main scenario should work reliably enough to demonstrate the complete concept to judges.                                                                                                                                          |
-| **19** | **Documentation**                       | Explain the problem, solution, architecture, workflow, setup/use, technologies and limitations clearly.                                                                                                                               |
-| **20** | **Demo Video**                          | Prepare and edit the demo video mentioned in your timeline, showing the problem and the working solution.                                                                                                                             |
-| **21** | **Submission Files & Links**            | Make sure all required project files, documentation, demo links and other submission links work before submission.                                                                                                                    |
-| **22** | **Final Submission**                    | Complete and verify the submission by **15 October 2026** according to your timeline.                                                                                                                                                 |
+
+- [ ] **Track Alignment** — Project must clearly fit **Track 1: Agentic Cyber Defense**.
+- [ ] **Clear Problem Statement** — Define one specific cybersecurity problem that the project solves. Avoid trying to solve cybersecurity as a whole.
+- [ ] **Target User** — Clearly state who uses it, e.g. SOC analyst, security engineer, incident responder, SME security team, etc.
+- [ ] **Clear Use Case / Scenario** — Have one strong scenario that can be demonstrated from beginning to end.
+- [ ] **Agentic AI Component** — The system should use an AI agent/agents that can **reason, make decisions, plan steps and perform cybersecurity-related tasks**, rather than simply functioning as a chatbot.
+- [ ] **Agent Workflow** — Show how information flows through the agents/system: **input → analysis → reasoning → decision → action/recommendation → result**.
+- [ ] **Evidence / Security Data Processing** — The prototype needs some cybersecurity evidence or data to analyse, such as logs, alerts, events, threat intelligence, vulnerabilities, simulated incidents, or another dataset appropriate to the chosen problem.
+- [ ] **Architecture** — Have a clear technical architecture showing the UI, agents, AI/model layer, tools, data sources and other major components.
+- [ ] **Working MVP** — Build the smallest version that proves the idea actually works. It does **not** need production-scale infrastructure.
+- [ ] **User Interface** — Provide enough UI for judges to understand and interact with the system during the demo.
+- [ ] **Agent Reasoning / Decision Support** — The system should demonstrate why it reached an outcome rather than only outputting an unexplained answer.
+- [ ] **Planning / Action Component** — Where applicable, the agent should generate or execute a sequence of defensive steps based on what it detects.
+- [ ] **Human Oversight** — High-impact actions should have appropriate controls, such as analyst review/approval instead of unrestricted autonomous execution.
+- [ ] **Safeguards** — Define boundaries preventing unsafe, unsupported or inappropriate agent behaviour.
+- [ ] **Success Metrics** — Establish measurable criteria for whether the prototype works. These could include detection accuracy, task completion, response time, evidence quality, false positives, analyst effort reduction, etc.
+- [ ] **Evaluation / Testing** — Test the system using your main scenario and document whether it produced the intended result.
+- [ ] **Failure Handling** — Demonstrate sensible behaviour when information is missing, confidence is low, an agent fails, or a recommendation cannot be verified.
+- [ ] **Demo-Ready Prototype** — The main scenario should work reliably enough to demonstrate the complete concept to judges.
+- [ ] **Documentation** — Explain the problem, solution, architecture, workflow, setup/use, technologies and limitations clearly.
+- [ ] **Demo Video** — Prepare and edit the demo video mentioned in your timeline, showing the problem and the working solution.
+- [ ] **Submission Files & Links** — Make sure all required project files, documentation, demo links and other submission links work before submission.
+- [ ] **Final Submission** — Complete and verify the submission by **15 October 2026**.
 
 ## Security/Testing requirements and constraints
+
 | #      | Requirement from HackAI                                | What it means for our project                                                                                                                                                               |
 | ------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **1**  | **Only perform authorized testing**                    | Do not attack or test real systems, organisations, users, or AI services unless you have permission. HackAI explicitly says other AIs should only be hacked with permission. ([Hack AI][1]) |
