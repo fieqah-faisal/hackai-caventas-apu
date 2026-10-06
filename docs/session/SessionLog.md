@@ -3,6 +3,17 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 PR #3 merged — BL-002 complete (DONE)
+
+- PR #3 merged to `main` (`b4f445a`): planner adapter, planning endpoints,
+  guidance fixture and env alignment are now on `main`.
+- Follow-up docs sync: `backend/README.md` updated for the implemented
+  planning endpoints (`b6cc341` — committed while `main` was checked out;
+  that was a branch-discipline lapse. Guard for all future commits:
+  verify the current branch first, never commit on `main`).
+- Live smoke test still pending `OPENCODE_GO_API_KEY` in `backend/.env`.
+- Next: BL-003 (approvals → execution → reporting); BL-008 catalogue sync.
+
 ### 2026-10-06 PR #3 opened for BL-002 review (IN PROGRESS)
 
 - Opened PR #3 (`feat/ai-planner-adapter` → `main`): planner adapter,
