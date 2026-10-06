@@ -1,0 +1,39 @@
+# --- Secrets / credentials (NEVER commit) ---
+.env
+.env.*
+!.env.example
+secrets/
+*serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
+
+# --- Local runtime data ---
+backend/uploads/
+backend/reports/
+backend/data/
+*.sqlite
+*.db
+
+# --- Firebase emulator ---
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# --- OS / editor ---
+.DS_Store
+.idea/
+*.swp

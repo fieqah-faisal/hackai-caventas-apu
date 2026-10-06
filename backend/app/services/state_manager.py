@@ -1,0 +1,155 @@
+"""Incident State Manager.
+
+Builds and persists versioned incident-state snapshots. State is NEVER
+overwritten: each change appends a new version. The case document tracks
+``current_state_version`` as a pointer to the latest.
+
+Milestone 1 scope: create an initial state version and rebuild entities /
+relationships / timeline from the normalized evidence currently stored for
+a case. Richer reconstruction (findings, ATT&CK mapping, hypotheses) is
+layered in by later milestones.
+"""
+from __future__ import annotations
+
+from datetime import datetime
+
+from app.database import repositories
+from app.schemas.case import CaseStatus
+from app.schemas.incident_state import (
+    Entity,
+    EntityType,
+    IncidentState,
+    Relationship,
+    RelationshipStatus,
+    TimelineEvent,
+)
+from app.services import audit_service
+
+
+def _coerce_entity_type(raw: str) -> EntityType:
+    try:
+        return EntityType(raw)
+    except ValueError:
+        return EntityType.OTHER
+
+
+def _reconstruct(case_id: str, version: int) -> IncidentState:
+    """Derive a state snapshot from all evidence stored for the case.
+
+    Observed facts only: hosts and accounts become entities, and a
+    'logged_into' relationship is recorded when an evidence record carries
+    both an account and a host. Everything here is evidence-backed and
+    marked OBSERVED; inference is deferred to the AI/analysis layer.
+    """
+    evidence = repositories.list_evidence(case_id)
+
+    entities: dict[str, Entity] = {}
+    relationships: list[Relationship] = []
+    timeline: list[TimelineEvent] = []
+
+    for ev in evidence:
+        fields = ev.get("fields", {}) or {}
+        ev_id = ev.get("evidence_id")
+
+        host = fields.get("host")
+        account = fields.get("account")
+
+        host_id = None
+        if host:
+            host_id = f"HOST::{host}"
+            entities.setdefault(
+                host_id, Entity(id=host_id, type=EntityType.HOST, name=str(host))
+            )
+
+        account_id = None
+        if account:
+            account_id = f"ACCOUNT::{account}"
+            entities.setdefault(
+                account_id,
+                Entity(id=account_id, type=EntityType.ACCOUNT, name=str(account)),
+            )
+
+        if host_id and account_id:
+            relationships.append(
+                Relationship(
+                    source=account_id,
+                    relation="logged_into",
+                    target=host_id,
+                    evidence_ids=[ev_id] if ev_id else [],
+                    status=RelationshipStatus.OBSERVED,
+                )
+            )
+
+        event_time = ev.get("event_time")
+        parsed_time = None
+        if event_time:
+            try:
+                parsed_time = datetime.fromisoformat(event_time)
+            except (TypeError, ValueError):
+                parsed_time = None
+
+        event_type = fields.get("event_type", ev.get("kind", "event"))
+        timeline.append(
+            TimelineEvent(
+                timestamp=parsed_time,
+                description=f"{event_type} from {ev.get('source_file', 'unknown')}",
+                evidence_ids=[ev_id] if ev_id else [],
+            )
+        )
+
+    timeline.sort(key=lambda t: (t.timestamp is None, t.timestamp or datetime.min))
+
+    return IncidentState(
+        case_id=case_id,
+        version=version,
+        entities=list(entities.values()),
+        relationships=relationships,
+        timeline=timeline,
+    )
+
+
+def rebuild_and_version(case_id: str) -> IncidentState:
+    """Create a new state version reflecting current evidence.
+
+    Returns the newly created IncidentState.
+    """
+    case = repositories.get_case(case_id)
+    if case is None:
+        raise ValueError(f"case not found: {case_id}")
+
+    next_version = int(case.get("current_state_version", 0)) + 1
+    state = _reconstruct(case_id, next_version)
+
+    repositories.add_state_version(
+        case_id, next_version, state.model_dump(mode="json")
+    )
+    repositories.update_case(
+        case_id,
+        {
+            "current_state_version": next_version,
+            "status": CaseStatus.INVESTIGATING.value,
+            "updated_at": datetime.now().astimezone().isoformat(),
+        },
+    )
+    audit_service.record(
+        case_id,
+        "state_version_created",
+        {"version": next_version, "entity_count": len(state.entities)},
+    )
+    return state
+
+
+def get_current_state(case_id: str) -> IncidentState | None:
+    case = repositories.get_case(case_id)
+    if case is None:
+        return None
+    version = int(case.get("current_state_version", 0))
+    if version < 1:
+        return None
+    data = repositories.get_state_version(case_id, version)
+    return IncidentState(**data) if data else None
+
+
+def get_state(case_id: str, version: int) -> IncidentState | None:
+    data = repositories.get_state_version(case_id, version)
+    return IncidentState(**data) if data else None

@@ -1,0 +1,5 @@
+event_time,event_type,account,host,source_ip
+2026-10-03T10:00:00+00:00,login,user01,WS-01,203.0.113.10
+2026-10-03T10:05:00+00:00,login_failed,user01,WS-01,203.0.113.10
+2026-10-03T10:07:00+00:00,login,user01,WS-01,198.51.100.23
+2026-10-03T10:12:00+00:00,privilege_escalation,user01,WS-01,198.51.100.23
