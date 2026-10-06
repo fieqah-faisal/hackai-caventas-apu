@@ -1,3 +1,8 @@
+## Project memory
+
+Team state, session history, decisions and backlog live in
+[`docs/session/`](docs/session/README.md). Read it before starting work.
+
 ## Project Timeline
 ### Key Dates
 
