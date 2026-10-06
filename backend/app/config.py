@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # --- AI planner (optional; backend must work without it) ---
     deepseek_api_key: Optional[str] = None
     deepseek_model: str = "deepseek-v4.1-flash"
-    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_base_url: str = "https://opencode.ai/zen/go/v1"
 
     # --- Local storage ---
     upload_dir: str = str(BACKEND_DIR / "uploads")
