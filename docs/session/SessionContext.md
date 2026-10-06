@@ -30,9 +30,10 @@ Firestore; no credentials needed).
 
 - Milestone 1 backend complete at `950873c`: cases, evidence ingestion,
   versioned incident state, audit trail.
-- Planning / approvals / execution / reports are HTTP 501 stubs;
-  `FakePlannerAdapter` and `FakeSimulatorAdapter` fix the integration
-  contracts.
+- Planning implemented (BL-002): real LangGraph adapter + `/runs` +
+  `/plans` endpoints, guidance fixture, 24 tests passing; PR #3 open for
+  review. Approvals / execution / reports remain HTTP 501 stubs; fake
+  adapters remain the fallback when no API key is configured.
 - Storage: Google Cloud Firestore via Firebase Admin SDK; uploaded
   originals on the local filesystem (`backend/uploads/`, gitignored) with
   SHA-256 recorded in Firestore.

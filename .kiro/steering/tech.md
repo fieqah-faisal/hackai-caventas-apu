@@ -1,11 +1,12 @@
 # Technology Stack
 
 Programming language:
-Python 3.9+ (developed and tested on 3.9; 3.12 preferred where available)
-Code uses `from __future__ import annotations`, so new-style builtin
-generics (list[...], dict[...]) work on 3.9. Avoid runtime-evaluated
-`X | None` unions in Pydantic models — use typing.Optional instead so the
-backend stays importable on 3.9.
+Python 3.10+ (3.12 recommended and used for development; LangGraph
+requires >=3.10 and Python 3.9 is EOL — see DEC-004)
+Code uses `from __future__ import annotations`; new-style builtin generics
+(list[...], dict[...]) and runtime `X | None` unions both work on 3.10+.
+Existing models use typing.Optional — either style is fine; stay consistent
+within a file.
 
 Backend:
 FastAPI

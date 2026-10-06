@@ -3,6 +3,80 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 PR #3 opened for BL-002 review (IN PROGRESS)
+
+- Opened PR #3 (`feat/ai-planner-adapter` → `main`): planner adapter,
+  planning endpoints, guidance fixture, env alignment, 24 tests passing.
+- Awaiting maintainer review/merge; live smoke test to follow once
+  `OPENCODE_GO_API_KEY` is set in `backend/.env`.
+
+### 2026-10-06 Env structure aligned to the OpenCode Go provider (DONE)
+
+- Replaced the `DEEPSEEK_*` env vars with provider-scoped `OPENCODE_GO_*`
+  in `config.py`, `.env.example` and `.env`: `OPENCODE_GO_API_KEY`,
+  `OPENCODE_GO_MODEL`, `OPENCODE_GO_ENDPOINT` (full documented URL
+  `https://opencode.ai/zen/go/v1/chat/completions`), plus optional
+  `OPENCODE_GO_MAX_TOKENS`, `OPENCODE_GO_TEMPERATURE`,
+  `OPENCODE_GO_TIMEOUT_SECONDS`.
+- Adapter reads all request tuning from settings and posts to the endpoint
+  as configured; added a test pinning the request shape (URL, Bearer auth,
+  user-agent, `x-opencode-session`, model, params). Suite: **24 passed**.
+- Note: `.env` still needs the real key (`OPENCODE_GO_API_KEY=`).
+
+### 2026-10-06 BL-002 planner adapter + planning endpoints implemented (DONE)
+
+- `backend/app/ai/langgraph_planner.py`: LangGraph graph (analyze →
+  sufficiency route → propose) over the OpenCode Go chat-completions API
+  (`deepseek-v4.1-flash`); injectable LLM call for tests; local safety
+  validation (Stage enum, known entity/evidence ids, tool allowlist from
+  guidance, `based_on_state_version` always from the state).
+- `backend/fixtures/guidance.json`: provisional policy pack (POL-01…04) +
+  stage guidance + approved tool allowlist from the approved scenario doc.
+- `POST /cases/{id}/runs` + `GET /cases/{id}/plans` implemented via
+  `planning_service` + repository additions; `plan_created` audit event.
+- Tests: 14 new (`test_planner_adapter.py`, `test_planning_api.py`);
+  suite now **23 passed**.
+- Branch `feat/ai-planner-adapter`; pending: live smoke test with the
+  OpenCode Go key, and BL-008 catalogue sync with Aidan at integration.
+
+### 2026-10-06 BL-002 environment ready (DONE)
+
+- `.venv` on Python 3.12; `requirements.txt` (+ `langgraph` 1.2.13)
+  installed; `backend/.env` created from the example (API key pending).
+- Baseline backend suite: `9 passed` (`cd backend && ../.venv/bin/python
+  -m pytest -q`).
+- Firebase CLI not installed (Node 26 / npm 11 available) — needed at the
+  integration step (Step 5 / BL-004).
+- Next: Step 3 — planner adapter + endpoints (BL-002).
+
+### 2026-10-06 Python floor raised to 3.10+; inputs unblocked (DONE)
+
+- `tech.md` and `backend/README.md` updated: Python 3.10+ (development on
+  3.12); 3.9 dropped — see DEC-004. `langgraph` added to
+  `backend/requirements.txt`.
+- OpenCode Go API structure verified against the official docs: endpoint
+  `https://opencode.ai/zen/go/v1/chat/completions`, model
+  `deepseek-v4.1-flash`, `Authorization: Bearer sk-...`, OpenAI-compatible
+  request body; the adapter will add the recommended user-agent and
+  `x-opencode-session` headers.
+- Airil approved `IRP_Incident_Scenarios_draft.docx` as the source for the
+  v1 guidance fixture and the provisional action vocabulary.
+- Next: BL-002 implementation (adapter + LangGraph graph + planning
+  endpoints).
+
+### 2026-10-06 OpenCode Go gateway resolved from official docs (DONE)
+
+- BL-007 confirmed via the OpenCode Go docs: base URL
+  `https://opencode.ai/zen/go/v1`, OpenAI-compatible `/chat/completions`,
+  model ID `deepseek-v4.1-flash` (matches DEC-003).
+- Provider guidance noted for the adapter: specific user-agent +
+  `x-opencode-session` header; the service is documented for
+  coding-agent-style traffic (low-volume reasoning use; subscription is
+  Airil's, flagged for awareness).
+- Remaining input: the API key itself (Airil) before the live smoke test;
+  mocked tests do not need it.
+- Branch `feat/ai-planner-adapter`; next: BL-002 environment + adapter.
+
 ### 2026-10-06 Model references updated to DeepSeek V4.1 Flash (DONE)
 
 - AI planner model aligned to the updated proposal §9: `LangGraph +

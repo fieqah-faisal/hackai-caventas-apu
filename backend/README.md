@@ -64,7 +64,7 @@ app/
 
 ## Running locally
 
-Requires Python 3.9+ (developed/tested on 3.9).
+Requires Python 3.10+ (development uses 3.12; LangGraph requires >=3.10).
 
 ```bash
 cd backend

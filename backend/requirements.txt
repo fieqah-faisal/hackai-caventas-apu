@@ -9,4 +9,5 @@ python-dotenv
 reportlab
 httpx
 networkx
+langgraph
 pytest

@@ -52,9 +52,15 @@ comment) · DeepSeek V4.1 Flash via the OpenCode Go subscription (chosen).
 
 **Decision:** `LangGraph + DeepSeek V4.1 Flash`, model slug
 `deepseek-v4.1-flash`; API key provided by Airil from his OpenCode Go
-subscription; the key lives in `backend/.env` only (never committed). The
-exact gateway base URL/endpoint still needs confirmation (BL-007) — it may
-differ from `https://api.deepseek.com`.
+subscription; the key lives in `backend/.env` only (never committed).
+Gateway confirmed from the OpenCode Go docs on 2026-10-06:
+`https://opencode.ai/zen/go/v1` (OpenAI-compatible `chat/completions`).
+Config env vars follow the provider naming: `OPENCODE_GO_API_KEY`,
+`OPENCODE_GO_MODEL`, `OPENCODE_GO_ENDPOINT`, plus optional request tuning
+(`MAX_TOKENS`, `TEMPERATURE`, `TIMEOUT_SECONDS`).
+Provider guidance: send a specific user agent and a stable
+`x-opencode-session` header per conversation; traffic is monitored for
+abuse (the service is documented for coding-agent-style clients).
 
 **Tradeoff:** Subscription pricing is far cheaper than direct API (per the
 proposal comment, ~10 USD ≈ 60 USD of direct API), but access depends on
@@ -64,3 +70,24 @@ coding; the team assessed it as usable for data processing/reasoning).
 **Links:** updated proposal §9; `.kiro/steering/tech.md`;
 `backend/.env.example`; `backend/app/config.py`;
 `backend/app/ai/planner_adapter.py`.
+
+## DEC-004: Python floor raised to 3.10+ (2026-10-06)
+
+**Context:** The backend was documented and tested on Python 3.9. LangGraph
+— the agreed agent-orchestration framework (DEC-003, `tech.md`) — requires
+Python >=3.10 on current releases, and Python 3.9 is EOL.
+
+**Options considered:** (1) keep 3.9 compatibility and pin an old LangGraph
+release — outdated APIs, fragile; (2) split AI dependencies into an
+optional requirements file — extra complexity for the team; (3) raise the
+floor to 3.10+ and develop on 3.12 — chosen.
+
+**Decision:** Python 3.10+; the development venv uses 3.12. The
+`from __future__ import annotations` style stays; runtime `X | None` unions
+are acceptable now, but existing models keep `typing.Optional`.
+
+**Tradeoff:** Any environment still on 3.9 must upgrade (none known);
+supersedes Raaj's original 3.9 constraint — accepted by Airil on
+2026-10-06 without waiting for Raaj's explicit confirmation.
+
+**Links:** `.kiro/steering/tech.md`, `backend/README.md`, DEC-003.

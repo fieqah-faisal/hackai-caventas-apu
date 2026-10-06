@@ -1,0 +1,65 @@
+{
+  "policy_pack_version": "0.1-draft",
+  "playbook": {
+    "id": "PB-IR-001",
+    "version": "0.1",
+    "name": "Caventas demo IR playbook (from IRP_Incident_Scenarios_draft)"
+  },
+  "note": "Provisional tool allowlist pending Aidan's simulator catalogue (BL-008). Policy rules are the fictional organisation's own rules from the scenario draft.",
+  "policy_rules": [
+    {
+      "rule_id": "POL-01",
+      "statement": "Evidence must be preserved before a device is re-imaged; Preservation precedes Eradication."
+    },
+    {
+      "rule_id": "POL-02",
+      "statement": "Disabling a staff account requires IT manager approval."
+    },
+    {
+      "rule_id": "POL-03",
+      "statement": "Customer personal data accessed by an unauthorised party must be reported to the DPO."
+    },
+    {
+      "rule_id": "POL-04",
+      "statement": "A SOC analyst may approve isolating a user laptop alone."
+    }
+  ],
+  "stage_guidance": {
+    "assessment": [
+      "Determine scope and affected assets.",
+      "Identify which accounts, passwords and sessions were exposed."
+    ],
+    "preservation": [
+      "Preserve memory and disk images before re-imaging.",
+      "Export relevant auth, endpoint and CRM logs with hashes."
+    ],
+    "containment": [
+      "Isolate the affected endpoint when suspicious activity is evidence-backed.",
+      "Revoke stolen sessions and reset saved passwords.",
+      "Block malicious domains and IP addresses."
+    ],
+    "eradication": [
+      "Remove malicious files and persistence mechanisms.",
+      "Re-image the compromised device only after preservation."
+    ],
+    "hardening": [
+      "Address the weakness that enabled the incident (unmanaged software installs).",
+      "Add detection for the observed technique."
+    ],
+    "restoration": [
+      "Restore normal operations and verify security.",
+      "Confirm the stolen session can no longer be used."
+    ]
+  },
+  "approved_tools": [
+    "isolate_host",
+    "preserve_evidence",
+    "reimage_host",
+    "revoke_sessions",
+    "reset_password",
+    "disable_account",
+    "remove_mail_forwarding_rule",
+    "block_domain",
+    "warn_staff"
+  ]
+}
