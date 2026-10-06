@@ -6,9 +6,11 @@ audit trail and reports.
 
 Owner: Raaj (Backend, Incident State, Data & Integration).
 
-## Status: base layer complete, Milestone 1 working
+## Status: Milestone 1 + AI planning working
 
-**Functional now (Milestone 1):**
+**Functional now:**
+
+Milestone 1 (cases, evidence, incident state, audit):
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
@@ -25,18 +27,29 @@ record with a unique evidence id and source location, stores the original on
 the local filesystem, and automatically builds a new incident-state version
 (observed entities + relationships + timeline).
 
+AI planning (BL-002):
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/cases/{case_id}/runs` | Run the planner; persist a plan + proposed actions |
+| GET | `/cases/{case_id}/plans` | List stored plans for a case |
+
+The planner runs behind `app/ai/langgraph_planner.py` (LangGraph over the
+OpenCode Go gateway, model `deepseek-v4.1-flash`). It returns proposals only;
+the backend validates every id before persisting. With no
+`OPENCODE_GO_API_KEY` configured it falls back to `FakePlannerAdapter`, so
+the backend works without a key.
+
 **Stubbed for later milestones (return HTTP 501):**
 
-- `POST /cases/{case_id}/runs`, `GET /cases/{case_id}/plans` — AI planning
 - `POST /cases/{case_id}/actions/{action_id}/decision` — analyst approval
 - `POST /cases/{case_id}/actions/{action_id}/execute` — simulated execution
 - `POST /cases/{case_id}/reports`, `GET .../reports/{report_id}` — reporting
 
 The service/adapter interfaces for these exist (`approval_service`,
-`execution_service`, `reporting`, `planner_adapter`, `simulator_adapter`)
-with the agreed contracts and `Fake*` implementations, so integration with
-the AI planner (Airil) and the simulator (Aidan) can proceed against stable
-shapes.
+`execution_service`, `reporting`, `simulator_adapter`) with the agreed
+contracts and `Fake*` implementations, so integration can proceed against
+stable shapes.
 
 ## Architecture
 
@@ -56,9 +69,9 @@ data model):
 app/
   api/        FastAPI routers
   schemas/    Pydantic models (case, evidence, incident_state, plan, report)
-  services/   ingestion, state_manager, audit (+ stubbed approval/execution/reporting)
+  services/   ingestion, state_manager, audit, planning (+ stubbed approval/execution/reporting)
   database/   firebase.py (client), repositories.py (all Firestore access)
-  ai/         planner_adapter.py (PlannerAdapter + FakePlannerAdapter)
+  ai/         planner_adapter.py (Protocol + fake), langgraph_planner.py (real adapter)
   simulator/  simulator_adapter.py (SimulatorAdapter + FakeSimulatorAdapter)
 ```
 
@@ -89,13 +102,13 @@ cd backend
 ```
 
 Tests use an in-memory fake Firestore (`tests/fake_firestore.py`), so they
-run without the emulator or any credentials. The suite covers the five
-Milestone 1 endpoints, persistence, state versioning, malformed/unsupported
-uploads, 404s and the audit trail.
+run without the emulator or any credentials. The suite covers the Milestone 1
+endpoints, persistence, state versioning, malformed/unsupported uploads,
+404s, the audit trail, the planner adapter (scripted LLM) and the planning
+endpoints.
 
 ## Next steps (handoff)
 
 1. Smoke-test against the Firestore emulator (tests use a fake only).
-2. Wire the real `PlannerAdapter` (Airil / LangGraph + DeepSeek V4.1 Flash)
-   behind the existing interface.
-3. Implement approvals → execution (bounded simulator) → reporting in order.
+2. Implement approvals → execution (bounded simulator) → reporting in order
+   (the real `PlannerAdapter` is wired — see "AI planning" above).
