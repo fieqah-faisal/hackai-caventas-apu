@@ -3,6 +3,22 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 BL-002 planner adapter + planning endpoints implemented (DONE)
+
+- `backend/app/ai/langgraph_planner.py`: LangGraph graph (analyze →
+  sufficiency route → propose) over the OpenCode Go chat-completions API
+  (`deepseek-v4.1-flash`); injectable LLM call for tests; local safety
+  validation (Stage enum, known entity/evidence ids, tool allowlist from
+  guidance, `based_on_state_version` always from the state).
+- `backend/fixtures/guidance.json`: provisional policy pack (POL-01…04) +
+  stage guidance + approved tool allowlist from the approved scenario doc.
+- `POST /cases/{id}/runs` + `GET /cases/{id}/plans` implemented via
+  `planning_service` + repository additions; `plan_created` audit event.
+- Tests: 14 new (`test_planner_adapter.py`, `test_planning_api.py`);
+  suite now **23 passed**.
+- Branch `feat/ai-planner-adapter`; pending: live smoke test with the
+  OpenCode Go key, and BL-008 catalogue sync with Aidan at integration.
+
 ### 2026-10-06 BL-002 environment ready (DONE)
 
 - `.venv` on Python 3.12; `requirements.txt` (+ `langgraph` 1.2.13)

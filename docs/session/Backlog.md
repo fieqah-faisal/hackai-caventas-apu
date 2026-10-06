@@ -10,8 +10,9 @@
 
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
-- BL-002 — Wire the real `PlannerAdapter` (LangGraph + DeepSeek V4.1 Flash)
-  behind the existing interface. — open / Airil
+- BL-002 — Planner adapter (LangGraph + DeepSeek V4.1 Flash) and
+  `/runs` + `/plans` endpoints implemented (23 tests pass); live smoke test
+  pending the OpenCode Go key. — code complete / Airil
 - BL-003 — Implement approvals → bounded simulated execution → reporting
   (currently HTTP 501). — open / Raaj + Aidan
 
