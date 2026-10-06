@@ -41,8 +41,8 @@ Firebase Cloud Storage
 
 AI:
 PlannerAdapter
-DeepSeek V4 Pro
-Model: deepseek-v4-pro
+DeepSeek V4.1 Flash
+Model: deepseek-v4.1-flash
 
 Agent orchestration:
 LangGraph, owned by AI team member

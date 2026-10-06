@@ -39,3 +39,28 @@ copy-paste prompt).
 depends on triggers/links being read.
 
 **Links:** `docs/superpowers/specs/2026-10-06-session-notebook-design.md`.
+
+## DEC-003: DeepSeek V4.1 Flash as the AI planner model (2026-10-06)
+
+**Context:** The proposal's tech stack originally said "DeepSeek V4 Pro";
+review comments proposed V4.1 and the OpenCode Go subscription; the updated
+proposal (§9) now specifies **DeepSeek V4.1 Flash**, noting it outperforms
+V4 and V4 Pro on performance and cost.
+
+**Options considered:** DeepSeek V4 Pro (original) · DeepSeek V4.1 (early
+comment) · DeepSeek V4.1 Flash via the OpenCode Go subscription (chosen).
+
+**Decision:** `LangGraph + DeepSeek V4.1 Flash`, model slug
+`deepseek-v4.1-flash`; API key provided by Airil from his OpenCode Go
+subscription; the key lives in `backend/.env` only (never committed). The
+exact gateway base URL/endpoint still needs confirmation (BL-007) — it may
+differ from `https://api.deepseek.com`.
+
+**Tradeoff:** Subscription pricing is far cheaper than direct API (per the
+proposal comment, ~10 USD ≈ 60 USD of direct API), but access depends on
+the subscription's terms (the comment thread notes the key targets agent
+coding; the team assessed it as usable for data processing/reasoning).
+
+**Links:** updated proposal §9; `.kiro/steering/tech.md`;
+`backend/.env.example`; `backend/app/config.py`;
+`backend/app/ai/planner_adapter.py`.

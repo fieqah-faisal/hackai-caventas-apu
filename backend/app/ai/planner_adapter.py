@@ -10,7 +10,7 @@ treats the proposal as authorization.
 
 ``FakePlannerAdapter`` lets the backend be developed and integration-tested
 without DeepSeek or LangGraph. Airil's real adapter (LangGraph + DeepSeek
-V4 Pro, model ``deepseek-v4-pro``) drops in behind the same interface
+V4.1 Flash, model ``deepseek-v4.1-flash``) drops in behind the same interface
 later. These are defined now so later milestones build against a stable
 shape; Milestone 1 does not call them.
 """
