@@ -3,6 +3,19 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 Env structure aligned to the OpenCode Go provider (DONE)
+
+- Replaced the `DEEPSEEK_*` env vars with provider-scoped `OPENCODE_GO_*`
+  in `config.py`, `.env.example` and `.env`: `OPENCODE_GO_API_KEY`,
+  `OPENCODE_GO_MODEL`, `OPENCODE_GO_ENDPOINT` (full documented URL
+  `https://opencode.ai/zen/go/v1/chat/completions`), plus optional
+  `OPENCODE_GO_MAX_TOKENS`, `OPENCODE_GO_TEMPERATURE`,
+  `OPENCODE_GO_TIMEOUT_SECONDS`.
+- Adapter reads all request tuning from settings and posts to the endpoint
+  as configured; added a test pinning the request shape (URL, Bearer auth,
+  user-agent, `x-opencode-session`, model, params). Suite: **24 passed**.
+- Note: `.env` still needs the real key (`OPENCODE_GO_API_KEY=`).
+
 ### 2026-10-06 BL-002 planner adapter + planning endpoints implemented (DONE)
 
 - `backend/app/ai/langgraph_planner.py`: LangGraph graph (analyze →

@@ -55,6 +55,9 @@ comment) · DeepSeek V4.1 Flash via the OpenCode Go subscription (chosen).
 subscription; the key lives in `backend/.env` only (never committed).
 Gateway confirmed from the OpenCode Go docs on 2026-10-06:
 `https://opencode.ai/zen/go/v1` (OpenAI-compatible `chat/completions`).
+Config env vars follow the provider naming: `OPENCODE_GO_API_KEY`,
+`OPENCODE_GO_MODEL`, `OPENCODE_GO_ENDPOINT`, plus optional request tuning
+(`MAX_TOKENS`, `TEMPERATURE`, `TIMEOUT_SECONDS`).
 Provider guidance: send a specific user agent and a stable
 `x-opencode-session` header per conversation; traffic is monitored for
 abuse (the service is documented for coding-agent-style clients).
