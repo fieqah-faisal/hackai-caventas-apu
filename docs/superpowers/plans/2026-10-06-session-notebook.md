@@ -429,7 +429,7 @@ depends on triggers/links being read.
 
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
-- BL-002 — Wire the real `PlannerAdapter` (LangGraph + DeepSeek V4 Pro)
+- BL-002 — Wire the real `PlannerAdapter` (LangGraph + DeepSeek V4.1 Flash)
   behind the existing interface. — open / Airil
 - BL-003 — Implement approvals → bounded simulated execution → reporting
   (currently HTTP 501). — open / Raaj + Aidan
@@ -438,8 +438,7 @@ depends on triggers/links being read.
 
 - BL-004 — Smoke-test the backend against the Firestore emulator (tests use
   an in-memory fake only). — open / Raaj
-- BL-005 — Decide DeepSeek V4 Pro vs 4.1 (proposal comment, p.35); record
-  in `Decisions.md`. — open / Airil + team
+- BL-005 — DeepSeek model version — resolved: V4.1 Flash (DEC-003).
 
 ### P3
 

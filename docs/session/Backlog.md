@@ -10,7 +10,7 @@
 
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
-- BL-002 — Wire the real `PlannerAdapter` (LangGraph + DeepSeek V4 Pro)
+- BL-002 — Wire the real `PlannerAdapter` (LangGraph + DeepSeek V4.1 Flash)
   behind the existing interface. — open / Airil
 - BL-003 — Implement approvals → bounded simulated execution → reporting
   (currently HTTP 501). — open / Raaj + Aidan
@@ -19,8 +19,11 @@
 
 - BL-004 — Smoke-test the backend against the Firestore emulator (tests use
   an in-memory fake only). — open / Raaj
-- BL-005 — Decide DeepSeek V4 Pro vs 4.1 (proposal comment, p.35); record
-  in `Decisions.md`. — open / Airil + team
+- BL-007 — Confirm the OpenCode Go gateway base URL and exact model slug for
+  DeepSeek V4.1 Flash before wiring the adapter. — open / Airil
+- BL-008 — Sync the planner's proposed action vocabulary with Aidan's
+  approved simulator catalogue (defer to system integration, 6–8 Oct). —
+  open / Airil + Aidan
 
 ### P3
 

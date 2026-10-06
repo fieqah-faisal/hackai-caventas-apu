@@ -209,10 +209,10 @@ Project facts used below are the current verified repo state.
 ### Backlog.md — seed items
 
 - BL-001 (P1) Reconcile proposal (SQLite+JSON) vs repo (Firestore); confirm and record change — team.
-- BL-002 (P1) Wire real `PlannerAdapter` (LangGraph + DeepSeek V4 Pro) behind existing interface — Airil.
+- BL-002 (P1) Wire real `PlannerAdapter` (LangGraph + DeepSeek V4.1 Flash) behind existing interface — Airil.
 - BL-003 (P1) Implement approvals → bounded simulated execution → reporting (currently 501) — Raaj + Aidan.
 - BL-004 (P2) Smoke-test backend against Firestore emulator (tests use in-memory fake) — Raaj.
-- BL-005 (P2) Decide DeepSeek V4 Pro vs 4.1 (PDF comment p.35); record in Decisions.md — Airil/team.
+- BL-005 (P2) DeepSeek model version — resolved: V4.1 Flash (DEC-003).
 - BL-006 (P3, deferred) Add a thin `SKILL.md` wrapper pointing to `docs/session/README.md` only if a teammate's agent supports project skills and is not covered by `AGENTS.md`/steering — Airil.
 
 ## 8. Conflict & Hygiene Rules

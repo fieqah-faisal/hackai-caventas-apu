@@ -96,6 +96,6 @@ uploads, 404s and the audit trail.
 ## Next steps (handoff)
 
 1. Smoke-test against the Firestore emulator (tests use a fake only).
-2. Wire the real `PlannerAdapter` (Airil / LangGraph + DeepSeek V4 Pro)
+2. Wire the real `PlannerAdapter` (Airil / LangGraph + DeepSeek V4.1 Flash)
    behind the existing interface.
 3. Implement approvals → execution (bounded simulator) → reporting in order.

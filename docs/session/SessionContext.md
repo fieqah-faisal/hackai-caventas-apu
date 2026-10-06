@@ -46,7 +46,8 @@ Firestore; no credentials needed).
 - `backend/app/services/` — ingestion, state_manager, audit; approval /
   execution / reporting stubs
 - `backend/app/database/` — Firestore client + repositories
-- `backend/app/ai/planner_adapter.py` — AI boundary (LangGraph + DeepSeek)
+- `backend/app/ai/planner_adapter.py` — AI boundary (LangGraph + DeepSeek
+  V4.1 Flash)
 - `backend/app/simulator/` — action simulator boundary
 - Full tree and Firestore data model: `.kiro/steering/structure.md`
 - Stack rules: `.kiro/steering/tech.md`; security: `.kiro/steering/security.md`;
