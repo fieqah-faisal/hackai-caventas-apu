@@ -33,9 +33,6 @@ from app.schemas.plan import PlanProposal, ProposedAction, Stage
 LLMCall = Callable[[list[dict[str, Any]], str], str]
 
 USER_AGENT = "caventas-ir-planner/0.1"
-REQUEST_TIMEOUT_SECONDS = 60.0
-MAX_OUTPUT_TOKENS = 4000
-TEMPERATURE = 0.2
 
 DEFAULT_ALLOWED_TOOLS = {
     "isolate_host",
@@ -95,25 +92,27 @@ def _str_list(value: Any) -> list[str]:
 
 def _default_llm_call(messages: list[dict[str, Any]], session_id: str) -> str:
     settings = get_settings()
-    if not settings.deepseek_api_key:
+    if not settings.opencode_go_api_key:
         raise PlannerError(
-            "DEEPSEEK_API_KEY is not configured; set it in backend/.env"
+            "OPENCODE_GO_API_KEY is not configured; set it in backend/.env"
         )
-    url = f"{settings.deepseek_base_url.rstrip('/')}/chat/completions"
     payload = {
-        "model": settings.deepseek_model,
+        "model": settings.opencode_go_model,
         "messages": messages,
-        "temperature": TEMPERATURE,
-        "max_tokens": MAX_OUTPUT_TOKENS,
+        "temperature": settings.opencode_go_temperature,
+        "max_tokens": settings.opencode_go_max_tokens,
     }
     headers = {
-        "Authorization": f"Bearer {settings.deepseek_api_key}",
+        "Authorization": f"Bearer {settings.opencode_go_api_key}",
         "User-Agent": USER_AGENT,
         "x-opencode-session": session_id,
     }
     try:
         response = httpx.post(
-            url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS
+            settings.opencode_go_endpoint,
+            json=payload,
+            headers=headers,
+            timeout=settings.opencode_go_timeout_seconds,
         )
         response.raise_for_status()
     except httpx.HTTPError as exc:
@@ -307,6 +306,6 @@ def load_guidance(path: Optional[Path] = None) -> dict[str, Any]:
 
 def get_planner_adapter() -> PlannerAdapter:
     """Return the real adapter when an API key is configured, else the fake."""
-    if get_settings().deepseek_api_key:
+    if get_settings().opencode_go_api_key:
         return LangGraphPlannerAdapter()
     return FakePlannerAdapter()

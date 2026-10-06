@@ -29,10 +29,15 @@ class Settings(BaseSettings):
     firebase_project_id: str = "ir-planner-dev"
     firestore_emulator_host: Optional[str] = None
 
-    # --- AI planner (optional; backend must work without it) ---
-    deepseek_api_key: Optional[str] = None
-    deepseek_model: str = "deepseek-v4.1-flash"
-    deepseek_base_url: str = "https://opencode.ai/zen/go/v1"
+    # --- AI planner: OpenCode Go (optional; backend works without it) ---
+    opencode_go_api_key: Optional[str] = None
+    opencode_go_model: str = "deepseek-v4.1-flash"
+    opencode_go_endpoint: str = (
+        "https://opencode.ai/zen/go/v1/chat/completions"
+    )
+    opencode_go_max_tokens: int = 4000
+    opencode_go_temperature: float = 0.2
+    opencode_go_timeout_seconds: float = 60.0
 
     # --- Local storage ---
     upload_dir: str = str(BACKEND_DIR / "uploads")

@@ -188,18 +188,61 @@ def test_malformed_llm_output_raises_planner_error():
         LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
 
 
+def _settings(api_key: str | None = "sk-test", **overrides) -> SimpleNamespace:
+    values = {
+        "opencode_go_api_key": api_key,
+        "opencode_go_model": "deepseek-v4.1-flash",
+        "opencode_go_endpoint": "https://opencode.ai/zen/go/v1/chat/completions",
+        "opencode_go_max_tokens": 1234,
+        "opencode_go_temperature": 0.1,
+        "opencode_go_timeout_seconds": 9.0,
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
 def test_missing_api_key_raises_planner_error(monkeypatch):
     monkeypatch.setattr(
-        "app.ai.langgraph_planner.get_settings",
-        lambda: SimpleNamespace(
-            deepseek_api_key=None,
-            deepseek_model="deepseek-v4.1-flash",
-            deepseek_base_url="https://opencode.ai/zen/go/v1",
-        ),
+        "app.ai.langgraph_planner.get_settings", lambda: _settings(api_key=None)
     )
     adapter = LangGraphPlannerAdapter()  # default client, no key configured
     with pytest.raises(PlannerError):
         adapter.generate_plan(_state(), GUIDANCE)
+
+
+def test_default_llm_call_builds_opencode_go_request(monkeypatch):
+    captured: dict = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        captured.update(url=url, json=json, headers=headers, timeout=timeout)
+
+        class _Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"choices": [{"message": {"content": "{\"ok\": true}"}}]}
+
+        return _Response()
+
+    monkeypatch.setattr("app.ai.langgraph_planner.httpx.post", fake_post)
+    monkeypatch.setattr("app.ai.langgraph_planner.get_settings", lambda: _settings())
+
+    from app.ai import langgraph_planner
+
+    out = langgraph_planner._default_llm_call(
+        [{"role": "user", "content": "hi"}], "CASE-001"
+    )
+
+    assert out == "{\"ok\": true}"
+    assert captured["url"] == "https://opencode.ai/zen/go/v1/chat/completions"
+    assert captured["headers"]["Authorization"] == "Bearer sk-test"
+    assert captured["headers"]["x-opencode-session"] == "CASE-001"
+    assert "caventas" in captured["headers"]["User-Agent"]
+    assert captured["json"]["model"] == "deepseek-v4.1-flash"
+    assert captured["json"]["max_tokens"] == 1234
+    assert captured["json"]["temperature"] == 0.1
+    assert captured["timeout"] == 9.0
 
 
 def test_load_guidance_reads_repo_fixture():
