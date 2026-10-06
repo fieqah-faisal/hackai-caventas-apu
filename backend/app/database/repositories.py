@@ -25,6 +25,8 @@ from app.database.firebase import get_db
 CASES = "cases"
 EVIDENCE = "evidence"
 STATE_VERSIONS = "state_versions"
+PLANS = "plans"
+ACTIONS = "actions"
 AUDIT_EVENTS = "audit_events"
 
 
@@ -92,6 +94,21 @@ def get_state_version(case_id: str, version: int) -> dict[str, Any] | None:
         .get()
     )
     return snap.to_dict() if snap.exists else None
+
+
+# --- Plans and actions ---------------------------------------------------
+
+def add_plan(case_id: str, plan_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(PLANS).document(plan_id).set(data)
+
+
+def list_plans(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(PLANS).stream()
+    return [d.to_dict() for d in docs]
+
+
+def add_action(case_id: str, action_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(ACTIONS).document(action_id).set(data)
 
 
 # --- Audit events --------------------------------------------------------
