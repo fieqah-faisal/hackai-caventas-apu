@@ -1,0 +1,312 @@
+"""LangGraph planner adapter: the real AI planner behind ``PlannerAdapter``.
+
+Contract (see ``app/ai/planner_adapter.py`` and ``app/schemas/plan.py``):
+
+    generate_plan(incident_state, approved_guidance) -> PlanProposal
+
+The graph is intentionally small:
+
+    analyze (LLM #1) -> sufficient evidence? -> propose (LLM #2)
+                                            -> END (missing_evidence)
+
+The LLM is an OpenAI-compatible chat-completions call (OpenCode Go gateway,
+model ``deepseek-v4.1-flash``). The call is injectable so tests run without a
+network or an API key. Safety rules are enforced locally, not trusted to the
+model: the stage must be a valid ``Stage``, action targets must exist in the
+incident state, evidence ids must exist, tool names must be in the approved
+allowlist, and ``based_on_state_version`` always comes from the state.
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Callable, Optional, TypedDict
+
+import httpx
+from langgraph.graph import END, START, StateGraph
+
+from app.ai.planner_adapter import FakePlannerAdapter, PlannerAdapter
+from app.config import get_settings
+from app.schemas.incident_state import IncidentState
+from app.schemas.plan import PlanProposal, ProposedAction, Stage
+
+LLMCall = Callable[[list[dict[str, Any]], str], str]
+
+USER_AGENT = "caventas-ir-planner/0.1"
+REQUEST_TIMEOUT_SECONDS = 60.0
+MAX_OUTPUT_TOKENS = 4000
+TEMPERATURE = 0.2
+
+DEFAULT_ALLOWED_TOOLS = {
+    "isolate_host",
+    "preserve_evidence",
+    "reimage_host",
+    "revoke_sessions",
+    "reset_password",
+    "disable_account",
+    "remove_mail_forwarding_rule",
+    "block_domain",
+    "warn_staff",
+}
+
+DEFAULT_GUIDANCE_PATH = (
+    Path(__file__).resolve().parents[2] / "fixtures" / "guidance.json"
+)
+
+
+class PlannerError(RuntimeError):
+    """Raised when the planner cannot produce a valid proposal."""
+
+
+class PlannerState(TypedDict, total=False):
+    incident: dict[str, Any]
+    guidance: dict[str, Any]
+    analysis: dict[str, Any]
+    sufficient: bool
+    stage: str
+    actions: list[dict[str, Any]]
+    missing_evidence: list[str]
+
+
+def _extract_json(text: str) -> dict[str, Any]:
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`").strip()
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:].strip()
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end > start:
+            try:
+                return json.loads(cleaned[start : end + 1])
+            except json.JSONDecodeError as exc:
+                raise PlannerError(f"planner returned invalid JSON: {exc}") from exc
+        raise PlannerError("planner returned no JSON object")
+
+
+def _str_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(v) for v in value]
+
+
+def _default_llm_call(messages: list[dict[str, Any]], session_id: str) -> str:
+    settings = get_settings()
+    if not settings.deepseek_api_key:
+        raise PlannerError(
+            "DEEPSEEK_API_KEY is not configured; set it in backend/.env"
+        )
+    url = f"{settings.deepseek_base_url.rstrip('/')}/chat/completions"
+    payload = {
+        "model": settings.deepseek_model,
+        "messages": messages,
+        "temperature": TEMPERATURE,
+        "max_tokens": MAX_OUTPUT_TOKENS,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.deepseek_api_key}",
+        "User-Agent": USER_AGENT,
+        "x-opencode-session": session_id,
+    }
+    try:
+        response = httpx.post(
+            url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise PlannerError(f"AI provider request failed: {exc}") from exc
+    try:
+        return response.json()["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise PlannerError("AI provider returned an unexpected response shape") from exc
+
+
+def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
+    system = (
+        "You are an incident-response analysis assistant. Given a versioned "
+        "incident state (entities, relationships, timeline, findings), "
+        "determine the likely incident type, scope, severity, confidence "
+        "(0-1), and the recommended IR stage. Set \"sufficient\": false when "
+        "critical facts are missing and list them in missing_evidence. Never "
+        "invent entity ids or evidence ids. Return ONLY a JSON object with "
+        "keys: incident_type, scope, severity (low|medium|high|critical), "
+        "confidence, sufficient, missing_evidence, stage (assessment|"
+        "preservation|containment|eradication|hardening|restoration)."
+    )
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": json.dumps(incident, sort_keys=True)},
+    ]
+
+
+def _proposal_messages(
+    incident: dict[str, Any],
+    analysis: dict[str, Any],
+    guidance: dict[str, Any],
+    entity_ids: set[str],
+    evidence_ids: set[str],
+) -> list[dict[str, Any]]:
+    system = (
+        "You are an incident-response planner. Propose the next response "
+        "actions for the analyst to approve. Rules: use ONLY tools from the "
+        "approved tool list in the guidance; target_id must be one of the "
+        "valid entity ids; evidence_ids must come only from the valid "
+        "evidence ids; reference policy rule ids in policy_refs when "
+        "relevant. Every action needs rationale, risk, expected_effect and "
+        "validation_checks. Never invent ids. Return ONLY a JSON object: "
+        "{\"stage\": ..., \"actions\": [...]}."
+    )
+    payload = {
+        "incident_state": incident,
+        "analysis": analysis,
+        "approved_guidance": guidance,
+        "valid_entity_ids": sorted(entity_ids),
+        "valid_evidence_ids": sorted(evidence_ids),
+    }
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": json.dumps(payload, sort_keys=True)},
+    ]
+
+
+def _collect_evidence_ids(incident: dict[str, Any]) -> set[str]:
+    ids: set[str] = set()
+    for relationship in incident.get("relationships", []):
+        ids.update(_str_list(relationship.get("evidence_ids")))
+    for event in incident.get("timeline", []):
+        ids.update(_str_list(event.get("evidence_ids")))
+    for finding in incident.get("findings", []):
+        ids.update(_str_list(finding.get("evidence_ids")))
+    return ids
+
+
+def _allowed_tools(guidance: dict[str, Any]) -> set[str]:
+    tools = guidance.get("approved_tools")
+    if isinstance(tools, list) and tools:
+        return {str(t) for t in tools}
+    return set(DEFAULT_ALLOWED_TOOLS)
+
+
+def _coerce_stage(raw: Any) -> Stage:
+    try:
+        return Stage(str(raw))
+    except ValueError:
+        return Stage.ASSESSMENT
+
+
+def _validated_action(
+    raw: dict[str, Any],
+    entity_ids: set[str],
+    evidence_ids: set[str],
+    allowlist: set[str],
+) -> Optional[ProposedAction]:
+    tool = str(raw.get("tool_name", ""))
+    target = str(raw.get("target_id", ""))
+    if tool not in allowlist or target not in entity_ids:
+        return None
+    cited = [e for e in _str_list(raw.get("evidence_ids")) if e in evidence_ids]
+    return ProposedAction(
+        tool_name=tool,
+        target_id=target,
+        evidence_ids=cited,
+        policy_refs=_str_list(raw.get("policy_refs")),
+        rationale=str(raw.get("rationale", "")),
+        prerequisites=_str_list(raw.get("prerequisites")),
+        risk=str(raw.get("risk", "")),
+        expected_effect=str(raw.get("expected_effect", "")),
+        validation_checks=_str_list(raw.get("validation_checks")),
+    )
+
+
+class LangGraphPlannerAdapter:
+    """Real planner: LangGraph orchestration over an OpenAI-compatible LLM."""
+
+    def __init__(self, llm_call: Optional[LLMCall] = None) -> None:
+        self._llm_call = llm_call or _default_llm_call
+        graph = StateGraph(PlannerState)
+        graph.add_node("analyze", self._analyze)
+        graph.add_node("propose", self._propose)
+        graph.add_edge(START, "analyze")
+        graph.add_conditional_edges(
+            "analyze",
+            self._route_after_analyze,
+            {"propose": "propose", "end": END},
+        )
+        graph.add_edge("propose", END)
+        self._graph = graph.compile()
+
+    def _analyze(self, state: PlannerState) -> PlannerState:
+        incident = state["incident"]
+        raw = self._llm_call(_analysis_messages(incident), incident["case_id"])
+        analysis = _extract_json(raw)
+        return {
+            "analysis": analysis,
+            "sufficient": bool(analysis.get("sufficient", False)),
+            "stage": str(analysis.get("stage", Stage.ASSESSMENT.value)),
+            "missing_evidence": _str_list(analysis.get("missing_evidence")),
+        }
+
+    def _route_after_analyze(self, state: PlannerState) -> str:
+        return "propose" if state.get("sufficient") else "end"
+
+    def _propose(self, state: PlannerState) -> PlannerState:
+        incident = state["incident"]
+        entity_ids = {str(e.get("id")) for e in incident.get("entities", [])}
+        raw = self._llm_call(
+            _proposal_messages(
+                incident,
+                state.get("analysis", {}),
+                state.get("guidance", {}),
+                entity_ids,
+                _collect_evidence_ids(incident),
+            ),
+            incident["case_id"],
+        )
+        proposal = _extract_json(raw)
+        actions = proposal.get("actions") or []
+        if not isinstance(actions, list):
+            raise PlannerError("planner 'actions' must be a list")
+        return {
+            "stage": str(proposal.get("stage", state.get("stage", ""))),
+            "actions": [a for a in actions if isinstance(a, dict)],
+        }
+
+    def generate_plan(
+        self, incident_state: IncidentState, approved_guidance: dict | None = None
+    ) -> PlanProposal:
+        incident = incident_state.model_dump(mode="json")
+        guidance = approved_guidance or {}
+        final = self._graph.invoke({"incident": incident, "guidance": guidance})
+
+        entity_ids = {entity.id for entity in incident_state.entities}
+        evidence_ids = _collect_evidence_ids(incident)
+        allowlist = _allowed_tools(guidance)
+        actions: list[ProposedAction] = []
+        for raw_action in final.get("actions", []):
+            action = _validated_action(raw_action, entity_ids, evidence_ids, allowlist)
+            if action is not None:
+                actions.append(action)
+
+        return PlanProposal(
+            based_on_state_version=incident_state.version,
+            stage=_coerce_stage(final.get("stage")),
+            actions=actions,
+            missing_evidence=_str_list(final.get("missing_evidence")),
+        )
+
+
+def load_guidance(path: Optional[Path] = None) -> dict[str, Any]:
+    """Load the approved-guidance fixture (policy pack + tool allowlist)."""
+    source = path or DEFAULT_GUIDANCE_PATH
+    with source.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def get_planner_adapter() -> PlannerAdapter:
+    """Return the real adapter when an API key is configured, else the fake."""
+    if get_settings().deepseek_api_key:
+        return LangGraphPlannerAdapter()
+    return FakePlannerAdapter()
