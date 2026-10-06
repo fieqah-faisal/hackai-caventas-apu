@@ -3,6 +3,13 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 PR #3 opened for BL-002 review (IN PROGRESS)
+
+- Opened PR #3 (`feat/ai-planner-adapter` → `main`): planner adapter,
+  planning endpoints, guidance fixture, env alignment, 24 tests passing.
+- Awaiting maintainer review/merge; live smoke test to follow once
+  `OPENCODE_GO_API_KEY` is set in `backend/.env`.
+
 ### 2026-10-06 Env structure aligned to the OpenCode Go provider (DONE)
 
 - Replaced the `DEEPSEEK_*` env vars with provider-scoped `OPENCODE_GO_*`
