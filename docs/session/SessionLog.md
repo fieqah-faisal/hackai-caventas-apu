@@ -3,6 +3,21 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 Python floor raised to 3.10+; inputs unblocked (DONE)
+
+- `tech.md` and `backend/README.md` updated: Python 3.10+ (development on
+  3.12); 3.9 dropped — see DEC-004. `langgraph` added to
+  `backend/requirements.txt`.
+- OpenCode Go API structure verified against the official docs: endpoint
+  `https://opencode.ai/zen/go/v1/chat/completions`, model
+  `deepseek-v4.1-flash`, `Authorization: Bearer sk-...`, OpenAI-compatible
+  request body; the adapter will add the recommended user-agent and
+  `x-opencode-session` headers.
+- Airil approved `IRP_Incident_Scenarios_draft.docx` as the source for the
+  v1 guidance fixture and the provisional action vocabulary.
+- Next: BL-002 implementation (adapter + LangGraph graph + planning
+  endpoints).
+
 ### 2026-10-06 OpenCode Go gateway resolved from official docs (DONE)
 
 - BL-007 confirmed via the OpenCode Go docs: base URL

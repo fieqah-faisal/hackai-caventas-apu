@@ -67,3 +67,24 @@ coding; the team assessed it as usable for data processing/reasoning).
 **Links:** updated proposal §9; `.kiro/steering/tech.md`;
 `backend/.env.example`; `backend/app/config.py`;
 `backend/app/ai/planner_adapter.py`.
+
+## DEC-004: Python floor raised to 3.10+ (2026-10-06)
+
+**Context:** The backend was documented and tested on Python 3.9. LangGraph
+— the agreed agent-orchestration framework (DEC-003, `tech.md`) — requires
+Python >=3.10 on current releases, and Python 3.9 is EOL.
+
+**Options considered:** (1) keep 3.9 compatibility and pin an old LangGraph
+release — outdated APIs, fragile; (2) split AI dependencies into an
+optional requirements file — extra complexity for the team; (3) raise the
+floor to 3.10+ and develop on 3.12 — chosen.
+
+**Decision:** Python 3.10+; the development venv uses 3.12. The
+`from __future__ import annotations` style stays; runtime `X | None` unions
+are acceptable now, but existing models keep `typing.Optional`.
+
+**Tradeoff:** Any environment still on 3.9 must upgrade (none known);
+supersedes Raaj's original 3.9 constraint — accepted by Airil on
+2026-10-06 without waiting for Raaj's explicit confirmation.
+
+**Links:** `.kiro/steering/tech.md`, `backend/README.md`, DEC-003.
