@@ -3,6 +3,16 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 BL-002 environment ready (DONE)
+
+- `.venv` on Python 3.12; `requirements.txt` (+ `langgraph` 1.2.13)
+  installed; `backend/.env` created from the example (API key pending).
+- Baseline backend suite: `9 passed` (`cd backend && ../.venv/bin/python
+  -m pytest -q`).
+- Firebase CLI not installed (Node 26 / npm 11 available) — needed at the
+  integration step (Step 5 / BL-004).
+- Next: Step 3 — planner adapter + endpoints (BL-002).
+
 ### 2026-10-06 Python floor raised to 3.10+; inputs unblocked (DONE)
 
 - `tech.md` and `backend/README.md` updated: Python 3.10+ (development on
