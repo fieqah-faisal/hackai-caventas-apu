@@ -3,6 +3,19 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 OpenCode Go gateway resolved from official docs (DONE)
+
+- BL-007 confirmed via the OpenCode Go docs: base URL
+  `https://opencode.ai/zen/go/v1`, OpenAI-compatible `/chat/completions`,
+  model ID `deepseek-v4.1-flash` (matches DEC-003).
+- Provider guidance noted for the adapter: specific user-agent +
+  `x-opencode-session` header; the service is documented for
+  coding-agent-style traffic (low-volume reasoning use; subscription is
+  Airil's, flagged for awareness).
+- Remaining input: the API key itself (Airil) before the live smoke test;
+  mocked tests do not need it.
+- Branch `feat/ai-planner-adapter`; next: BL-002 environment + adapter.
+
 ### 2026-10-06 Model references updated to DeepSeek V4.1 Flash (DONE)
 
 - AI planner model aligned to the updated proposal §9: `LangGraph +

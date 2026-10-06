@@ -52,9 +52,12 @@ comment) · DeepSeek V4.1 Flash via the OpenCode Go subscription (chosen).
 
 **Decision:** `LangGraph + DeepSeek V4.1 Flash`, model slug
 `deepseek-v4.1-flash`; API key provided by Airil from his OpenCode Go
-subscription; the key lives in `backend/.env` only (never committed). The
-exact gateway base URL/endpoint still needs confirmation (BL-007) — it may
-differ from `https://api.deepseek.com`.
+subscription; the key lives in `backend/.env` only (never committed).
+Gateway confirmed from the OpenCode Go docs on 2026-10-06:
+`https://opencode.ai/zen/go/v1` (OpenAI-compatible `chat/completions`).
+Provider guidance: send a specific user agent and a stable
+`x-opencode-session` header per conversation; traffic is monitored for
+abuse (the service is documented for coding-agent-style clients).
 
 **Tradeoff:** Subscription pricing is far cheaper than direct API (per the
 proposal comment, ~10 USD ≈ 60 USD of direct API), but access depends on
