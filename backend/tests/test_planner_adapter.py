@@ -251,3 +251,49 @@ def test_load_guidance_reads_repo_fixture():
     assert guidance["policy_pack_version"]
     assert any(r["rule_id"] == "POL-01" for r in guidance["policy_rules"])
     assert "isolate_host" in guidance["approved_tools"]
+
+
+def test_alternate_tool_and_target_keys_are_normalized():
+    llm = ScriptedLLM(
+        [
+            _analysis(),
+            _proposal(
+                actions=[
+                    {
+                        "tool": "isolate_host",
+                        "target": "HOST::WS-01",
+                        "evidence_ids": ["EV-1"],
+                        "rationale": "Model used alternate key names.",
+                    }
+                ]
+            ),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert len(plan.actions) == 1
+    assert plan.actions[0].tool_name == "isolate_host"
+    assert plan.actions[0].target_id == "HOST::WS-01"
+
+
+def test_empty_llm_content_raises_with_finish_reason(monkeypatch):
+    def fake_post(url, json=None, headers=None, timeout=None):
+        class _Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {
+                    "choices": [
+                        {"message": {"content": ""}, "finish_reason": "length"}
+                    ]
+                }
+
+        return _Response()
+
+    monkeypatch.setattr("app.ai.langgraph_planner.httpx.post", fake_post)
+    monkeypatch.setattr("app.ai.langgraph_planner.get_settings", lambda: _settings())
+
+    adapter = LangGraphPlannerAdapter()
+    with pytest.raises(PlannerError, match="empty content"):
+        adapter.generate_plan(_state(), GUIDANCE)

@@ -35,9 +35,9 @@ class Settings(BaseSettings):
     opencode_go_endpoint: str = (
         "https://opencode.ai/zen/go/v1/chat/completions"
     )
-    opencode_go_max_tokens: int = 4000
+    opencode_go_max_tokens: int = 32000
     opencode_go_temperature: float = 0.2
-    opencode_go_timeout_seconds: float = 60.0
+    opencode_go_timeout_seconds: float = 300.0
 
     # --- Local storage ---
     upload_dir: str = str(BACKEND_DIR / "uploads")
