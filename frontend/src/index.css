@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Authoritative design tokens — mirror of PRODUCT.md "Brand Commitments".
+ * HTB-inspired dark navy operational shell; lime reserved for action.
+ * These exact values are the single source of truth for the frontend.
+ */
+:root {
+  /* Backgrounds */
+  --bg-canvas: #101827;
+  --bg-shell: #141e2d;
+  --bg-surface: #1b2637;
+  --bg-surface-raised: #263145;
+  --bg-surface-hover: #2d394d;
+
+  /* Borders */
+  --border-subtle: #2b374a;
+  --border-strong: #394558;
+
+  /* Text */
+  --text-primary: #ececed;
+  --text-secondary: #bac5d7;
+  --text-muted: #7788a4;
+
+  /* Accent (lime) */
+  --accent-primary: #9ded00;
+  --accent-hover: #b0ff1a;
+  --accent-pressed: #84c900;
+  --accent-text: #101827;
+
+  /* Status — operational meaning only, always paired with a label/icon */
+  --status-warning: #f2b84b;
+  --status-danger: #ff5d5d;
+  --status-info: #68a0ff;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: var(--border-subtle);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+      sans-serif;
+    font-feature-settings: "cv05" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Browser surfaces themed from the palette, not left as UA defaults. */
+  ::selection {
+    background-color: color-mix(in srgb, var(--accent-primary) 26%, transparent);
+    color: var(--text-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* Thin blue-grey scrollbars, in keeping with "borders not shadows". */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--border-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: #46556c;
+  }
+
+  /* Tabular numerals for versions, counts, timestamps. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
