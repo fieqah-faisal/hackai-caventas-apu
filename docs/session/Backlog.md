@@ -16,10 +16,17 @@
 ### P2
 
 - BL-004 — Emulator smoke executed and passing (script + `firebase.py`
-  anonymous-credential fix in PR #6). — in review / Airil
+  anonymous-credential fix in PR #7). — in review / Airil
 - BL-008 — Sync the planner's proposed action vocabulary with Aidan's
   approved simulator catalogue (defer to system integration, 6–8 Oct). —
   open / Airil + Aidan
+- BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
+  created; if so, obtain the project ID and have the service-account key
+  placed at `backend/secrets/serviceAccount.json` (gitignored) to enable an
+  optional cloud-Firestore run path; ask her to preserve the emulator
+  config in `firebase.json` when initializing. — open / team
+- BL-010 — Share the BL-003 decision payload contract (`decision`,
+  `analyst`, `reason`) with Syafieqah's approval UI work. — open / Airil
 
 ### P3
 
