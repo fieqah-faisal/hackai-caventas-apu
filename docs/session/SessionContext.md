@@ -34,6 +34,9 @@ Firestore; no credentials needed).
   + `/runs` + `/plans` endpoints, guidance fixture, 24 tests passing on
   `main`. Approvals / execution / reports remain HTTP 501 stubs; fake
   adapters remain the fallback when no API key is configured.
+- Live planner smoke passed against OpenCode Go (BL-007): containment plan
+  with 4 evidence-grounded actions + 7 gaps; planner client hardened for
+  reasoning models (see `SessionLog.md`).
 - Storage: Google Cloud Firestore via Firebase Admin SDK; uploaded
   originals on the local filesystem (`backend/uploads/`, gitignored) with
   SHA-256 recorded in Firestore.

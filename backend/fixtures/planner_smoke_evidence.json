@@ -1,0 +1,51 @@
+[
+  {
+    "event_time": "2026-10-04T21:38:00+08:00",
+    "event_type": "dns_query",
+    "host": "SALES-LT-07",
+    "account": "farah",
+    "query": "pdf-editor-free.example",
+    "source_ip": "192.0.2.44"
+  },
+  {
+    "event_time": "2026-10-04T21:40:00+08:00",
+    "event_type": "process_start",
+    "host": "SALES-LT-07",
+    "account": "farah",
+    "process": "installer.exe",
+    "path": "C:\\Users\\farah\\Downloads\\installer.exe",
+    "signed": false
+  },
+  {
+    "event_time": "2026-10-04T21:41:00+08:00",
+    "event_type": "alert",
+    "host": "SALES-LT-07",
+    "account": "farah",
+    "alert": "unsigned process read browser credential store",
+    "technique": "T1555.003"
+  },
+  {
+    "event_time": "2026-10-04T21:42:00+08:00",
+    "event_type": "dns_query",
+    "host": "SALES-LT-07",
+    "account": "farah",
+    "query": "cdn-sync-update.example",
+    "source_ip": "192.0.2.44"
+  },
+  {
+    "event_time": "2026-10-04T21:42:30+08:00",
+    "event_type": "network_upload",
+    "host": "SALES-LT-07",
+    "account": "farah",
+    "destination_ip": "203.0.113.45",
+    "bytes": 2400000,
+    "technique": "T1041"
+  },
+  {
+    "event_time": "2026-10-05T08:55:00+08:00",
+    "event_type": "analyst_note",
+    "host": "SALES-LT-07",
+    "account": "farah",
+    "note": "Overnight alert triage: suspected infostealer on SALES-LT-07 (Farah, sales). Unsigned installer, browser credential store access, outbound upload to 203.0.113.45."
+  }
+]

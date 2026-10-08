@@ -118,20 +118,35 @@ def _default_llm_call(messages: list[dict[str, Any]], session_id: str) -> str:
     except httpx.HTTPError as exc:
         raise PlannerError(f"AI provider request failed: {exc}") from exc
     try:
-        return response.json()["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError) as exc:
+        data = response.json()
+        choice = data["choices"][0]
+        content = choice["message"]["content"]
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
         raise PlannerError("AI provider returned an unexpected response shape") from exc
+    if not content or not content.strip():
+        finish = choice.get("finish_reason") or "unknown"
+        raise PlannerError(
+            f"AI provider returned empty content (finish_reason={finish}); "
+            "consider raising OPENCODE_GO_MAX_TOKENS"
+        )
+    return content
 
 
 def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
     system = (
         "You are an incident-response analysis assistant. Given a versioned "
-        "incident state (entities, relationships, timeline, findings), "
-        "determine the likely incident type, scope, severity, confidence "
-        "(0-1), and the recommended IR stage. Set \"sufficient\": false when "
-        "critical facts are missing and list them in missing_evidence. Never "
-        "invent entity ids or evidence ids. Return ONLY a JSON object with "
-        "keys: incident_type, scope, severity (low|medium|high|critical), "
+        "incident state (entities, relationships, timeline, findings) "
+        "derived from current evidence, determine the likely incident type, "
+        "scope, severity, confidence (0-1), and the recommended IR stage. "
+        "\"sufficient\" means: is there enough evidence to recommend an "
+        "initial response focus? Indicators of active compromise (malicious "
+        "execution, credential access, exfiltration, unauthorized sessions) "
+        "warrant an initial plan: set sufficient=true and still list any "
+        "remaining gaps in missing_evidence. Set sufficient=false only when "
+        "no defensible action can be recommended yet, e.g. events look "
+        "ambiguous or benign without corroboration. Never invent entity ids "
+        "or evidence ids. Return ONLY a JSON object with keys: "
+        "incident_type, scope, severity (low|medium|high|critical), "
         "confidence, sufficient, missing_evidence, stage (assessment|"
         "preservation|containment|eradication|hardening|restoration)."
     )
@@ -155,8 +170,14 @@ def _proposal_messages(
         "valid entity ids; evidence_ids must come only from the valid "
         "evidence ids; reference policy rule ids in policy_refs when "
         "relevant. Every action needs rationale, risk, expected_effect and "
-        "validation_checks. Never invent ids. Return ONLY a JSON object: "
-        "{\"stage\": ..., \"actions\": [...]}."
+        "validation_checks. Never invent ids. Return ONLY a JSON object "
+        "with exactly these keys: {\"stage\": <assessment|preservation|"
+        "containment|eradication|hardening|restoration>, \"actions\": "
+        "[{\"tool_name\": <string>, \"target_id\": <string>, "
+        "\"evidence_ids\": [<string>], \"policy_refs\": [<string>], "
+        "\"rationale\": <string>, \"prerequisites\": [<string>], "
+        "\"risk\": <string>, \"expected_effect\": <string>, "
+        "\"validation_checks\": [<string>]}]}."
     )
     payload = {
         "incident_state": incident,
@@ -196,14 +217,22 @@ def _coerce_stage(raw: Any) -> Stage:
         return Stage.ASSESSMENT
 
 
+def _first_str(raw: dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = raw.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
 def _validated_action(
     raw: dict[str, Any],
     entity_ids: set[str],
     evidence_ids: set[str],
     allowlist: set[str],
 ) -> Optional[ProposedAction]:
-    tool = str(raw.get("tool_name", ""))
-    target = str(raw.get("target_id", ""))
+    tool = _first_str(raw, "tool_name", "tool", "action", "action_type")
+    target = _first_str(raw, "target_id", "target")
     if tool not in allowlist or target not in entity_ids:
         return None
     cited = [e for e in _str_list(raw.get("evidence_ids")) if e in evidence_ids]

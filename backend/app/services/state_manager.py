@@ -12,6 +12,7 @@ layered in by later milestones.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from app.database import repositories
 from app.schemas.case import CaseStatus
@@ -31,6 +32,19 @@ def _coerce_entity_type(raw: str) -> EntityType:
         return EntityType(raw)
     except ValueError:
         return EntityType.OTHER
+
+
+_DESCRIPTION_SKIP_KEYS = {"host", "account", "event_type"}
+
+
+def _describe_fields(fields: dict[str, Any]) -> str:
+    """Compact, planner-readable summary of a record's non-entity fields."""
+    parts = [
+        f"{key}={value}"
+        for key, value in fields.items()
+        if key not in _DESCRIPTION_SKIP_KEYS and value not in (None, "")
+    ]
+    return ", ".join(parts)[:300]
 
 
 def _reconstruct(case_id: str, version: int) -> IncidentState:
@@ -89,10 +103,12 @@ def _reconstruct(case_id: str, version: int) -> IncidentState:
                 parsed_time = None
 
         event_type = fields.get("event_type", ev.get("kind", "event"))
+        detail = _describe_fields(fields)
+        description = f"{event_type}: {detail}" if detail else str(event_type)
         timeline.append(
             TimelineEvent(
                 timestamp=parsed_time,
-                description=f"{event_type} from {ev.get('source_file', 'unknown')}",
+                description=f"{description} ({ev.get('source_file', 'unknown')})",
                 evidence_ids=[ev_id] if ev_id else [],
             )
         )

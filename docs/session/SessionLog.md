@@ -3,6 +3,26 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-06 Live planner smoke passed; reasoning-model hardening (DONE)
+
+- First real end-to-end run against OpenCode Go (`deepseek-v4.1-flash`):
+  6 evidence items → state v1 → plan `stage=containment` with 4
+  evidence-grounded actions (isolate_host, preserve_evidence,
+  revoke_sessions, reset_password; POL-01 cited) + 7 remaining gaps
+  (42.5s). Script: `backend/scripts/planner_smoke.py` (re-runnable).
+- Fixes the smoke surfaced and shipped on `chore/planner-live-smoke`:
+  - timeline entries now carry record fields (destinations, domains, byte
+    counts) so the planner can ground on evidence — `state_manager.py`,
+    flagged for Raaj (his layer); pinned by `test_state_detail.py`;
+  - analysis prompt defines "sufficient" as enough for an *initial* plan
+    (active-compromise indicators → plan + gaps), matching the scenario
+    design;
+  - `max_tokens` 4000→32000 and timeout 60→300s: reasoning burned the
+    budget mid-thought (empty content at 4000);
+  - proposal prompt pins the exact action JSON schema; validation accepts
+    `tool`/`target` aliases; empty-content errors report `finish_reason`.
+- Suite: **27 passed**.
+
 ### 2026-10-06 PR #3 merged — BL-002 complete (DONE)
 
 - PR #3 merged to `main` (`b4f445a`): planner adapter, planning endpoints,
