@@ -20,6 +20,25 @@
   BL-009.
 t.
 
+### 2026-10-08 Syafieqah's frontend branch landed; review (IN PROGRESS)
+
+- `feat/frontend-workspace-fieqah` (1 commit, based on b6cc341 — behind
+  main): React + Vite + Tailwind analyst shell under `frontend/` (mock
+  data, `npm run build` green), root `PRODUCT.md`, and DEC-005 proposing
+  the React stack over steering's Streamlit note (flagged for team veto).
+- No backend / `firebase.json` changes — clean separation. But the branch's
+  docs assume BL-003 endpoints are still stubs (stale) and its action-state
+  / audit-event names don't match the live contracts (`proposed/executed/
+  effective` vs `awaiting_approval/approved/rejected/verified/failed`;
+  `approval_recorded` vs `action_approved|action_rejected`;
+  `evidence_ingested` vs `evidence_uploaded`), so it needs a rebase onto
+  current `main` plus a wiring pass before merge.
+- Merge care: notebook files edited on both sides (SessionLog top,
+  SessionContext bullets); BL number collision — her "BL-009" = frontend vs
+  our BL-009 = cloud-Firebase coordination.
+- PR #7 (BL-004) has no dependency on her branch; kept draft per Airil's
+  call. Syafieqah: Firebase project not initialized yet ("frontend first").
+
 ### 2026-10-08 Firestore emulator smoke passed — BL-004 (DONE)
 
 - Ran the full API flow against the local Firestore emulator (firebase-tools
