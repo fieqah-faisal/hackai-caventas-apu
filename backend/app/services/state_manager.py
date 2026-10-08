@@ -34,6 +34,13 @@ def _coerce_entity_type(raw: str) -> EntityType:
         return EntityType.OTHER
 
 
+def _parse_time(value: Any) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
 _DESCRIPTION_SKIP_KEYS = {"host", "account", "event_type"}
 
 
@@ -113,6 +120,46 @@ def _reconstruct(case_id: str, version: int) -> IncidentState:
             )
         )
 
+    actions = repositories.list_actions(case_id)
+    action_results = repositories.list_action_results(case_id)
+
+    for action in actions:
+        proposal = action.get("proposal", {}) or {}
+        tool = proposal.get("tool_name", "action")
+        target = proposal.get("target_id", "?")
+        status = action.get("status")
+        if status == "rejected":
+            reason = action.get("reason") or ""
+            timeline.append(
+                TimelineEvent(
+                    timestamp=_parse_time(action.get("decided_at")),
+                    description=(
+                        f"defender: action rejected — {tool} on {target} ({reason})"
+                    ),
+                )
+            )
+        elif status == "approved":
+            timeline.append(
+                TimelineEvent(
+                    timestamp=_parse_time(action.get("decided_at")),
+                    description=f"defender: action approved — {tool} on {target}",
+                )
+            )
+
+    for result in action_results:
+        timeline.append(
+            TimelineEvent(
+                timestamp=_parse_time(result.get("created_at")),
+                description=(
+                    f"defender: action result — {result.get('tool_name')} on "
+                    f"{result.get('target_id')}: "
+                    f"execution={result.get('execution_status')}, "
+                    f"validation={result.get('validation_status')} "
+                    f"({result.get('observed_effect', '')})"
+                ),
+            )
+        )
+
     timeline.sort(key=lambda t: (t.timestamp is None, t.timestamp or datetime.min))
 
     return IncidentState(
@@ -121,6 +168,8 @@ def _reconstruct(case_id: str, version: int) -> IncidentState:
         entities=list(entities.values()),
         relationships=relationships,
         timeline=timeline,
+        actions=[str(a.get("action_id")) for a in actions],
+        action_results=[str(r.get("execution_id")) for r in action_results],
     )
 
 

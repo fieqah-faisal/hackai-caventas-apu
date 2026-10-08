@@ -1,25 +1,28 @@
-"""Execution endpoints (later milestone).
+"""Execution endpoints (BL-003).
 
-POST /cases/{case_id}/actions/{action_id}/execute -> run approved action
+POST /cases/{case_id}/actions/{action_id}/execute -> run an approved action
      through the bounded simulator.
 GET  /cases/{case_id}/audit                       -> audit trail
-
-Execution is not implemented in Milestone 1. The audit read is wired now
-since the audit trail already records case/evidence/state events.
 """
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
 from app.database import repositories
-from app.services import audit_service
+from app.services import audit_service, execution_service
 
 router = APIRouter(prefix="/cases", tags=["execution"])
 
+_STATUS_FOR_KIND = {"not_found": 404, "conflict": 409}
 
-@router.post("/{case_id}/actions/{action_id}/execute", status_code=501)
+
+@router.post("/{case_id}/actions/{action_id}/execute")
 def execute_action(case_id: str, action_id: str):
-    raise HTTPException(status_code=501, detail="execution: not implemented yet")
+    try:
+        return execution_service.execute(case_id, action_id)
+    except execution_service.ExecutionError as exc:
+        status = _STATUS_FOR_KIND.get(exc.kind, 500)
+        raise HTTPException(status_code=status, detail=str(exc)) from exc
 
 
 @router.get("/{case_id}/audit")
