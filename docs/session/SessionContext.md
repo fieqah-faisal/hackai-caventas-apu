@@ -32,8 +32,11 @@ Firestore; no credentials needed).
   versioned incident state, audit trail.
 - Planning implemented and merged (BL-002, PR #3): real LangGraph adapter
   + `/runs` + `/plans` endpoints, guidance fixture, 24 tests passing on
-  `main`. Approvals / execution / reports remain HTTP 501 stubs; fake
-  adapters remain the fallback when no API key is configured.
+  `main`.
+- Approval → simulated execution → reporting implemented (BL-003, PR open):
+  decision binding + security preconditions + outcome→state rebuild +
+  v1.2 report JSON/PDF; suite now **43 passed**. Tool catalogue still
+  provisional (BL-008); fake adapters remain the fallback without a key.
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).

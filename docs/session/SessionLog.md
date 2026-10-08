@@ -3,6 +3,30 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-08 BL-003 approval loop implemented (IN PROGRESS)
+
+- Approvals: `POST /cases/{id}/actions/{id}/decision` — approve/reject with
+  analyst + reason; approval binds (action_id, action_version,
+  state_version); stored-action statuses + audit events.
+- Execution: `POST /cases/{id}/actions/{id}/execute` — the security.md
+  preconditions (approved status, matching approval, state not invalidated,
+  tool catalogue, target in state, evidence exists); bounded simulator;
+  `execution_status` kept separate from `validation_status`; idempotent by
+  execution id; ineffective → action status `failed`, effective → `verified`
+  (report-schema v1.2 status set).
+- Outcome → state loop (proposal §5.4.4): rebuild adds defender-side
+  timeline events (approvals, rejections, action results) + action/result
+  ids so re-planning can see what happened.
+- Reporting: `POST/GET /cases/{id}/reports[...]` — schema-v1.2-shaped JSON
+  from stored records + ReportLab PDF; unsourceable sections stay
+  empty/"unknown" (no fabrication).
+- Tests: 16 new; suite **43 passed**. Branch `feat/bl-003-approval-loop`;
+  PR open for review.
+- Notes: prototype writes are sequential (the test fake has no
+  transactions); tool catalogue remains the provisional guidance allowlist
+  until BL-008; decision payload to be confirmed with Syafieqah's approval
+  UI.
+
 ### 2026-10-06 Live planner smoke passed; reasoning-model hardening (DONE)
 
 - First real end-to-end run against OpenCode Go (`deepseek-v4.1-flash`):

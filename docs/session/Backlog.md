@@ -10,8 +10,8 @@
 
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
-- BL-003 — Implement approvals → bounded simulated execution → reporting
-  (currently HTTP 501). — open / Raaj + Aidan
+- BL-003 — Approvals → bounded simulated execution → reporting implemented;
+  PR open for review/merge. — in review / Airil
 
 ### P2
 
