@@ -27,10 +27,13 @@
   config in `firebase.json` when initializing. — open / team
 - BL-010 — Share the BL-003 decision payload contract (`decision`,
   `analyst`, `reason`) with Syafieqah's approval UI work. — open / Airil
-- BL-011 — Frontend branch (`feat/frontend-workspace-fieqah`): rebase onto
-  `main`, wire approvals/activity to the live BL-003 endpoints, align
-  action-state/audit names, fix the BL-009 numbering collision, update the
-  stale "stubs" notes. — open / Syafieqah + Airil
+- BL-011 — Frontend branch (`feat/frontend-workspace-fieqah`): pull `main`
+  and resolve conflicts before opening the PR, wire approvals/activity to
+  the live BL-003 endpoints, align action-state/audit names, fix the BL-009
+  numbering collision, update the stale "stubs" notes. Merge order agreed:
+  frontend branch first; PR #7 rebased onto `main` afterwards (its only
+  overlap with the frontend branch is `docs/session/`). — open /
+  Syafieqah + Airil
 - BL-012 — Ratify or veto DEC-005 (React + Vite + Tailwind vs the
   steering's Streamlit note); if ratified, update `.kiro/steering/tech.md`
   + `structure.md` and the proposal §9 row. — open / team
