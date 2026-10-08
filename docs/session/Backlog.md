@@ -15,8 +15,8 @@
 
 ### P2
 
-- BL-004 — Smoke-test the backend against the Firestore emulator (tests use
-  an in-memory fake only). — open / Raaj
+- BL-004 — Emulator smoke executed and passing (script + `firebase.py`
+  anonymous-credential fix in PR #6). — in review / Airil
 - BL-008 — Sync the planner's proposed action vocabulary with Aidan's
   approved simulator catalogue (defer to system integration, 6–8 Oct). —
   open / Airil + Aidan

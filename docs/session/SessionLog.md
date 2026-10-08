@@ -20,6 +20,20 @@
   BL-009.
 t.
 
+### 2026-10-08 Firestore emulator smoke passed — BL-004 (DONE)
+
+- Ran the full API flow against the local Firestore emulator (firebase-tools
+  15.33 via npx; `JAVA_HOME` from brew openjdk; project ir-planner-dev):
+  case → evidence (6 items, state v1) → plan → approve → execute
+  (`completed`/`ineffective`) → report + PDF; state v2 and all audit events
+  verified. Re-runnable script: `backend/scripts/emulator_smoke.py`.
+- Found + fixed a real bug: firebase-admin 7.x always resolves credentials,
+  so the emulator path failed with `DefaultCredentialsError`. `firebase.py`
+  now initializes with an explicit anonymous credential in emulator mode;
+  pinned by `tests/test_firebase_emulator.py`.
+- Suite: **44 passed**. Note: firebase-tools 15 needs Java 21+ (brew
+  openjdk@25/26 present; the default java 17 is too old).
+
 ### 2026-10-08 BL-003 approval loop implemented (IN PROGRESS)
 
 - Approvals: `POST /cases/{id}/actions/{id}/decision` — approve/reject with
