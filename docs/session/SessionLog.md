@@ -2,6 +2,23 @@
 
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
+
+### 2026-10-09 Bounded action simulator wired into the backend (DONE)
+
+- `backend/app/simulator/`: `catalog.py` (9 tools = the planner's
+  `approved_tools`; resolves BL-008), `engine.py` (pure, deterministic),
+  `environment.json` (fictional org assets + `demo` fault: CRM admin API
+  down until 10:30 on the infostealer day), `BoundedSimulatorAdapter`.
+- Stateless: simulated clock = latest evidence time + 5 min per action;
+  history = stored action results. No SQLite / no new store (DEC-006).
+- Backend wiring (small, flagged for Raaj): `execution_service` now uses
+  the real adapter, passes `case_id`, stores `simulated_at` / `services` /
+  `side_effects`, maps completed+not_applicable -> `not_applicable`;
+  `state_manager` orders result events by `simulated_at`;
+  `SIMULATOR_PROFILE` setting (`demo` | `clean`).
+- Tests: `tests/test_simulator.py` (23); suite **66 passed**
+  (`cd backend && ../.venv/bin/python -m pytest -q`).
+- Branch `security-scenario-simulation-evaluation-lead` (Aidan).
 ### 2026-10-07 Analyst dashboard shell + PRODUCT.md (IN PROGRESS)
 
 - Wrote root `PRODUCT.md` (product record, HTB-inspired dark-navy token

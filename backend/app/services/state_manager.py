@@ -147,9 +147,13 @@ def _reconstruct(case_id: str, version: int) -> IncidentState:
             )
 
     for result in action_results:
+        # Simulated results carry the simulated time the action ran, which
+        # keeps defender events in order with the synthetic evidence.
         timeline.append(
             TimelineEvent(
-                timestamp=_parse_time(result.get("created_at")),
+                timestamp=_parse_time(
+                    result.get("simulated_at") or result.get("created_at")
+                ),
                 description=(
                     f"defender: action result — {result.get('tool_name')} on "
                     f"{result.get('target_id')}: "

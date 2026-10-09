@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     opencode_go_temperature: float = 0.2
     opencode_go_timeout_seconds: float = 300.0
 
+    # --- Action simulator: "demo" (injected CRM fault) or "clean" ---
+    simulator_profile: str = "demo"
+
     # --- Local storage ---
     upload_dir: str = str(BACKEND_DIR / "uploads")
     report_dir: str = str(BACKEND_DIR / "reports")
