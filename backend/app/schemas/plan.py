@@ -55,7 +55,8 @@ class StoredAction(BaseModel):
     """A proposed action after backend validation and persistence.
 
     ``version`` lets approvals bind to an exact action revision: approving
-    version 1 must never authorize version 2.
+    version 1 must never authorize version 2. ``status`` follows the report
+    schema v1.2 action lifecycle.
     """
 
     action_id: str
@@ -64,4 +65,8 @@ class StoredAction(BaseModel):
     version: int = 1
     based_on_state_version: int
     proposal: ProposedAction
+    status: str = "awaiting_approval"
+    decided_by: str | None = None
+    decided_at: datetime | None = None
+    reason: str | None = None
     created_at: datetime = Field(default_factory=_now)

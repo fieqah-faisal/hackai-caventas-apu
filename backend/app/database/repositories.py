@@ -27,6 +27,9 @@ EVIDENCE = "evidence"
 STATE_VERSIONS = "state_versions"
 PLANS = "plans"
 ACTIONS = "actions"
+APPROVALS = "approvals"
+ACTION_RESULTS = "action_results"
+REPORTS = "reports"
 AUDIT_EVENTS = "audit_events"
 
 
@@ -109,6 +112,49 @@ def list_plans(case_id: str) -> list[dict[str, Any]]:
 
 def add_action(case_id: str, action_id: str, data: dict[str, Any]) -> None:
     _case_ref(case_id).collection(ACTIONS).document(action_id).set(data)
+
+
+def get_action(case_id: str, action_id: str) -> dict[str, Any] | None:
+    snap = _case_ref(case_id).collection(ACTIONS).document(action_id).get()
+    return snap.to_dict() if snap.exists else None
+
+
+def update_action(case_id: str, action_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(ACTIONS).document(action_id).update(data)
+
+
+def list_actions(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(ACTIONS).stream()
+    return [d.to_dict() for d in docs]
+
+
+# --- Approvals and action results ----------------------------------------
+
+def add_approval(case_id: str, approval_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(APPROVALS).document(approval_id).set(data)
+
+
+def list_approvals(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(APPROVALS).stream()
+    return [d.to_dict() for d in docs]
+
+
+def add_action_result(case_id: str, exec_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(ACTION_RESULTS).document(exec_id).set(data)
+
+
+def list_action_results(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(ACTION_RESULTS).stream()
+    return [d.to_dict() for d in docs]
+
+
+def add_report(case_id: str, report_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(REPORTS).document(report_id).set(data)
+
+
+def get_report(case_id: str, report_id: str) -> dict[str, Any] | None:
+    snap = _case_ref(case_id).collection(REPORTS).document(report_id).get()
+    return snap.to_dict() if snap.exists else None
 
 
 # --- Audit events --------------------------------------------------------

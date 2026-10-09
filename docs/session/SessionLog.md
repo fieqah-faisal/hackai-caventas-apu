@@ -20,6 +20,61 @@
   BL-009.
 t.
 
+### 2026-10-08 BL-003 approval loop implemented (IN PROGRESS)
+
+- Approvals: `POST /cases/{id}/actions/{id}/decision` — approve/reject with
+  analyst + reason; approval binds (action_id, action_version,
+  state_version); stored-action statuses + audit events.
+- Execution: `POST /cases/{id}/actions/{id}/execute` — the security.md
+  preconditions (approved status, matching approval, state not invalidated,
+  tool catalogue, target in state, evidence exists); bounded simulator;
+  `execution_status` kept separate from `validation_status`; idempotent by
+  execution id; ineffective → action status `failed`, effective → `verified`
+  (report-schema v1.2 status set).
+- Outcome → state loop (proposal §5.4.4): rebuild adds defender-side
+  timeline events (approvals, rejections, action results) + action/result
+  ids so re-planning can see what happened.
+- Reporting: `POST/GET /cases/{id}/reports[...]` — schema-v1.2-shaped JSON
+  from stored records + ReportLab PDF; unsourceable sections stay
+  empty/"unknown" (no fabrication).
+- Tests: 16 new; suite **43 passed**. Branch `feat/bl-003-approval-loop`;
+  PR open for review.
+- Notes: prototype writes are sequential (the test fake has no
+  transactions); tool catalogue remains the provisional guidance allowlist
+  until BL-008; decision payload to be confirmed with Syafieqah's approval
+  UI.
+
+### 2026-10-06 Live planner smoke passed; reasoning-model hardening (DONE)
+
+- First real end-to-end run against OpenCode Go (`deepseek-v4.1-flash`):
+  6 evidence items → state v1 → plan `stage=containment` with 4
+  evidence-grounded actions (isolate_host, preserve_evidence,
+  revoke_sessions, reset_password; POL-01 cited) + 7 remaining gaps
+  (42.5s). Script: `backend/scripts/planner_smoke.py` (re-runnable).
+- Fixes the smoke surfaced and shipped on `chore/planner-live-smoke`:
+  - timeline entries now carry record fields (destinations, domains, byte
+    counts) so the planner can ground on evidence — `state_manager.py`,
+    flagged for Raaj (his layer); pinned by `test_state_detail.py`;
+  - analysis prompt defines "sufficient" as enough for an *initial* plan
+    (active-compromise indicators → plan + gaps), matching the scenario
+    design;
+  - `max_tokens` 4000→32000 and timeout 60→300s: reasoning burned the
+    budget mid-thought (empty content at 4000);
+  - proposal prompt pins the exact action JSON schema; validation accepts
+    `tool`/`target` aliases; empty-content errors report `finish_reason`.
+- Suite: **27 passed**.
+
+### 2026-10-06 PR #3 merged — BL-002 complete (DONE)
+
+- PR #3 merged to `main` (`b4f445a`): planner adapter, planning endpoints,
+  guidance fixture and env alignment are now on `main`.
+- Follow-up docs sync: `backend/README.md` updated for the implemented
+  planning endpoints (`b6cc341` — committed while `main` was checked out;
+  that was a branch-discipline lapse. Guard for all future commits:
+  verify the current branch first, never commit on `main`).
+- Live smoke test still pending `OPENCODE_GO_API_KEY` in `backend/.env`.
+- Next: BL-003 (approvals → execution → reporting); BL-008 catalogue sync.
+
 ### 2026-10-06 PR #3 opened for BL-002 review (IN PROGRESS)
 
 - Opened PR #3 (`feat/ai-planner-adapter` → `main`): planner adapter,
