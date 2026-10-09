@@ -15,11 +15,33 @@
 
 ### P2
 
-- BL-004 — Smoke-test the backend against the Firestore emulator (tests use
-  an in-memory fake only). — open / Raaj
+- BL-004 — Emulator smoke executed and passing (script + `firebase.py`
+  anonymous-credential fix in PR #7). — in review / Airil
 - BL-008 — Sync the planner's proposed action vocabulary with Aidan's
   approved simulator catalogue (defer to system integration, 6–8 Oct). —
   open / Airil + Aidan
+- BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
+  created; if so, obtain the project ID and have the service-account key
+  placed at `backend/secrets/serviceAccount.json` (gitignored) to enable an
+  optional cloud-Firestore run path; ask her to preserve the emulator
+  config in `firebase.json` when initializing. — open / team
+- BL-010 — Share the BL-003 decision payload contract (`decision`,
+  `analyst`, `reason`) with Syafieqah's approval UI work. — open / Airil
+- BL-011 — Frontend branch (`feat/frontend-workspace-fieqah`): pull `main`
+  and resolve conflicts before opening the PR, wire approvals/activity to
+  the live BL-003 endpoints, align action-state/audit names, fix the BL-009
+  numbering collision, update the stale "stubs" notes. Merge order agreed:
+  frontend branch first; PR #7 rebased onto `main` afterwards (its only
+  overlap with the frontend branch is `docs/session/`). — open /
+  Syafieqah + Airil
+- BL-012 — Ratify or veto DEC-005 (React + Vite + Tailwind vs the
+  steering's Streamlit note); if ratified, update `.kiro/steering/tech.md`
+  + `structure.md` and the proposal §9 row. — open / team
+- BL-013 — API-mode read endpoints the frontend needs: global `GET /cases`
+  (dashboard), `GET /cases/{id}/actions` (stored actions for the approvals
+  queue), plan-detail, execution-results list; align the frontend audit DTO
+  to the real fields (`event_type`/`timestamp`/`audit_id`). — open /
+  Airil + Syafieqah
 
 ### P3
 

@@ -40,6 +40,8 @@ Firestore; no credentials needed).
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).
+- Firestore emulator smoke passed (BL-004): full API flow against the real
+  emulator; emulator credential bug fixed (anonymous credential path).
 - Storage: Google Cloud Firestore via Firebase Admin SDK; uploaded
   originals on the local filesystem (`backend/uploads/`, gitignored) with
   SHA-256 recorded in Firestore.
