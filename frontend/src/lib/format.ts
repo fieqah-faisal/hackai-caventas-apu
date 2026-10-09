@@ -1,17 +1,21 @@
 import type {
-  ActionState,
   AttentionReason,
   CaseStatus,
+  DiffCategory,
+  EvidenceCategory,
+  PlanActionState,
   RecoveryStatus,
-  RunStatus,
+  Risk,
   Stage,
 } from "./types";
 
-/** Relative time, compact ("3m", "2h", "1d"). */
+export { cx } from "./types";
+
+/** Relative time, compact ("3m ago", "2h ago", "1d ago"). */
 export function relativeTime(iso: string, now: Date = new Date()): string {
   const then = new Date(iso).getTime();
-  const diffMs = now.getTime() - then;
-  const sec = Math.max(0, Math.round(diffMs / 1000));
+  if (Number.isNaN(then)) return "—";
+  const sec = Math.max(0, Math.round((now.getTime() - then) / 1000));
   if (sec < 60) return `${sec}s ago`;
   const min = Math.round(sec / 60);
   if (min < 60) return `${min}m ago`;
@@ -19,6 +23,17 @@ export function relativeTime(iso: string, now: Date = new Date()): string {
   if (hr < 24) return `${hr}h ago`;
   const day = Math.round(hr / 24);
   return `${day}d ago`;
+}
+
+/** Elapsed duration from an ISO instant to now, single largest whole unit. */
+export function elapsedLargestUnit(iso: string, now: Date = new Date()): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "—";
+  const min = Math.max(0, Math.floor((now.getTime() - then) / 60000));
+  if (min < 60) return `${min}m`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h`;
+  return `${Math.floor(hr / 24)}d`;
 }
 
 export const caseStatusLabel: Record<CaseStatus, string> = {
@@ -54,20 +69,34 @@ export const attentionReasonLabel: Record<AttentionReason, string> = {
   escalation_pending: "Escalation pending",
 };
 
-export const runStatusLabel: Record<RunStatus, string> = {
-  running: "Running",
-  complete: "Complete",
-  blocked: "Blocked",
-};
-
-export const actionStateLabel: Record<ActionState, string> = {
+/** Canonical six-state action labels (default surface). */
+export const actionStateLabel: Record<PlanActionState, string> = {
   proposed: "Proposed",
   approved: "Approved",
-  executed: "Executed",
-  effective: "Confirmed effective",
-  failed: "Failed",
+  simulated: "Simulated",
+  validated_effective: "Validated effective",
+  validated_ineffective: "Validated ineffective",
+  superseded: "Superseded",
 };
 
-export function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
+export const evidenceCategoryLabel: Record<EvidenceCategory, string> = {
+  endpoint: "Endpoint",
+  identity: "Identity",
+  network: "Network",
+  application: "Application",
+  analyst_note: "Analyst Notes",
+  other: "Other",
+};
+
+export const diffCategoryLabel: Record<DiffCategory, string> = {
+  unchanged: "Unchanged",
+  added: "Added",
+  replaced_or_insufficient: "Replaced / insufficient",
+  policy_triggered: "Policy-triggered",
+};
+
+export const riskLabel: Record<Risk, string> = {
+  low: "Low risk",
+  moderate: "Moderate risk",
+  high: "High risk",
+};

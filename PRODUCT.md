@@ -171,7 +171,7 @@ decorative statistics, and cybersecurity cliches.
 
 ### Typography
 
-Caventas uses IBM Plex Sans for interface text and IBM Plex Mono for technical
+Caventas uses Barlow for interface text and IBM Plex Mono for technical
 identifiers, commands, hashes and structured values (case ids, state versions,
 tool names). Monospace is used selectively and never for long explanatory
 text. Fonts are self-hosted (bundled locally) so the UI makes no runtime
@@ -217,6 +217,44 @@ evidence) sits above the queues, with every value derived from case and
 planning records rather than hardcoded. Detailed evidence, rationale, policy
 references and state history remain on case-specific surfaces; dashboard rows
 show only enough to decide where to go next.
+
+## Case Workspace and Tabbed Progressive Disclosure
+
+A case opens into a dedicated workspace, separate from the dashboard. A
+persistent header carries case identity, status, stage and recovery, and the
+agent planning state; beneath it, tabs disclose the incident in workflow order:
+Overview, Evidence, Timeline, Analysis, Response Plan, Approvals and Report.
+
+Tabs are gated by observable case facts rather than shown-then-broken: Evidence
+and Timeline latch available once reached (analysts can always revisit), while
+Analysis, Response Plan, Approvals and Report unlock only when their
+prerequisite exists and relock if it stops being met. A disabled tab explains
+why. This keeps the analyst oriented in the Evidence -> State -> Analysis ->
+Proposal -> Approval -> Simulation -> Validation -> Report flow without hiding
+where they are.
+
+## Scenario-Based Demonstration Harness
+
+The product is demonstrated through synthetic scenarios (e.g. an infostealer
+that escalates to session hijack). The scenario layer is a presentation
+harness, not a planner: it reveals pre-authored synthetic evidence and the
+resulting plan versions. Revealing a later evidence batch drives a visible
+re-plan (Plan v1 -> v2) with a diff that classifies each action as unchanged,
+added, replaced/insufficient or policy-triggered. The harness never fabricates
+backend behaviour and never claims real systems were touched.
+
+## Action Boundary and Data-Source Honesty
+
+The analyst UI selects exactly one data source per run and never mixes them
+within a case. Fixture mode supplies deterministic synthetic data implementing
+the complete intended contract (six-state action lifecycle, request-more-
+investigation, plan history, separate simulation and validation, structured
+report), and every such surface is visibly flagged as synthetic. API mode talks
+only to endpoints the backend actually implements, surfaces known gaps
+explicitly (e.g. no request-more-investigation endpoint, no PDF download), and
+never silently falls back to synthetic data on failure. In both modes the AI
+recommends, the analyst approves, and execution runs only in the bounded
+simulator — the UI never presents a recommendation as an action already taken.
 
 ## Prototype Identity and Access Boundary
 

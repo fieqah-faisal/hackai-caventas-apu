@@ -7,8 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
-import { cx } from "@/lib/format";
+import { Icon, type IconName } from "@/components/icons/Icon";
+import { cx } from "@/lib/types";
 
 type ToastTone = "success" | "info" | "error";
 
@@ -33,23 +33,15 @@ export function useToast(): ToastApi {
 
 const toneConfig: Record<
   ToastTone,
-  { icon: typeof Info; cls: string; role: "status" | "alert" }
+  { icon: IconName; cls: string; role: "status" | "alert" }
 > = {
-  success: {
-    icon: CheckCircle2,
-    cls: "text-accent border-accent/40",
-    role: "status",
-  },
-  info: { icon: Info, cls: "text-status-info border-status-info/40", role: "status" },
-  error: {
-    icon: AlertTriangle,
-    cls: "text-status-danger border-status-danger/45",
-    role: "alert",
-  },
+  success: { icon: "success", cls: "text-accent border-accent/40", role: "status" },
+  info: { icon: "info", cls: "text-status-info border-status-info/40", role: "status" },
+  error: { icon: "warning", cls: "text-status-danger border-status-danger/45", role: "alert" },
 };
 
 function ToastItem({ t, onDismiss }: { t: Toast; onDismiss: (id: number) => void }) {
-  const { icon: Icon, cls, role } = toneConfig[t.tone];
+  const { icon, cls, role } = toneConfig[t.tone];
   useEffect(() => {
     const timer = setTimeout(() => onDismiss(t.id), 6000);
     return () => clearTimeout(timer);
@@ -64,19 +56,17 @@ function ToastItem({ t, onDismiss }: { t: Toast; onDismiss: (id: number) => void
         cls,
       )}
     >
-      <Icon size={17} className="mt-0.5 shrink-0" aria-hidden />
+      <Icon name={icon} size={18} className="mt-0.5" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-text-primary">{t.title}</p>
-        {t.detail && (
-          <p className="mt-0.5 text-meta text-text-secondary">{t.detail}</p>
-        )}
+        {t.detail && <p className="mt-0.5 text-meta text-text-secondary">{t.detail}</p>}
       </div>
       <button
         onClick={() => onDismiss(t.id)}
         className="shrink-0 rounded p-0.5 text-text-muted hover:text-text-primary"
         aria-label="Dismiss notification"
       >
-        <X size={15} aria-hidden />
+        <Icon name="close" size={18} />
       </button>
     </div>
   );

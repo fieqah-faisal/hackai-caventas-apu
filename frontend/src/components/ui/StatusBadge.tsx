@@ -1,19 +1,14 @@
 import type { ReactNode } from "react";
-import {
-  CheckCircle2,
-  CircleDashed,
-  Clock,
-  Loader2,
-  ShieldAlert,
-  XCircle,
-} from "lucide-react";
-import { cx } from "@/lib/format";
+import { Icon, type IconName } from "@/components/icons/Icon";
+import { actionStateLabel } from "@/lib/format";
+import { cx } from "@/lib/types";
+import type { PlanActionState } from "@/lib/types";
 
 /**
- * Status is NEVER conveyed by colour alone: every badge carries a text
- * label and an icon. Tone sets the hue; the label sets the meaning.
+ * Status is NEVER colour-alone: every badge pairs a hue with a text label and
+ * (optionally) an icon. Tone sets the hue; the label sets the meaning.
  */
-type Tone = "neutral" | "accent" | "warning" | "danger" | "info";
+export type Tone = "neutral" | "accent" | "warning" | "danger" | "info";
 
 const toneClass: Record<Tone, string> = {
   neutral: "text-text-secondary border-border-strong",
@@ -37,8 +32,7 @@ export function StatusBadge({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 rounded border px-2 py-0.5 " +
-          "text-xs font-medium whitespace-nowrap",
+        "inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-xs font-medium whitespace-nowrap",
         toneClass[tone],
         className,
       )}
@@ -49,50 +43,31 @@ export function StatusBadge({
   );
 }
 
-/** Semantic badge for the four legible action states + failed. */
-export function ActionStateBadge({
-  state,
-}: {
-  state: "proposed" | "approved" | "executed" | "effective" | "failed";
-}) {
-  const map = {
-    proposed: {
-      tone: "warning" as const,
-      icon: <Clock size={13} aria-hidden />,
-      label: "Proposed",
-    },
-    approved: {
-      tone: "info" as const,
-      icon: <CircleDashed size={13} aria-hidden />,
-      label: "Approved",
-    },
-    executed: {
-      tone: "neutral" as const,
-      icon: <Loader2 size={13} aria-hidden />,
-      label: "Executed",
-    },
-    effective: {
-      tone: "accent" as const,
-      icon: <CheckCircle2 size={13} aria-hidden />,
-      label: "Confirmed",
-    },
-    failed: {
-      tone: "danger" as const,
-      icon: <XCircle size={13} aria-hidden />,
-      label: "Failed",
-    },
-  }[state];
+/**
+ * Canonical six-state action badge. Simulated and validated_effective are
+ * kept visually distinct; lime (accent) is reserved for validated_effective.
+ */
+const STATE_VISUAL: Record<PlanActionState, { tone: Tone; icon: IconName }> = {
+  proposed: { tone: "warning", icon: "humanDecision" },
+  approved: { tone: "info", icon: "success" },
+  simulated: { tone: "info", icon: "running" },
+  validated_effective: { tone: "accent", icon: "success" },
+  validated_ineffective: { tone: "danger", icon: "blocked" },
+  superseded: { tone: "neutral", icon: "reload" },
+};
 
+export function ActionStateBadge({ state }: { state: PlanActionState }) {
+  const v = STATE_VISUAL[state];
   return (
-    <StatusBadge tone={map.tone} icon={map.icon}>
-      {map.label}
+    <StatusBadge tone={v.tone} icon={<Icon name={v.icon} size={18} />}>
+      {actionStateLabel[state]}
     </StatusBadge>
   );
 }
 
 export function EscalationBadge() {
   return (
-    <StatusBadge tone="danger" icon={<ShieldAlert size={13} aria-hidden />}>
+    <StatusBadge tone="danger" icon={<Icon name="shield" size={18} />}>
       Senior approval required
     </StatusBadge>
   );

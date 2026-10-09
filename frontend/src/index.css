@@ -22,7 +22,7 @@
   /* Text */
   --text-primary: #ececed;
   --text-secondary: #bac5d7;
-  --text-muted: #7788a4;
+  --text-muted: #8191ad; /* AA on canvas (5.6:1) and surface (4.8:1) */
 
   /* Accent (lime) */
   --accent-primary: #9ded00;

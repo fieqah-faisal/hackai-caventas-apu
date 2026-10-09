@@ -1,36 +1,24 @@
 import { NavLink } from "react-router-dom";
-import {
-  Activity,
-  BookOpen,
-  Building2,
-  CheckSquare,
-  FileText,
-  FolderClosed,
-  LayoutDashboard,
-  LogOut,
-  Settings,
-} from "lucide-react";
-import { cx } from "@/lib/format";
+import { Icon, type IconName } from "@/components/icons/Icon";
+import { cx } from "@/lib/types";
 
 interface NavItem {
   to: string;
   label: string;
-  icon: typeof LayoutDashboard;
-  badge?: number;
+  icon: IconName;
 }
 
 const primaryNav: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/cases", label: "Cases", icon: FolderClosed },
-  { to: "/approvals", label: "Approvals", icon: CheckSquare, badge: 3 },
-  { to: "/guidance", label: "Guidance Library", icon: BookOpen },
-  { to: "/reports", label: "Reports", icon: FileText },
-  { to: "/activity", label: "Activity Log", icon: Activity },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/", label: "Dashboard", icon: "dashboard" },
+  { to: "/cases", label: "Cases", icon: "cases" },
+  { to: "/approvals", label: "Approvals", icon: "approvals" },
+  { to: "/guidance", label: "Guidance Library", icon: "guidance" },
+  { to: "/reports", label: "Reports", icon: "reports" },
+  { to: "/activity", label: "Activity Log", icon: "activity" },
+  { to: "/settings", label: "Settings", icon: "settings" },
 ];
 
 function Item({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
-  const Icon = item.icon;
   return (
     <NavLink
       to={item.to}
@@ -40,8 +28,6 @@ function Item({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) 
         cx(
           "group relative flex items-center gap-3 h-9 pl-4 pr-3 mx-2 rounded",
           "text-sm font-medium transition-colors duration-180",
-          // Active = raised navy + white text + thin lime indicator bar.
-          // NOT lime text.
           isActive
             ? "bg-surface-raised text-text-primary"
             : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
@@ -58,22 +44,13 @@ function Item({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) 
             )}
           />
           <Icon
-            size={17}
-            strokeWidth={1.75}
+            name={item.icon}
+            size={20}
             className={cx(
-              "shrink-0",
-              isActive
-                ? "text-text-primary"
-                : "text-text-muted group-hover:text-text-secondary",
+              isActive ? "text-text-primary" : "text-text-muted group-hover:text-text-secondary",
             )}
-            aria-hidden
           />
           <span className="flex-1 truncate">{item.label}</span>
-          {typeof item.badge === "number" && item.badge > 0 && (
-            <span className="tnum rounded bg-surface px-1.5 py-0.5 text-2xs text-status-warning border border-status-warning/35">
-              {item.badge}
-            </span>
-          )}
         </>
       )}
     </NavLink>
@@ -91,19 +68,22 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="mt-auto border-t border-border-subtle p-3 space-y-1">
         <button className="flex w-full items-center gap-3 h-9 px-2 rounded text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180">
-          <Building2 size={17} strokeWidth={1.75} className="text-text-muted" aria-hidden />
-          <span className="flex-1 text-left truncate">Northwind SOC</span>
+          <Icon name="shield" size={20} className="text-text-muted" />
+          <span className="flex-1 text-left truncate">Caventas Demo Org</span>
         </button>
-        <button className="flex w-full items-center gap-3 h-9 px-2 rounded text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180">
-          <LogOut size={17} strokeWidth={1.75} className="text-text-muted" aria-hidden />
-          <span className="flex-1 text-left truncate">Sign out</span>
-        </button>
+        <NavLink
+          to="/about"
+          onClick={onNavigate}
+          className="flex w-full items-center gap-3 h-9 px-2 rounded text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180"
+        >
+          <Icon name="info" size={20} className="text-text-muted" />
+          <span className="flex-1 text-left truncate">About &amp; credits</span>
+        </NavLink>
       </div>
     </>
   );
 }
 
-/** Static sidebar — visible from the lg breakpoint up. */
 export function Sidebar() {
   return (
     <aside className="hidden lg:flex w-60 shrink-0 flex-col bg-shell border-r border-border-subtle">
@@ -112,7 +92,6 @@ export function Sidebar() {
   );
 }
 
-/** Off-canvas drawer for below the lg breakpoint. */
 export function SidebarDrawer({
   open,
   onClose,
@@ -125,7 +104,6 @@ export function SidebarDrawer({
       className={cx("lg:hidden", open ? "pointer-events-auto" : "pointer-events-none")}
       aria-hidden={!open}
     >
-      {/* Scrim */}
       <div
         onClick={onClose}
         className={cx(
@@ -133,7 +111,6 @@ export function SidebarDrawer({
           open ? "opacity-100" : "opacity-0",
         )}
       />
-      {/* Panel */}
       <aside
         className={cx(
           "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-shell border-r border-border-strong",

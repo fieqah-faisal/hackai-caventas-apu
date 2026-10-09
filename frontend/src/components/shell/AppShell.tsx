@@ -3,17 +3,33 @@ import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar, SidebarDrawer } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { ConnectionBanner } from "./ConnectionBanner";
+import { getProvider } from "@/lib/api";
 
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [pendingApprovals, setPendingApprovals] = useState<number | null>(null);
   const location = useLocation();
 
-  // Close the mobile drawer on route change.
+  // Aggregate pending-approval count for the top bar. Only available where the
+  // provider can supply it (fixture mode); API mode has no global endpoint, so
+  // the count stays null and the badge is hidden rather than fabricated.
+  useEffect(() => {
+    let alive = true;
+    getProvider()
+      .getHumanDecisions()
+      .then((o) => {
+        if (alive && o.kind === "ok") setPendingApprovals(o.value.data.awaitingApproval);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [location.pathname]);
+
   useEffect(() => {
     setDrawerOpen(false);
   }, [location.pathname]);
 
-  // Close on Escape.
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -25,7 +41,7 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen flex-col bg-canvas text-text-primary">
-      <TopBar onOpenMenu={() => setDrawerOpen(true)} />
+      <TopBar onOpenMenu={() => setDrawerOpen(true)} pendingApprovals={pendingApprovals} />
       <ConnectionBanner />
       <div className="flex min-h-0 flex-1">
         <Sidebar />

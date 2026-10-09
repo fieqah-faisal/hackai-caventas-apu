@@ -1,11 +1,8 @@
 import type { ReactNode } from "react";
-import { AlertTriangle, RotateCw } from "lucide-react";
-import { cx } from "@/lib/format";
+import { Icon } from "@/components/icons/Icon";
+import { cx } from "@/lib/types";
 
-/**
- * A dashboard region. Flat surface divided by thin borders — not a nested
- * card stack. Header row carries the title, an optional count, and an action.
- */
+/** A workspace region: flat surface, thin borders, header with title + action. */
 export function Region({
   title,
   count,
@@ -31,13 +28,9 @@ export function Region({
     >
       <header className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 h-12">
         <div className="flex min-w-0 items-center gap-2.5">
-          <h2 className="truncate text-lg font-semibold text-text-primary">
-            {title}
-          </h2>
+          <h2 className="truncate text-lg font-semibold text-text-primary">{title}</h2>
           {typeof count === "number" && (
-            <span className="tnum shrink-0 text-meta text-text-muted">
-              {count}
-            </span>
+            <span className="tnum shrink-0 text-meta text-text-muted">{count}</span>
           )}
         </div>
         {action && <div className="shrink-0">{action}</div>}
@@ -77,14 +70,14 @@ export function ErrorState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-      <AlertTriangle size={22} className="text-status-danger" aria-hidden />
+      <Icon name="warning" size={24} className="text-status-danger" />
       <p className="text-base text-text-secondary max-w-sm">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
           className="inline-flex items-center gap-2 rounded border border-border-strong bg-surface-raised px-3 h-8 text-sm text-text-primary hover:bg-surface-hover transition-colors duration-180"
         >
-          <RotateCw size={14} aria-hidden />
+          <Icon name="reload" size={18} />
           Retry
         </button>
       )}
@@ -92,7 +85,7 @@ export function ErrorState({
   );
 }
 
-/** Honest "not wired yet" marker for backend stubs (BL-003). */
+/** Honest "not available in this mode / not implemented" marker. */
 export function PendingBackendNote({ children }: { children: ReactNode }) {
   return (
     <p className="text-meta text-text-muted border-t border-border-subtle px-4 py-2">
