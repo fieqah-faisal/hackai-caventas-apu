@@ -39,7 +39,7 @@ function Item({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) 
       className={({ isActive }) =>
         cx(
           "group relative flex items-center gap-3 h-9 pl-4 pr-3 mx-2 rounded",
-          "text-base transition-colors duration-180",
+          "text-sm font-medium transition-colors duration-180",
           // Active = raised navy + white text + thin lime indicator bar.
           // NOT lime text.
           isActive
@@ -90,11 +90,11 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="mt-auto border-t border-border-subtle p-3 space-y-1">
-        <button className="flex w-full items-center gap-3 h-9 px-2 rounded text-base text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180">
+        <button className="flex w-full items-center gap-3 h-9 px-2 rounded text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180">
           <Building2 size={17} strokeWidth={1.75} className="text-text-muted" aria-hidden />
           <span className="flex-1 text-left truncate">Northwind SOC</span>
         </button>
-        <button className="flex w-full items-center gap-3 h-9 px-2 rounded text-base text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180">
+        <button className="flex w-full items-center gap-3 h-9 px-2 rounded text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180">
           <LogOut size={17} strokeWidth={1.75} className="text-text-muted" aria-hidden />
           <span className="flex-1 text-left truncate">Sign out</span>
         </button>

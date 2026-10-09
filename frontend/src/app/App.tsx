@@ -1,7 +1,9 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AppShell } from "@/components/shell/AppShell";
+import { ToastProvider } from "@/components/ui/Toast";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { PlaceholderPage } from "./PlaceholderPage";
+import { NotFoundPage } from "./NotFoundPage";
 
 const router = createBrowserRouter([
   {
@@ -18,8 +20,13 @@ const router = createBrowserRouter([
       { path: "cases/:caseId", element: <PlaceholderPage title="Case detail" /> },
     ],
   },
+  { path: "*", element: <NotFoundPage /> },
 ]);
 
 export function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ToastProvider>
+      <RouterProvider router={router} />
+    </ToastProvider>
+  );
 }

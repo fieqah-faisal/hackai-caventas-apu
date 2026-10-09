@@ -1,4 +1,4 @@
-﻿# Product
+# Product
 
 <!-- impeccable:product-schema 1 -->
 
@@ -169,6 +169,15 @@ excessive/large areas of green, coloured decorative backgrounds, glassmorphism,
 excessive rounding, nested cards, invented charts, oversized typography,
 decorative statistics, and cybersecurity cliches.
 
+### Typography
+
+Caventas uses IBM Plex Sans for interface text and IBM Plex Mono for technical
+identifiers, commands, hashes and structured values (case ids, state versions,
+tool names). Monospace is used selectively and never for long explanatory
+text. Fonts are self-hosted (bundled locally) so the UI makes no runtime
+Google Fonts request. Hierarchy comes from deliberate differences in size,
+weight and colour between headings, body and metadata — never colour alone.
+
 ## Evidence on Hand
 
 Real backend schemas and endpoints define the vocabulary above (case,
@@ -197,3 +206,31 @@ status contrast must meet WCAG AA on the dark shell (>= 4.5:1 for normal text),
 status must never be conveyed by color alone (pair the lime accent and any
 status hue with a label or icon), and all navigation and approval controls must
 be fully keyboard operable with visible focus.
+
+## Dashboard Experience
+
+The dashboard is an operational summary, not a full incident record. It uses
+progressive disclosure and visually separates immediate attention, pending
+human decisions, active agent work and recent changes. An operational summary
+row (open cases, awaiting approval, active planning runs, blocked/missing
+evidence) sits above the queues, with every value derived from case and
+planning records rather than hardcoded. Detailed evidence, rationale, policy
+references and state history remain on case-specific surfaces; dashboard rows
+show only enough to decide where to go next.
+
+## Prototype Identity and Access Boundary
+
+The MVP uses one fixed synthetic analyst identity. Registration,
+authentication, email verification, password recovery, account deletion and
+production role-based access control are outside the prototype scope. Senior
+approval is represented as a workflow requirement (high-impact actions are
+flagged and held) rather than a fully authenticated user role.
+
+## Resilient Interface States
+
+All data-driven surfaces must provide loading, empty, error and
+network-failure states. Loading uses skeletons, not full-page spinners. The
+interface never reports success before backend confirmation and never replaces
+missing backend data with fabricated values; where a capability is a backend
+stub, it says so plainly. Browser-offline is distinguished from a backend
+request failure.

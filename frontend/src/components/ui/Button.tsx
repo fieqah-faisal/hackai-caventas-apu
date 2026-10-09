@@ -11,7 +11,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded font-medium " +
+  "inline-flex items-center justify-center gap-2 rounded font-semibold " +
   "transition-colors duration-180 focus-visible:outline-none " +
   "disabled:cursor-not-allowed disabled:opacity-45";
 
@@ -27,8 +27,8 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-7 px-2.5 text-xs",
-  md: "h-9 px-3.5 text-base",
+  sm: "h-7 px-2.5 text-btn",
+  md: "h-9 px-3.5 text-btn",
 };
 
 export function Button({

@@ -2,16 +2,20 @@
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
-    // Tight product-UI scale (ratio ~1.14), fixed rem (not fluid).
+    // Operational type scale (typography-refinement brief). Fixed px, not fluid.
     fontSize: {
-      "2xs": ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.02em" }],
-      xs: ["0.75rem", { lineHeight: "1.1rem" }],
-      sm: ["0.8125rem", { lineHeight: "1.25rem" }],
-      base: ["0.875rem", { lineHeight: "1.4rem" }],
-      md: ["1rem", { lineHeight: "1.5rem" }],
-      lg: ["1.125rem", { lineHeight: "1.6rem" }],
-      xl: ["1.3125rem", { lineHeight: "1.75rem" }],
-      "2xl": ["1.625rem", { lineHeight: "2rem", letterSpacing: "-0.01em" }],
+      "2xs": ["0.6875rem", { lineHeight: "1rem" }], // 11px — count chips/badges
+      eyebrow: ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.1em" }], // 11px mono eyebrow
+      xs: ["0.75rem", { lineHeight: "1.05rem" }], // 12px — mono identifiers
+      meta: ["0.8125rem", { lineHeight: "1.45" }], // 13px — metadata
+      btn: ["0.875rem", { lineHeight: "1.1" }], // 14px — buttons / metric labels
+      sm: ["0.9375rem", { lineHeight: "1.3" }], // 15px — navigation
+      base: ["0.9375rem", { lineHeight: "1.55" }], // 15px — body / explanations
+      case: ["1.0625rem", { lineHeight: "1.3" }], // 17px — case title
+      lg: ["1.25rem", { lineHeight: "1.2" }], // 20px — section heading
+      desc: ["1rem", { lineHeight: "1.5" }], // 16px — page description
+      metric: ["2.125rem", { lineHeight: "1.08" }], // 34px — metric value
+      title: ["2.125rem", { lineHeight: "1.08", letterSpacing: "-0.02em" }], // 34px — page title
     },
     extend: {
       colors: {
@@ -44,14 +48,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: [
-          "Inter",
-          "ui-sans-serif",
-          "system-ui",
-          "-apple-system",
-          "Segoe UI",
-          "sans-serif",
-        ],
+        sans: ["var(--font-sans)"],
+        mono: ["var(--font-mono)"],
       },
       borderRadius: {
         DEFAULT: "4px",
@@ -59,7 +57,7 @@ export default {
         lg: "6px",
       },
       maxWidth: {
-        shell: "1600px",
+        shell: "1480px",
       },
       transitionDuration: {
         180: "180ms",

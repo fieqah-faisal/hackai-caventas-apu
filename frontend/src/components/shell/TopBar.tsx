@@ -12,7 +12,7 @@ function Wordmark() {
       >
         <ShieldCheck size={16} className="text-accent" strokeWidth={2} />
       </span>
-      <span className="text-md font-semibold tracking-tight text-text-primary">
+      <span className="text-case font-semibold tracking-tight text-text-primary">
         Caventas
       </span>
     </div>
