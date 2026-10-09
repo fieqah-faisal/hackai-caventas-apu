@@ -2,6 +2,23 @@
 
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
+### 2026-10-07 Analyst dashboard shell + PRODUCT.md (IN PROGRESS)
+
+- Wrote root `PRODUCT.md` (product record, HTB-inspired dark-navy token
+  palette, binding colour rules); recorded the frontend stack in `## Stack`.
+- Built the React + Vite + Tailwind analyst workspace under `frontend/`:
+  persistent top bar, responsive sidebar (static at lg, off-canvas drawer
+  below), and the Dashboard's 5 approved regions (attention, approvals,
+  agent status, recently updated, activity) over synthetic data; approval
+  rows marked "not persisted" while BL-003 endpoints are stubs.
+- Verified: `cd frontend && npm run build` -> green (tsc strict + vite).
+  Visual pass on desktop 1440 + mobile 390 (headless Chrome); fixed sidebar
+  overflow + approval/attention row overflow on mobile, reconfirmed clean.
+- Impeccable detector: 1 warning only (Inter "overused") — kept by design
+  for an Operate-mode tool; no errors.
+- Branch `feat/frontend-workspace-fieqah` (not yet committed). See DEC-005,
+  BL-009.
+t.
 
 ### 2026-10-08 BL-003 approval loop implemented (IN PROGRESS)
 

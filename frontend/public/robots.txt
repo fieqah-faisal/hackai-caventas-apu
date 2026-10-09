@@ -1,0 +1,3 @@
+# Prototype — do not index. Remove or relax before any public deployment.
+User-agent: *
+Disallow: /

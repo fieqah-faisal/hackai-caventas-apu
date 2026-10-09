@@ -40,3 +40,18 @@ env/
 
 # --- Local code review graph ---
 .code-review-graph/
+# --- Local editor / design tooling (not product code) ---
+# Impeccable skill bundle (binary + references) lives only on-machine.
+.kiro/skills/
+
+# Bundled design-skill packs under steering are vendored tooling, not
+# project rules. Ignore the pack directories but keep the real steering
+# markdown that the team relies on (product/security/tech/structure/
+# session-notebook).
+.kiro/steering/banner-design/
+.kiro/steering/brand/
+.kiro/steering/design/
+.kiro/steering/design-system/
+.kiro/steering/slides/
+.kiro/steering/ui-styling/
+.kiro/steering/ui-ux-pro-max/

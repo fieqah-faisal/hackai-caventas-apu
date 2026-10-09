@@ -45,6 +45,10 @@ Firestore; no credentials needed).
   SHA-256 recorded in Firestore.
 - Code-review graph built (148 nodes / 658 edges); local data in
   `.code-review-graph/` (gitignored).
+- Frontend (BL-009): analyst workspace scaffolded under `frontend/`
+  (React + Vite + Tailwind, DEC-005) — dashboard shell + 5 regions on
+  synthetic data; `npm run build` green. Approvals/activity not yet wired to
+  live endpoints (BL-003). Product record + palette in root `PRODUCT.md`.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

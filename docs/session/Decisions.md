@@ -91,3 +91,28 @@ supersedes Raaj's original 3.9 constraint — accepted by Airil on
 2026-10-06 without waiting for Raaj's explicit confirmation.
 
 **Links:** `.kiro/steering/tech.md`, `backend/README.md`, DEC-003.
+
+## DEC-005: Frontend stack — React + Vite + Tailwind (2026-10-07)
+
+**Context:** The analyst dashboard needs a bespoke dark operational shell
+(persistent top nav, compact sidebar, selected states, thin borders,
+restrained lime accent). `.kiro/steering/structure.md` describes a
+Streamlit -> FastAPI UI flow, which does not give clean control over that
+layout and interaction detail.
+
+**Options considered:** (1) keep Streamlit per the steering note — poor fit
+for the custom shell and selected-state control; (2) plain static HTML/CSS
+— lean but manual for interactive state; (3) React + Vite + Tailwind —
+chosen for full shell/interaction control while the backend is unchanged.
+
+**Decision:** Build the frontend as a `frontend/` React + Vite + Tailwind
+app that talks to FastAPI over HTTP (dev proxy `/api` -> `:8000`); the UI
+never touches Firestore directly. HTB-inspired dark-navy palette with lime
+reserved for primary action / confirmed / selected, recorded as
+authoritative tokens in `PRODUCT.md` and `frontend/src/index.css`.
+
+**Tradeoff:** Diverges from the steering's Streamlit note (flagged for team
+veto in PRODUCT.md `## Stack`); adds a Node/npm toolchain alongside the
+Python backend. If vetoed, revisit before investing further in the shell.
+
+**Links:** `PRODUCT.md`, `frontend/`, `.kiro/steering/structure.md`, BL-009.
