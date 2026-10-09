@@ -42,7 +42,7 @@ def load_environment(path: Optional[str] = None) -> dict[str, Any]:
 
 
 def parse_time(value: Any) -> Optional[datetime]:
-    """Parse an ISO timestamp; naive times are taken as organisation time."""
+    """Parse an ISO timestamp; naive times are assumed UTC, as in the backend."""
     if isinstance(value, datetime):
         parsed = value
     else:
@@ -50,7 +50,7 @@ def parse_time(value: Any) -> Optional[datetime]:
             parsed = datetime.fromisoformat(str(value))
         except (TypeError, ValueError):
             return None
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=ORG_TZ)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
 def simulated_clock(

@@ -57,8 +57,8 @@ def test_clock_advances_after_each_result():
     assert clock == at("09:05")
 
 
-def test_naive_timestamps_are_organisation_time():
-    assert engine.parse_time("2026-10-05T09:00:00") == at("09:00")
+def test_naive_timestamps_are_utc_like_the_backend():
+    assert engine.parse_time("2026-10-05T01:00:00") == at("09:00")
 
 
 # --- outcomes ----------------------------------------------------------------
