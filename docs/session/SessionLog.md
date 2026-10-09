@@ -2,6 +2,21 @@
 
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
+
+### 2026-10-08 PR #8 (frontend) merged; PR #7 synced (DONE)
+
+- PR #8 merged (`3a6a323`): React/Vite frontend — dashboard, create-case
+  workflow, 7-tab case workspace, fixture/real providers, DTO + mapping
+  layers, vitest tests, `.kiro` IA specs, `PRODUCT.md`, DEC-005. No backend
+  or `firebase.json` changes.
+- `RealProvider` documents the merged BL-003 contract accurately (incl. the
+  action-status reconciliation) and honestly marks unavailable operations.
+  Gaps it exposes → **BL-013**: global `GET /cases`, stored-actions read,
+  plan-detail, execution-results list; plus the audit DTO field mismatch
+  (`kind/at/event_id` vs the real `event_type/timestamp/audit_id`).
+- PR #7 synced by merging `main` into the branch — no conflicts, backend
+  suite still 44 passed; draft and ready for merge.
+
 ### 2026-10-07 Analyst dashboard shell + PRODUCT.md (IN PROGRESS)
 
 - Wrote root `PRODUCT.md` (product record, HTB-inspired dark-navy token

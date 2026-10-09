@@ -37,6 +37,11 @@
 - BL-012 — Ratify or veto DEC-005 (React + Vite + Tailwind vs the
   steering's Streamlit note); if ratified, update `.kiro/steering/tech.md`
   + `structure.md` and the proposal §9 row. — open / team
+- BL-013 — API-mode read endpoints the frontend needs: global `GET /cases`
+  (dashboard), `GET /cases/{id}/actions` (stored actions for the approvals
+  queue), plan-detail, execution-results list; align the frontend audit DTO
+  to the real fields (`event_type`/`timestamp`/`audit_id`). — open /
+  Airil + Syafieqah
 
 ### P3
 
