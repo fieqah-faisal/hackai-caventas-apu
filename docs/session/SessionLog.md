@@ -3,6 +3,22 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-11 Evaluation harness, scorer, results + re-approval fix (DONE)
+
+- `backend/evaluation/`: harness replays each scenario through the real
+  endpoints (fake Firestore, real simulator, scripted analyst), scorer
+  (100 pts + safety gates), `run_eval` CLI, `SCORING_SHEET.md`,
+  `TEST_PLAN.md`, `INTEGRATION_GAPS.md`, committed results.
+- Results: oracle 12/12 checkpoints (ground truth reachable), unsafe 0/12
+  (gates fire), fake planner 0/12 (mean 48.2). No live results yet (no key
+  here) - BL-010.
+- Found and fixed: executing one approved action stranded every other
+  approval in the plan (stale + not re-decidable). Re-approval of stale
+  approvals now allowed (DEC-007) - flagged for Raaj/Syafieqah (BL-011).
+- Docs: `backend/README.md`, `.kiro/steering/structure.md`; backlog
+  BL-008 closed, BL-010..019 added; DEC-006, DEC-007.
+- Suite **128 passed** (`cd backend && ../.venv/bin/python -m pytest -q`).
+
 ### 2026-10-11 Synthetic incident package + ground truth (DONE)
 
 - `backend/scenarios/`: `build_scenarios.py` (single source) generates 3

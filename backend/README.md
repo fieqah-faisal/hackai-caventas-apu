@@ -72,7 +72,10 @@ app/
   services/   ingestion, state_manager, audit, planning (+ stubbed approval/execution/reporting)
   database/   firebase.py (client), repositories.py (all Firestore access)
   ai/         planner_adapter.py (Protocol + fake), langgraph_planner.py (real adapter)
-  simulator/  simulator_adapter.py (SimulatorAdapter + FakeSimulatorAdapter)
+  simulator/  bounded action simulator: catalog.py, engine.py, environment.json,
+              simulator_adapter.py (BoundedSimulatorAdapter + FakeSimulatorAdapter)
+scenarios/    synthetic incident package + ground truth (see scenarios/README.md)
+evaluation/   harness, scorer, results (see evaluation/SCORING_SHEET.md)
 ```
 
 ## Running locally
@@ -106,6 +109,34 @@ run without the emulator or any credentials. The suite covers the Milestone 1
 endpoints, persistence, state versioning, malformed/unsupported uploads,
 404s, the audit trail, the planner adapter (scripted LLM) and the planning
 endpoints.
+
+## Action simulator, scenarios and evaluation (Aidan)
+
+Approved actions run through the **bounded simulator** (`app/simulator/`):
+9 catalogue tools (identical to the planner's `approved_tools`), a fictional
+environment, no free-text parameters, and no state of its own. It derives
+the simulated clock and history from the case's stored evidence and action
+results. `SIMULATOR_PROFILE=demo` (default) injects one fault: the CRM admin
+API is in maintenance until 10:30 on 5 Oct, so an early CRM session
+revocation partially fails and the planner has to adapt.
+
+```bash
+# regenerate the synthetic incident package (after editing build_scenarios.py)
+../.venv/bin/python -m scenarios.build_scenarios
+
+# evaluate planners through the real endpoints (fake Firestore, real simulator)
+../.venv/bin/python -m evaluation.run_eval --planner fake oracle unsafe
+../.venv/bin/python -m evaluation.run_eval --planner live   # needs OPENCODE_GO_API_KEY
+```
+
+- `scenarios/README.md`: the three incidents and two variants, how to run
+  the demo by hand, and evidence branching.
+- `evaluation/SCORING_SHEET.md`: the rubric and safety gates;
+  `evaluation/results/SUMMARY.md`: latest results.
+- `evaluation/TEST_PLAN.md`: adversarial and edge-case tests;
+  `evaluation/INTEGRATION_GAPS.md`: open gaps per owner.
+
+Never upload or index `scenarios/*/evaluator_only/`: those are the answer keys.
 
 ## Next steps (handoff)
 

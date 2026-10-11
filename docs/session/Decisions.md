@@ -116,3 +116,52 @@ veto in PRODUCT.md `## Stack`); adds a Node/npm toolchain alongside the
 Python backend. If vetoed, revisit before investing further in the shell.
 
 **Links:** `PRODUCT.md`, `frontend/`, `.kiro/steering/structure.md`, BL-009.
+
+## DEC-006: Simulator, scenarios and evaluation live in backend/, no new store (2026-10-11)
+
+**Context:** Aidan's WBS deliverables (bounded simulator, synthetic
+incidents, ground truth, evaluation) were first designed as a standalone
+`security_eval/` folder with its own SQLite store, approval table and
+guessed HTTP routes. That folder never reached the repo, `tech.md` forbids
+SQLite, and the backend already owns approvals and action results.
+
+**Options considered:** (1) standalone folder + SQLite (conflicts with
+`tech.md`, duplicates approvals); (2) a Firestore collection for simulator
+state (duplicates `action_results`); (3) a stateless simulator that reads
+the case's stored evidence and action results, plus `backend/scenarios/` and
+`backend/evaluation/` running against the real endpoints - chosen.
+
+**Decision:** Option 3. The simulator catalogue adopts the planner's tool
+names (resolves BL-008). Simulated time = latest evidence + 5 min per
+executed action. A `demo` fault profile injects the CRM-maintenance failure.
+
+**Tradeoff:** The simulator's behaviour depends on stored records (so it is
+only as correct as they are); evaluation tooling imports the test fake
+Firestore. Evaluator answer keys sit in the repo, guarded by a test that
+`app/` never reads them.
+
+**Links:** `backend/app/simulator/`, `backend/scenarios/README.md`,
+`backend/evaluation/SCORING_SHEET.md`.
+
+## DEC-007: Stale approvals can be re-approved (2026-10-11)
+
+**Context:** Executing one approved action rebuilds the state, which made
+every other approval in the plan stale; execute answered "re-approval
+required" but the decision endpoint refused already-approved actions, so
+only one action per plan could ever run.
+
+**Options considered:** (1) only new evidence invalidates approvals (smoother,
+but weakens "any state change invalidates"); (2) re-plan after every
+execution (many LLM calls); (3) allow a fresh decision on an approved action
+only when no approval is bound to the current state - chosen.
+
+**Decision:** Option 3. Approvals bind to the state version current at
+decision time; execution uses the latest approval. Deciding twice against
+the same state is still a conflict.
+
+**Tradeoff:** One extra analyst click per remaining action after each
+execution; the approval UI must offer "Re-approve" on a 409. Needs Raaj's
+and Syafieqah's confirmation (BL-011).
+
+**Links:** `backend/app/services/approval_service.py`,
+`tests/test_execution_api.py::test_sibling_action_needs_and_accepts_reapproval`.

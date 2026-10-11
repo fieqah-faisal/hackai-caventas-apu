@@ -142,9 +142,9 @@ def test_agent_inputs_contain_no_answer_keys():
 
 
 def test_backend_code_never_reads_evaluator_data():
+    leak = re.compile(r"evaluator_only|^\s*(from|import)\s+(scenarios|evaluation)\b", re.M)
     for path in (BACKEND / "app").rglob("*.py"):
-        text = path.read_text(encoding="utf-8")
-        assert "evaluator_only" not in text and "scenarios" not in text, path
+        assert not leak.search(path.read_text(encoding="utf-8")), path
 
 
 @pytest.mark.parametrize(

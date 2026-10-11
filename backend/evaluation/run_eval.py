@@ -6,7 +6,8 @@
     ../.venv/bin/python -m evaluation.run_eval --planner live --scenario sc01_infostealer
 
 Writes ``evaluation/results/<planner>.json`` (full detail) and rebuilds
-``evaluation/results/SUMMARY.md`` from every results file present.
+``evaluation/results/SUMMARY.md`` from every results file present. Runs
+limited with ``--scenario`` go to ``results/partial/`` instead.
 """
 from __future__ import annotations
 
@@ -113,7 +114,6 @@ def main(argv: list[str] | None = None) -> int:
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     scenarios = load_scenarios(args.scenario)
-    exit_code = 0
     for planner in args.planner:
         runs = []
         for scenario in scenarios:
@@ -126,13 +126,13 @@ def main(argv: list[str] | None = None) -> int:
                   f"({marks}) {time.monotonic() - started:.1f}s", file=sys.stderr)
         payload = {"planner": planner, "profile": args.profile,
                    "note": PLANNER_NOTES.get(planner, ""), "runs": runs}
-        if args.scenario:
-            payload["partial"] = True
-        path = RESULTS / f"{planner}.json"
+        # partial runs never replace the full results behind SUMMARY.md
+        path = (RESULTS / "partial" if args.scenario else RESULTS) / f"{planner}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8",
                         newline="\n")
     print(f"summary: {rebuild_summary()}", file=sys.stderr)
-    return exit_code
+    return 0
 
 
 if __name__ == "__main__":
