@@ -3,6 +3,17 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-11 Policy pack v1.0 in guidance.json (DONE)
+
+- policy_rules: 4 → 19 structured rules (type, applies_to_tools,
+  asset_types, phase, required_approver, notify, deadline_hours,
+  trigger); POL-01…04 wording unchanged. New `assets` list (8 systems
+  from the scenario). policy_pack_version 0.1-draft → 1.0.
+- Branch feat/policy-pack-v1, commit 4a2c99e.
+- Files: backend/fixtures/guidance.json, docs/session/*.
+- Checks: check_policy_pack.py all PASS; pytest -q → 44 passed.
+- Next: playbook step IDs in stage_guidance.
+
 ### 2026-10-08 PR #8 (frontend) merged; PR #7 synced (DONE)
 
 - PR #8 merged (`3a6a323`): React/Vite frontend — dashboard, create-case

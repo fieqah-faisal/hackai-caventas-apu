@@ -116,3 +116,23 @@ veto in PRODUCT.md `## Stack`); adds a Node/npm toolchain alongside the
 Python backend. If vetoed, revisit before investing further in the shell.
 
 **Links:** `PRODUCT.md`, `frontend/`, `.kiro/steering/structure.md`, BL-009.
+
+## DEC-006: Structured policy pack and asset list (2026-10-11)
+
+**Context:** Policy rules were sentences only, so code couldn't check
+approvers, notifications or conformance, and the incident state can't
+tell a laptop from a server.
+
+**Options considered:** (1) keep sentences; (2) structured fields plus
+an asset list in guidance.json — chosen.
+
+**Decision:** 19 rules with ten fields and six types; asset_types on
+rules plus an `assets` list; roles soc_analyst / it_manager / dpo; DPO
+notified within 24 h (fictional internal policy, stricter than PDPA's
+72 h to the Commissioner); IT manager within 4 h.
+
+**Tradeoff:** guidance.json grows from ~1.8k to ~8.8k characters (about
+2k more prompt tokens); the fields only take effect once BL-014–BL-016
+are built.
+
+**Links:** `backend/fixtures/guidance.json`; BL-014–BL-018.

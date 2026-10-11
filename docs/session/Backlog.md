@@ -42,6 +42,17 @@
   queue), plan-detail, execution-results list; align the frontend audit DTO
   to the real fields (`event_type`/`timestamp`/`audit_id`). — open /
   Airil + Syafieqah
+- BL-014 — Policy check: enforce required_approver in approval_service
+  and order rules (POL-01) in execution_service; add approver_role to
+  the BL-010 decision payload. — open / Raaj
+- BL-015 — Fill report notifications, policy_conformance and asset
+  criticality from guidance.json. — open / Raaj
+- BL-016 — Drop planner policy_refs not in policy_rules (e.g.
+  "POL-99"). — open / Airil
+- BL-017 — Confirm asset host names match the synthetic logs
+  (SALES-LT-07, FS-01, …). — open / Aida + Aidan
+- BL-018 — Align frontend demo fixture (infostealer.ts) with policy pack
+  v1.0: rule IDs, roles, tool names, asset IDs. — open / Syafieqah
 
 ### P3
 

@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-06.
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-11.
 
 ## Project
 
@@ -52,6 +52,8 @@ Firestore; no credentials needed).
   synthetic data; `npm run build` green. Approvals/activity not yet wired to
   live endpoints (BL-003). Product record + palette in root `PRODUCT.md`.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
+- Policy pack v1.0 (POL-01…19, structured) + 8-asset list in
+  `backend/fixtures/guidance.json` (DEC-006); PR open.
 
 ## Architecture
 
