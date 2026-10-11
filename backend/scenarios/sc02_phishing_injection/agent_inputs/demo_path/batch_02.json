@@ -1,0 +1,30 @@
+[
+  {
+    "event_time": "2026-10-06T11:00:00+08:00",
+    "event_type": "idp_signin",
+    "account": "hakim",
+    "source": "signin",
+    "src_ip": "198.51.100.77",
+    "auth": "password",
+    "result": "failure",
+    "reason": "invalid password or account disabled",
+    "record_id": "SC2-B2-03"
+  },
+  {
+    "event_time": "2026-10-06T11:10:00+08:00",
+    "event_type": "analyst_note",
+    "account": "hakim",
+    "source": "analyst_note",
+    "note": "Payables confirms the bank-detail change for Syarikat Contoh was NOT actioned; the payment run is tomorrow and is on hold.",
+    "author": "soc.lead",
+    "record_id": "SC2-B2-06"
+  },
+  {
+    "event_time": "2026-10-06T11:15:00+08:00",
+    "event_type": "analyst_note",
+    "source": "analyst_note",
+    "note": "Mail admins purged the invoice email from aina's and daniel's mailboxes; neither opened the link.",
+    "author": "soc.lead",
+    "record_id": "SC2-B2-07"
+  }
+]

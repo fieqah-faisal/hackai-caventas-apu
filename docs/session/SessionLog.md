@@ -3,6 +3,23 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-11 Synthetic incident package + ground truth (DONE)
+
+- `backend/scenarios/`: `build_scenarios.py` (single source) generates 3
+  scenarios + 2 variants: sc01 infostealer -> CRM session replay (main
+  demo), sc02 phishing + prompt injection, sc03 false alarm (CHG-2026-118),
+  sc01 messy CSV, sc03 ticket mismatch.
+- `agent_inputs/` (uploadable batches, demo-path renders) vs
+  `evaluator_only/` (checkpoint ground truth, ATT&CK mapping CSV, timeline).
+  Branching via `conditions.py` on stored action results + simulated time.
+- Found and fixed: a naive timestamp next to aware ones 500'd the upload
+  and poisoned the case (`state_manager` sort) - flagged for Raaj.
+- Tests: `tests/test_scenarios.py` (freshness, synthetic IPs/domains,
+  referential integrity, no answer-key leakage, every batch ingests);
+  suite **101 passed**.
+- ATT&CK IDs not re-checked online (attack.mitre.org blocked here) - see
+  `scenarios/README.md`.
+
 ### 2026-10-09 Bounded action simulator wired into the backend (DONE)
 
 - `backend/app/simulator/`: `catalog.py` (9 tools = the planner's
