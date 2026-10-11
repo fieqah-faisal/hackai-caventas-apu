@@ -45,9 +45,11 @@ Firestore; no credentials needed).
   into execution (DEC-006), synthetic incident package
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
-  unsafe 0/12, fake planner 0/12; **no live-planner results yet** (BL-010).
+  unsafe 0/12, fake planner 0/12; **no live-planner results yet** (BL-014).
   Two backend bugs fixed (naive timestamps; stale approvals, DEC-007).
-  Suite **128 passed**.
+  Suite **129 passed** after syncing with main.
+- Firestore emulator smoke passed (BL-004): full API flow against the real
+  emulator; emulator credential bug fixed (anonymous credential path).
 - Storage: Google Cloud Firestore via Firebase Admin SDK; uploaded
   originals on the local filesystem (`backend/uploads/`, gitignored) with
   SHA-256 recorded in Firestore.

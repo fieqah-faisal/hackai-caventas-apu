@@ -3,6 +3,15 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-11 PR #9 synced with main (DONE)
+
+- Merged `origin/main` (PR #7 emulator smoke, PR #8 review notes) into
+  `security-scenario-simulation-evaluation-lead`; conflicts only in
+  `docs/session/`.
+- Renumbered this branch's backlog items BL-010..019 -> BL-014..023 (main
+  already used BL-009..013); removed BL-008 (resolved by the simulator
+  catalogue); missing `GET /cases/{id}/actions` points to main's BL-013.
+
 ### 2026-10-11 Evaluation harness, scorer, results + re-approval fix (DONE)
 
 - `backend/evaluation/`: harness replays each scenario through the real
@@ -11,12 +20,12 @@
   `TEST_PLAN.md`, `INTEGRATION_GAPS.md`, committed results.
 - Results: oracle 12/12 checkpoints (ground truth reachable), unsafe 0/12
   (gates fire), fake planner 0/12 (mean 48.2). No live results yet (no key
-  here) - BL-010.
+  here) - BL-014.
 - Found and fixed: executing one approved action stranded every other
   approval in the plan (stale + not re-decidable). Re-approval of stale
-  approvals now allowed (DEC-007) - flagged for Raaj/Syafieqah (BL-011).
+  approvals now allowed (DEC-007) - flagged for Raaj/Syafieqah (BL-015).
 - Docs: `backend/README.md`, `.kiro/steering/structure.md`; backlog
-  BL-008 closed, BL-010..019 added; DEC-006, DEC-007.
+  BL-008 closed, BL-014..023 added; DEC-006, DEC-007.
 - Suite **128 passed** (`cd backend && ../.venv/bin/python -m pytest -q`).
 
 ### 2026-10-11 Synthetic incident package + ground truth (DONE)
@@ -52,6 +61,20 @@
 - Tests: `tests/test_simulator.py` (23); suite **66 passed**
   (`cd backend && ../.venv/bin/python -m pytest -q`).
 - Branch `security-scenario-simulation-evaluation-lead` (Aidan).
+### 2026-10-08 PR #8 (frontend) merged; PR #7 synced (DONE)
+
+- PR #8 merged (`3a6a323`): React/Vite frontend — dashboard, create-case
+  workflow, 7-tab case workspace, fixture/real providers, DTO + mapping
+  layers, vitest tests, `.kiro` IA specs, `PRODUCT.md`, DEC-005. No backend
+  or `firebase.json` changes.
+- `RealProvider` documents the merged BL-003 contract accurately (incl. the
+  action-status reconciliation) and honestly marks unavailable operations.
+  Gaps it exposes → **BL-013**: global `GET /cases`, stored-actions read,
+  plan-detail, execution-results list; plus the audit DTO field mismatch
+  (`kind/at/event_id` vs the real `event_type/timestamp/audit_id`).
+- PR #7 synced by merging `main` into the branch — no conflicts, backend
+  suite still 44 passed; draft and ready for merge.
+
 ### 2026-10-07 Analyst dashboard shell + PRODUCT.md (IN PROGRESS)
 
 - Wrote root `PRODUCT.md` (product record, HTB-inspired dark-navy token
@@ -69,6 +92,39 @@
 - Branch `feat/frontend-workspace-fieqah` (not yet committed). See DEC-005,
   BL-009.
 t.
+
+### 2026-10-08 Syafieqah's frontend branch landed; review (IN PROGRESS)
+
+- `feat/frontend-workspace-fieqah` (1 commit, based on b6cc341 — behind
+  main): React + Vite + Tailwind analyst shell under `frontend/` (mock
+  data, `npm run build` green), root `PRODUCT.md`, and DEC-005 proposing
+  the React stack over steering's Streamlit note (flagged for team veto).
+- No backend / `firebase.json` changes — clean separation. But the branch's
+  docs assume BL-003 endpoints are still stubs (stale) and its action-state
+  / audit-event names don't match the live contracts (`proposed/executed/
+  effective` vs `awaiting_approval/approved/rejected/verified/failed`;
+  `approval_recorded` vs `action_approved|action_rejected`;
+  `evidence_ingested` vs `evidence_uploaded`), so it needs a rebase onto
+  current `main` plus a wiring pass before merge.
+- Merge care: notebook files edited on both sides (SessionLog top,
+  SessionContext bullets); BL number collision — her "BL-009" = frontend vs
+  our BL-009 = cloud-Firebase coordination.
+- PR #7 (BL-004) has no dependency on her branch; kept draft per Airil's
+  call. Syafieqah: Firebase project not initialized yet ("frontend first").
+
+### 2026-10-08 Firestore emulator smoke passed — BL-004 (DONE)
+
+- Ran the full API flow against the local Firestore emulator (firebase-tools
+  15.33 via npx; `JAVA_HOME` from brew openjdk; project ir-planner-dev):
+  case → evidence (6 items, state v1) → plan → approve → execute
+  (`completed`/`ineffective`) → report + PDF; state v2 and all audit events
+  verified. Re-runnable script: `backend/scripts/emulator_smoke.py`.
+- Found + fixed a real bug: firebase-admin 7.x always resolves credentials,
+  so the emulator path failed with `DefaultCredentialsError`. `firebase.py`
+  now initializes with an explicit anonymous credential in emulator mode;
+  pinned by `tests/test_firebase_emulator.py`.
+- Suite: **44 passed**. Note: firebase-tools 15 needs Java 21+ (brew
+  openjdk@25/26 present; the default java 17 is too old).
 
 ### 2026-10-08 BL-003 approval loop implemented (IN PROGRESS)
 

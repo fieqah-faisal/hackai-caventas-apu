@@ -33,10 +33,18 @@ def get_db():
 
     if not firebase_admin._apps:
         cred = None
-        if settings.google_application_credentials and not settings.use_emulator:
+        if settings.use_emulator:
+            # firebase-admin always resolves credentials, so the emulator
+            # path must supply an anonymous credential explicitly.
+            from google.auth.credentials import AnonymousCredentials
+
+            class _EmulatorCredential(credentials.Base):
+                def get_credential(self):
+                    return AnonymousCredentials()
+
+            cred = _EmulatorCredential()
+        elif settings.google_application_credentials:
             cred = credentials.Certificate(settings.google_application_credentials)
-        # With the emulator (or ambient GOOGLE_APPLICATION_CREDENTIALS) the
-        # SDK can initialize without an explicit certificate.
         firebase_admin.initialize_app(
             cred,
             {"projectId": settings.firebase_project_id},

@@ -161,7 +161,7 @@ the same state is still a conflict.
 
 **Tradeoff:** One extra analyst click per remaining action after each
 execution; the approval UI must offer "Re-approve" on a 409. Needs Raaj's
-and Syafieqah's confirmation (BL-011).
+and Syafieqah's confirmation (BL-015).
 
 **Links:** `backend/app/services/approval_service.py`,
 `tests/test_execution_api.py::test_sibling_action_needs_and_accepts_reapproval`.

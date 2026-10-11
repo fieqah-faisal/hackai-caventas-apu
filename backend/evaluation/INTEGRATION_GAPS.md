@@ -1,6 +1,6 @@
 # Integration notes and gaps (from Aidan's branch)
 
-Branch: `security-scenario-simulation-evaluation-lead`. Everything Aidan's
+Branch: `security-scenario-simulation-evaluation-lead` (PR #9). Backlog items: BL-014 to BL-023. Everything Aidan's
 role owns now lives inside `backend/` and runs against the real endpoints;
 the earlier standalone `security_eval/` design (SQLite, own approval store,
 guessed HTTP routes) was **not** used, because `tech.md` forbids SQLite and
@@ -30,7 +30,7 @@ the backend already owns approvals.
    least one evidence id.
 3. **No `GET /cases/{id}/actions` (or results).** The approval UI and demo
    tooling can only see actions via the plan response, the report or the
-   audit log.
+   audit log. Already tracked as BL-013.
 4. **No approver role.** `analyst` is free text, so POL-02 (IT manager
    approves disabling an account) cannot be enforced. Add a role and check
    it per tool.
