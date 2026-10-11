@@ -110,3 +110,72 @@ def test_execute_is_idempotent(client, monkeypatch):
 
 def test_execute_unknown_case_404(client):
     assert client.post("/cases/CASE-NOPE/actions/ACT-NOPE/execute").status_code == 404
+
+
+class _TwoActionPlanner:
+    def generate_plan(self, incident_state, approved_guidance=None):
+        from app.schemas.plan import PlanProposal, ProposedAction, Stage
+
+        host = next(e.id for e in incident_state.entities if e.type.value == "host")
+        evidence = [e for ev in incident_state.timeline for e in ev.evidence_ids][:1]
+        return PlanProposal(
+            based_on_state_version=incident_state.version,
+            stage=Stage.CONTAINMENT,
+            actions=[
+                ProposedAction(tool_name="isolate_host", target_id=host, evidence_ids=evidence),
+                ProposedAction(tool_name="preserve_evidence", target_id=host, evidence_ids=evidence),
+            ],
+        )
+
+
+def test_sibling_action_needs_and_accepts_reapproval(client, monkeypatch):
+    """Regression: executing one action used to strand every other approval."""
+    monkeypatch.setattr(PLANNER_PATH, lambda: _TwoActionPlanner())
+    monkeypatch.setattr(SIMULATOR_PATH, lambda: FakeSimulatorAdapter())
+    case_id = client.post("/cases", json={"title": "two actions"}).json()["case_id"]
+    client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("batch1.json", FIXTURE.read_bytes(), "application/json")},
+    )
+    first, second = (a["action_id"] for a in client.post(f"/cases/{case_id}/runs").json()["actions"])
+    for action_id in (first, second):
+        client.post(
+            f"/cases/{case_id}/actions/{action_id}/decision",
+            json={"decision": "approve", "analyst": "aida"},
+        )
+    assert client.post(f"/cases/{case_id}/actions/{first}/execute").status_code == 200
+
+    stale = client.post(f"/cases/{case_id}/actions/{second}/execute")
+    assert stale.status_code == 409
+    assert "re-approval" in stale.json()["detail"]
+
+    again = client.post(
+        f"/cases/{case_id}/actions/{second}/decision",
+        json={"decision": "approve", "analyst": "aida", "reason": "still needed"},
+    )
+    assert again.status_code == 200, again.text
+    assert again.json()["approval"]["state_version"] == 2
+    assert client.post(f"/cases/{case_id}/actions/{second}/execute").status_code == 200
+
+    # a current approval cannot be decided again
+    assert (
+        client.post(
+            f"/cases/{case_id}/actions/{first}/decision",
+            json={"decision": "approve", "analyst": "aida"},
+        ).status_code
+        == 409
+    )
+
+
+def test_stale_approval_can_be_withdrawn(client, monkeypatch):
+    case_id, action_id = _approved_action(client, monkeypatch)
+    client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("batch2.json", FIXTURE.read_bytes(), "application/json")},
+    )
+    resp = client.post(
+        f"/cases/{case_id}/actions/{action_id}/decision",
+        json={"decision": "reject", "analyst": "aida", "reason": "new evidence"},
+    )
+    assert resp.status_code == 200
+    assert client.post(f"/cases/{case_id}/actions/{action_id}/execute").status_code == 409

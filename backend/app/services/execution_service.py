@@ -71,14 +71,15 @@ def execute(case_id: str, action_id: str) -> dict[str, Any]:
             f"action is '{action.get('status')}', not approved", "conflict"
         )
 
-    approval = next(
+    approval = max(
         (
             record
             for record in repositories.list_approvals(case_id)
             if record.get("action_id") == action_id
             and record.get("decision") == "approved"
         ),
-        None,
+        key=lambda record: int(record.get("state_version", 0)),
+        default=None,
     )
     if approval is None:
         raise ExecutionError(f"no approval found for action {action_id}", "conflict")
