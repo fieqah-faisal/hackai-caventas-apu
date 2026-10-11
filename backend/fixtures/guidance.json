@@ -1,5 +1,5 @@
 {
-  "policy_pack_version": "0.1-draft",
+  "policy_pack_version": "1.0",
   "playbook": {
     "id": "PB-IR-001",
     "version": "0.1",
@@ -9,19 +9,303 @@
   "policy_rules": [
     {
       "rule_id": "POL-01",
-      "statement": "Evidence must be preserved before a device is re-imaged; Preservation precedes Eradication."
+      "statement": "Evidence must be preserved before a device is re-imaged; Preservation precedes Eradication.",
+      "type": "sequence",
+      "applies_to_tools": [
+        "reimage_host"
+      ],
+      "asset_types": [],
+      "phase": [
+        "preservation",
+        "eradication"
+      ],
+      "required_approver": null,
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
     },
     {
       "rule_id": "POL-02",
-      "statement": "Disabling a staff account requires IT manager approval."
+      "statement": "Disabling a staff account requires IT manager approval.",
+      "type": "approval",
+      "applies_to_tools": [
+        "disable_account"
+      ],
+      "asset_types": [],
+      "phase": [
+        "containment"
+      ],
+      "required_approver": "it_manager",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
     },
     {
       "rule_id": "POL-03",
-      "statement": "Customer personal data accessed by an unauthorised party must be reported to the DPO."
+      "statement": "Customer personal data accessed by an unauthorised party must be reported to the DPO.",
+      "type": "notification",
+      "applies_to_tools": [],
+      "asset_types": [],
+      "phase": [
+        "assessment"
+      ],
+      "required_approver": null,
+      "notify": "dpo",
+      "deadline_hours": 24,
+      "trigger": "personal_data_exposed"
     },
     {
       "rule_id": "POL-04",
-      "statement": "A SOC analyst may approve isolating a user laptop alone."
+      "statement": "A SOC analyst may approve isolating a user laptop alone.",
+      "type": "approval",
+      "applies_to_tools": [
+        "isolate_host"
+      ],
+      "asset_types": [
+        "user_device"
+      ],
+      "phase": [
+        "containment"
+      ],
+      "required_approver": "soc_analyst",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-05",
+      "statement": "A SOC analyst may approve evidence preservation alone.",
+      "type": "approval",
+      "applies_to_tools": [
+        "preserve_evidence"
+      ],
+      "asset_types": [],
+      "phase": [
+        "preservation"
+      ],
+      "required_approver": "soc_analyst",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-06",
+      "statement": "Re-imaging a device requires IT manager approval.",
+      "type": "approval",
+      "applies_to_tools": [
+        "reimage_host"
+      ],
+      "asset_types": [],
+      "phase": [
+        "eradication"
+      ],
+      "required_approver": "it_manager",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-07",
+      "statement": "A SOC analyst may approve revoking sessions and resetting the password of a compromised account alone.",
+      "type": "approval",
+      "applies_to_tools": [
+        "revoke_sessions",
+        "reset_password"
+      ],
+      "asset_types": [],
+      "phase": [
+        "containment",
+        "eradication"
+      ],
+      "required_approver": "soc_analyst",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-08",
+      "statement": "A SOC analyst may approve removing a malicious mail forwarding rule alone, after recording the rule as evidence.",
+      "type": "approval",
+      "applies_to_tools": [
+        "remove_mail_forwarding_rule"
+      ],
+      "asset_types": [],
+      "phase": [
+        "eradication"
+      ],
+      "required_approver": "soc_analyst",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-09",
+      "statement": "A SOC analyst may approve blocking a domain alone only when evidence links it to the incident.",
+      "type": "approval",
+      "applies_to_tools": [
+        "block_domain"
+      ],
+      "asset_types": [],
+      "phase": [
+        "containment"
+      ],
+      "required_approver": "soc_analyst",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-10",
+      "statement": "Sending a security warning to all staff requires IT manager approval.",
+      "type": "approval",
+      "applies_to_tools": [
+        "warn_staff"
+      ],
+      "asset_types": [],
+      "phase": [
+        "containment"
+      ],
+      "required_approver": "it_manager",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-11",
+      "statement": "If session cookies were stolen, active sessions must be revoked; resetting the password alone is not enough.",
+      "type": "required_action",
+      "applies_to_tools": [
+        "revoke_sessions"
+      ],
+      "asset_types": [],
+      "phase": [
+        "containment"
+      ],
+      "required_approver": null,
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": "session_cookie_stolen"
+    },
+    {
+      "rule_id": "POL-12",
+      "statement": "After a mailbox compromise, the mailbox must be checked for forwarding rules and any malicious rule removed.",
+      "type": "required_action",
+      "applies_to_tools": [
+        "remove_mail_forwarding_rule"
+      ],
+      "asset_types": [],
+      "phase": [
+        "assessment",
+        "eradication"
+      ],
+      "required_approver": null,
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": "mailbox_compromised"
+    },
+    {
+      "rule_id": "POL-13",
+      "statement": "The IT manager must be informed within 4 hours when a staff account is confirmed compromised.",
+      "type": "notification",
+      "applies_to_tools": [],
+      "asset_types": [],
+      "phase": [
+        "assessment"
+      ],
+      "required_approver": null,
+      "notify": "it_manager",
+      "deadline_hours": 4,
+      "trigger": "staff_account_compromised"
+    },
+    {
+      "rule_id": "POL-14",
+      "statement": "Every evidence item must be stored with its SHA-256 hash, its source and who collected it.",
+      "type": "evidence",
+      "applies_to_tools": [
+        "preserve_evidence"
+      ],
+      "asset_types": [],
+      "phase": [
+        "preservation"
+      ],
+      "required_approver": null,
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-15",
+      "statement": "A case may be closed only after a SOC analyst signs off the final report.",
+      "type": "closure",
+      "applies_to_tools": [],
+      "asset_types": [],
+      "phase": [],
+      "required_approver": "soc_analyst",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": "case_closure"
+    },
+    {
+      "rule_id": "POL-16",
+      "statement": "Closing a case as a false positive requires a recorded reason and supporting evidence, such as an approved change ticket.",
+      "type": "closure",
+      "applies_to_tools": [],
+      "asset_types": [],
+      "phase": [],
+      "required_approver": "soc_analyst",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": "false_positive_closure"
+    },
+    {
+      "rule_id": "POL-17",
+      "statement": "Isolating a server, data store or network device requires IT manager approval.",
+      "type": "approval",
+      "applies_to_tools": [
+        "isolate_host"
+      ],
+      "asset_types": [
+        "server",
+        "data_store",
+        "network"
+      ],
+      "phase": [
+        "containment"
+      ],
+      "required_approver": "it_manager",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
+    },
+    {
+      "rule_id": "POL-18",
+      "statement": "Before a confirmed incident is closed, the report must include at least one hardening recommendation tied to its root cause.",
+      "type": "required_action",
+      "applies_to_tools": [],
+      "asset_types": [],
+      "phase": [
+        "hardening"
+      ],
+      "required_approver": null,
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": "incident_confirmed"
+    },
+    {
+      "rule_id": "POL-19",
+      "statement": "A re-imaged or isolated device may return to use only after a SOC analyst confirms it is clean and the affected account's stolen sessions are revoked.",
+      "type": "sequence",
+      "applies_to_tools": [],
+      "asset_types": [
+        "user_device"
+      ],
+      "phase": [
+        "restoration"
+      ],
+      "required_approver": "soc_analyst",
+      "notify": null,
+      "deadline_hours": null,
+      "trigger": null
     }
   ],
   "stage_guidance": {
@@ -61,5 +345,63 @@
     "remove_mail_forwarding_rule",
     "block_domain",
     "warn_staff"
+  ],
+  "assets": [
+    {
+      "asset_id": "SALES-LT-07",
+      "name": "Farah's laptop (sales)",
+      "type": "user_device",
+      "criticality": "medium",
+      "holds_personal_data": false
+    },
+    {
+      "asset_id": "FIN-LT-03",
+      "name": "Hakim's laptop (finance)",
+      "type": "user_device",
+      "criticality": "medium",
+      "holds_personal_data": false
+    },
+    {
+      "asset_id": "CRM",
+      "name": "Customer database: names, phones, delivery addresses",
+      "type": "data_store",
+      "criticality": "critical",
+      "holds_personal_data": true
+    },
+    {
+      "asset_id": "IDP",
+      "name": "Single sign-on and MFA for all staff accounts",
+      "type": "server",
+      "criticality": "high",
+      "holds_personal_data": false
+    },
+    {
+      "asset_id": "MAIL",
+      "name": "Company email (cloud)",
+      "type": "server",
+      "criticality": "high",
+      "holds_personal_data": false
+    },
+    {
+      "asset_id": "VPN",
+      "name": "Remote access gateway",
+      "type": "network",
+      "criticality": "high",
+      "holds_personal_data": false
+    },
+    {
+      "asset_id": "FS-01",
+      "name": "File server",
+      "type": "server",
+      "criticality": "high",
+      "holds_personal_data": false
+    },
+    {
+      "asset_id": "BKP-01",
+      "name": "Backup server",
+      "type": "server",
+      "criticality": "high",
+      "holds_personal_data": false
+    }
   ]
 }
