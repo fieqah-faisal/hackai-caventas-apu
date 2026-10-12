@@ -191,13 +191,32 @@ export function categorizeEvidence(dto: EvidenceItemDTO): EvidenceCategory {
   return "other";
 }
 
+/**
+ * Evidence in upload order: real Firestore streams GET /evidence in
+ * document-ID order (random hex). All items from one upload share an
+ * `ingestion_time`, and `row`/`line` follow the file, so this reproduces the
+ * insertion order the test fake returns. `evidence_id` breaks any remaining tie.
+ */
+export function sortEvidenceInUploadOrder(items: EvidenceItemDTO[]): EvidenceItemDTO[] {
+  const pos = (e: EvidenceItemDTO) => e.source_location.row ?? e.source_location.line ?? 0;
+  return [...items].sort(
+    (a, b) =>
+      compareIsoInstants(a.ingestion_time, b.ingestion_time) ||
+      pos(a) - pos(b) ||
+      (a.evidence_id < b.evidence_id ? -1 : a.evidence_id > b.evidence_id ? 1 : 0),
+  );
+}
+
 export function toEvidenceItemVM(dto: EvidenceItemDTO): EvidenceItemVM {
   const loc = dto.source_location;
   const locLabel = loc.row != null ? `row ${loc.row}` : loc.line != null ? `line ${loc.line}` : loc.file;
+  // The backend's normalized field is `event_type`; the others are kept for
+  // evidence that carries free-text titles.
   const title =
     (typeof dto.fields.event === "string" && dto.fields.event) ||
     (typeof dto.fields.summary === "string" && dto.fields.summary) ||
     (typeof dto.fields.message === "string" && dto.fields.message) ||
+    (typeof dto.fields.event_type === "string" && dto.fields.event_type) ||
     `${dto.kind.toUpperCase()} record`;
   return {
     evidenceId: dto.evidence_id,

@@ -5,16 +5,23 @@
  */
 import { describe, it, expect } from "vitest";
 import type { AuditEventDTO, ReportActionRowDTO } from "../api/dto";
-import { PLANS_IN_DOC_ID_ORDER, REPORT_ACTION_ROWS, reportBody } from "@/test/realBackendBodies";
+import {
+  EVIDENCE_IN_DOC_ID_ORDER,
+  PLANS_IN_DOC_ID_ORDER,
+  REPORT_ACTION_ROWS,
+  reportBody,
+} from "@/test/realBackendBodies";
 import {
   auditSummary,
   compareIsoInstants,
   mapAuditKind,
   reportActionStage,
   reportDecision,
+  sortEvidenceInUploadOrder,
   sortPlansOldestFirst,
   stageFromPlans,
   toAuditEventVM,
+  toEvidenceItemVM,
   toReportVM,
 } from "./index";
 
@@ -155,6 +162,28 @@ describe("plan ordering (real Firestore streams in document-ID order)", () => {
     expect(stageFromPlans(PLANS_IN_DOC_ID_ORDER)).toBe("eradication");
     expect(stageFromPlans([...PLANS_IN_DOC_ID_ORDER].reverse())).toBe("eradication");
     expect(stageFromPlans([])).toBeNull();
+  });
+});
+
+describe("evidence mapping (real field names and upload order)", () => {
+  it("titles a record from the backend's normalized event_type", () => {
+    const vm = toEvidenceItemVM(EVIDENCE_IN_DOC_ID_ORDER[1]);
+    expect(vm.title).toBe("login_failed");
+    expect(vm.sourceLocation).toBe("row 1");
+  });
+
+  it("still prefers a free-text event title, and falls back to the kind label", () => {
+    const base = EVIDENCE_IN_DOC_ID_ORDER[0];
+    expect(toEvidenceItemVM({ ...base, fields: { event: "Unsigned installer executed", event_type: "process_start" } }).title)
+      .toBe("Unsigned installer executed");
+    expect(toEvidenceItemVM({ ...base, fields: { host: "SYNTH-LT-01" } }).title).toBe("JSON record");
+  });
+
+  it("restores upload order (ingestion_time, then row) from document-ID order", () => {
+    const sorted = sortEvidenceInUploadOrder(EVIDENCE_IN_DOC_ID_ORDER);
+    expect(sorted.map((e) => e.fields.event_type)).toEqual(["login", "login_failed", "dns_query", "process_start"]);
+    // Input untouched.
+    expect(EVIDENCE_IN_DOC_ID_ORDER[0].evidence_id).toBe("EV-04000000000a");
   });
 });
 

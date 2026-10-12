@@ -3,7 +3,7 @@
  * ordering the real backend returned in the link API-mode run (Firestore
  * emulator). Shared by the mapping and RealProvider contract tests.
  */
-import type { PlanDocDTO, ReportActionRowDTO, StructuredReportDTO } from "@/lib/api/dto";
+import type { EvidenceItemDTO, PlanDocDTO, ReportActionRowDTO, StructuredReportDTO } from "@/lib/api/dto";
 
 /**
  * GET /cases/{id}/plans as real Firestore returned it: document-ID order,
@@ -38,6 +38,50 @@ export const PLANS_IN_DOC_ID_ORDER: PlanDocDTO[] = [
     action_ids: ["ACT-000000000001"],
     created_at: "2026-10-12T02:43:38.195695+00:00",
   },
+];
+
+function evidenceItem(
+  id: string,
+  sourceFile: string,
+  kind: "csv" | "json",
+  row: number,
+  ingestionTime: string,
+  fields: Record<string, unknown>,
+): EvidenceItemDTO {
+  return {
+    evidence_id: id,
+    case_id: "CASE-TEST0001",
+    source_file: sourceFile,
+    source_location: { file: sourceFile, row, line: null },
+    sha256: (kind === "csv" ? "a" : "b").repeat(64),
+    kind,
+    event_time: typeof fields.event_time === "string" ? fields.event_time : null,
+    ingestion_time: ingestionTime,
+    fields,
+  };
+}
+
+const CSV_UPLOAD = "2026-10-12T02:43:36.671561Z";
+const JSON_UPLOAD = "2026-10-12T02:43:36.707072Z";
+
+/**
+ * GET /cases/{id}/evidence as real Firestore returned it: document-ID order.
+ * Two uploads (CSV then JSON); items in one upload share `ingestion_time`
+ * and are numbered by `row`. Normalized fields use `event_type`.
+ */
+export const EVIDENCE_IN_DOC_ID_ORDER: EvidenceItemDTO[] = [
+  evidenceItem("EV-04000000000a", "planner_smoke_evidence.json", "json", 1, JSON_UPLOAD, {
+    event_type: "process_start", host: "SYNTH-LT-01", event_time: "2026-10-04T21:40:00+08:00",
+  }),
+  evidenceItem("EV-23000000000b", "login_logs.csv", "csv", 1, CSV_UPLOAD, {
+    event_type: "login_failed", host: "SYNTH-WS-01", event_time: "2026-10-03T10:05:00Z",
+  }),
+  evidenceItem("EV-7b000000000c", "planner_smoke_evidence.json", "json", 0, JSON_UPLOAD, {
+    event_type: "dns_query", host: "SYNTH-LT-01", event_time: "2026-10-04T21:38:00+08:00",
+  }),
+  evidenceItem("EV-d8000000000d", "login_logs.csv", "csv", 0, CSV_UPLOAD, {
+    event_type: "login", host: "SYNTH-WS-01", event_time: "2026-10-03T10:00:00Z",
+  }),
 ];
 
 /**

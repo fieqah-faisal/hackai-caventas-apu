@@ -29,6 +29,7 @@ import {
   mapActionState,
   mapRisk,
   recoveryFromState,
+  sortEvidenceInUploadOrder,
   sortPlansOldestFirst,
   stageFromPlans,
   toAuditEventVM,
@@ -165,7 +166,7 @@ export class RealProvider implements DataProvider {
   async getEvidence(caseId: string): Promise<Outcome<EvidenceItemVM[]>> {
     const r = await apiGet<EvidenceItemDTO[]>(`/cases/${caseId}/evidence`);
     if (r.kind !== "ok") return fromApi<EvidenceItemVM[]>(r as ApiResult<never>, "real");
-    return ok(r.data.map(toEvidenceItemVM), "real");
+    return ok(sortEvidenceInUploadOrder(r.data).map(toEvidenceItemVM), "real");
   }
 
   async getTimeline(caseId: string): Promise<Outcome<TimelineEventVM[]>> {

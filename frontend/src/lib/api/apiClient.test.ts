@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { apiGet } from "./apiClient";
 import { PLAN_ACTIONS_UNAVAILABLE, RealProvider } from "./realProvider";
 import type { AuditEventDTO, DecisionResponseDTO, StoredActionDTO } from "./dto";
-import { PLANS_IN_DOC_ID_ORDER, reportBody } from "@/test/realBackendBodies";
+import { EVIDENCE_IN_DOC_ID_ORDER, PLANS_IN_DOC_ID_ORDER, reportBody } from "@/test/realBackendBodies";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -273,6 +273,20 @@ describe("RealProvider contract (real backend bodies)", () => {
     expect(v4.planId).toBe("PLAN-ee0000000004");
     expect(v4.actionsUnavailable).toBeUndefined();
     for (const p of out.value.data) expect(p.replanExplanation).toBeUndefined();
+  });
+
+  it("getEvidence returns upload order with event_type titles, whatever the backend list order", async () => {
+    globalThis.fetch = mockFetch(200, EVIDENCE_IN_DOC_ID_ORDER);
+    const out = await new RealProvider().getEvidence("CASE-TEST0001");
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.source).toBe("real");
+    expect(out.value.data.map((e) => [e.evidenceId, e.title])).toEqual([
+      ["EV-d8000000000d", "login"],
+      ["EV-23000000000b", "login_failed"],
+      ["EV-7b000000000c", "dns_query"],
+      ["EV-04000000000a", "process_start"],
+    ]);
   });
 
   it("getPlanRefs uses the same created_at ordinals", async () => {

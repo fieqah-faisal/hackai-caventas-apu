@@ -135,23 +135,32 @@ all vocabulary translation happens in `src/lib/mapping`, pinned by Vitest
 tests built from the real bodies. Audit rows: `audit_id` → `eventId`,
 `event_type` → `AuditKind` (the backend's `evidence_uploaded` is the view
 model's `evidence_ingested`; unknown types → `other`), `timestamp` → `at`,
-`details` → `payload`. Report action rows carry the action lifecycle
-`status`, which is never printed as a decision. `verified`/`failed` imply
-an approval, and `failed` reads "approved, simulated, not validated
-effective"; the row can't tell an ineffective result from a failed
-execution. Data a provider cannot load is marked as such, never returned
-as an empty fact: `PlanVM.actionsUnavailable` carries the real action
-count when `GET /plans` lists only action IDs. Narrative such as a re-plan
+`details` → `payload`. Evidence titles come from the normalized
+`event_type` field.
+
+Report action rows carry the action lifecycle `status`, which is never
+printed as a decision. `verified`/`failed` imply an approval, and `failed`
+reads "approved, sent to simulator, not validated effective"; the row
+can't tell an ineffective result from a failed execution.
+
+Data a provider cannot load is marked as such, never returned as an empty
+fact: `PlanVM.actionsUnavailable` carries the real action count when
+`GET /plans` lists only action IDs. Narrative such as a re-plan
 explanation is shown only when the provider supplies it, which today means
-fixture mode; API mode never borrows fixture copy. List order: real
-Firestore streams collections in
-document-ID order (random hex) where the test fake keeps insertion order,
-so the frontend sorts `GET /plans` by `created_at` (compared as instants,
-because the backend mixes `Z`, `+00:00` and local offsets) before deriving
-the latest plan or 1-based plan versions. The backend is changed only where
-its own logic is wrong. The one such case is `reporting._latest_plan`,
-which took `list_plans()[-1]`; it now sorts by `created_at` in Python, so
-the test fake stays compatible. `GET /plans` keeps its unordered response.
+fixture mode; API mode never borrows fixture copy.
+
+List order: real Firestore streams collections in document-ID order
+(random hex), while the test fake keeps insertion order. The frontend
+sorts `GET /plans` by `created_at` before deriving the latest plan or
+1-based plan versions. It compares instants, not strings, because the
+backend mixes `Z`, `+00:00` and local offsets. It also restores evidence
+upload order (`ingestion_time`, then `row`/`line`), which is the order the
+fake returns.
+
+The backend is changed only where its own logic is wrong. The one such
+case is `reporting._latest_plan`, which took `list_plans()[-1]`; it now
+sorts by `created_at` in Python, so the test fake stays compatible.
+`GET /plans` keeps its unordered response.
 `execution_service`'s first-matching-approval lookup is unchanged: an
 action can be decided only once (pinned by `test_decide_twice_conflicts`),
 so at most one approval matches, and the unmerged security-lead branch

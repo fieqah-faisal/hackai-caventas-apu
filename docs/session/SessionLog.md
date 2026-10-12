@@ -12,14 +12,15 @@
   - Decision: there was no mismatch; the UI sends `approve`/`reject`. Contract tests now pin the request body, the 409 path, and that request-more-investigation never reaches the backend.
 - Plan order (H3):
   - Frontend: `RealProvider` sorts `GET /plans` by `created_at`, compared as instants, before numbering versions or deriving the header stage. Live, v1..v3 now follow creation order; S2 had v3 as the oldest.
+  - Evidence (frontend): `GET /evidence` is put back in upload order (`ingestion_time`, then row/line), and titles come from the backend's `event_type`, so they no longer read "JSON record"/"CSV record". Live: 10 records listed in file order with titles such as `login_failed` and `dns_query`.
   - Backend: `reporting._latest_plan` sorts in Python instead of taking `list_plans()[-1]`, pinned by `test_report_uses_newest_plan_not_stream_order`. `execution_service` is unchanged because an action has at most one approval.
   - uvicorn was relaunched for the live probes with `s3-restart-backend.sh` (same env as S2).
 - Report and Response Plan honesty:
   - Report generation (H4, DEC-009): opening the Report tab no longer POSTs. It shows "No report generated yet" with a Generate button, and Regenerate once a report exists. The newest confirmed report is kept in memory per case, never in `localStorage`. Live probe: the tab read made no `/api` call, and one Generate made one `POST /reports` (`report_generated` events went from 9 to 10). The report read endpoint is logged as BL-025.
   - Report wording: an approved-then-ineffective action read "FAILED by Fieqah A." because the mapping printed the lifecycle `status` as a decision. Decisions now read Approved/Rejected by the analyst, with the reason; actions and validation show each lifecycle stage separately. A `failed` row reads "Approved, sent to simulator, not validated effective", never "simulated", because `failed` also covers an execution that did not complete. Checked offline against S2's captured real report body.
   - Response Plan: API mode showed "No actions in the Containment stage" although each plan had 1 action, and with 2+ plans it showed the fixture Infostealer re-plan copy, diff and "New evidence received" badge. Plans now carry `actionsUnavailable` (the real count), so the tab says "Plan v3 proposed 1 action … detail is unavailable". Re-plan copy appears only when the provider supplies it (fixture v2). Live probe: all 3 real plans were marked unavailable with count 1.
-- Commits on `link`: `91b3717` (audit), `5aa1b09` (decision pin), `a078663` (frontend plan order), `b29e9bc` (report plan order), `a727289` (report on explicit action), `7fecd92` (report wording), `5d6ffc2` (Response Plan). Tests:
-  - `cd frontend && npm run build && npm run test`: build green, **61 passed** (9 files).
+- Commits on `link`: `91b3717` (audit), `5aa1b09` (decision pin), `a078663` (frontend plan order), `b29e9bc` (report plan order), `a727289` (report on explicit action), `7fecd92` (report wording), `5d6ffc2` (Response Plan), `fc2be8d` (report "sent to simulator" wording). Tests:
+  - `cd frontend && npm run build && npm run test`: build green, **65 passed** (9 files).
   - `cd backend && ../.venv/bin/python -m pytest -q`: **45 passed**.
 - Next: the stale `main.py` router comment, deferred UI follow-ups, and the S3 verification record.
 
