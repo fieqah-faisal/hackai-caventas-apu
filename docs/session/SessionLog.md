@@ -3,6 +3,18 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 `feat/bl-014-live-evaluation` merged `origin/main`; PR #13 conflicts resolved (DONE)
+
+- Merged `origin/main` (`01c1c01` — root README rewrite, PR #12 / `8e366f1`)
+  into `feat/bl-014-live-evaluation`; the only conflict was
+  `docs/session/SessionLog.md` (both sides prepended 2026-10-12 entries),
+  resolved by union newest-first: the two BL-014 entries, then main's README
+  entry, then shared history. `README.md` auto-merged (this branch did not
+  touch it).
+- Tests on the merged tree: backend `../.venv/bin/python -m pytest -q`
+  → **137 passed**. Frontend untouched.
+- Branch pushed; PR #13 ready for maintainer merge.
+
 ### 2026-10-12 BL-014 live planner evaluation (DONE)
 
 - Full live evaluation completed in one attempt on `feat/bl-014-live-evaluation` at plan commit `97290f2`; results were committed in `69d5817` (`feat(ai): add live planner evaluation results (BL-014)`) with a follow-up notebook correction in `9ecc635`, heading PR #13 (open, not merged). Command:
@@ -20,6 +32,18 @@
 - Scoped live run `sc01_infostealer` completed in **475.6s** with `PASS`: CP1 95.0, CP2 85.0, CP3 75.0; all three checkpoints passed with no failed gates.
 - Uncommitted result: `backend/evaluation/results/partial/live.json`; task report: `.superpowers/sdd/2026-10-12-bl-014-live-evaluation/task-1-report.md`. No new commit.
 - Next: review the live result and decide whether to commit it as part of BL-014.
+
+### 2026-10-12 Root README refreshed for submission (IN PROGRESS)
+
+- Rewrote root `README.md` as a complete project README: description and
+  human-in-the-loop safety statement, the end-to-end loop diagram, repo
+  layout, getting-started (backend + emulator, frontend modes, demo
+  walkthrough, evaluation commands with the current calibration table),
+  status snapshot (2026-10-12), safety/data rules, project-memory/workflow
+  pointers, team, the original planning timeline with statuses updated, and
+  the HackAI security/testing constraints.
+- Branch `docs/readme-refresh` (worktree `Caventas-2`, from `main`
+  `5e53c66`); PR open for review. No code changes.
 
 ### 2026-10-12 `link` merged `origin/main` (PR #9); conflicts resolved (DONE)
 
