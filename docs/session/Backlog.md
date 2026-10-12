@@ -12,9 +12,20 @@
   and record the change. — open / team
 - BL-003 — Approvals → bounded simulated execution → reporting implemented;
   PR open for review/merge. — in review / Airil
+- BL-024 — GAS-lite incident-state slice: specification complete at
+  `.kiro/specs/caventas-gas-lite/` (DEC-010); implementation in progress on
+  branch `feat/gas-lite-state-fieqah`. Core = enriched Entity/Relationship
+  schemas + pure `app/services/gas_lite.py` + three-case prior-state
+  handling + additive `GET /cases/{id}/states[/{version}]`. Core Tasks 1-3
+  (schema, pure graph service, repository read) proceed now; Tasks 4.x
+  (state_manager integration) and 6.x (execution-flow integration) are
+  BLOCKED on PR #9 (modifies `state_manager.py`): merge PR #9 and rebase
+  this branch onto the updated `main` first, preserving PR #9's
+  timezone-aware timeline sorting and simulator-result behaviour. Numbering
+  (DEC-010/BL-024) chosen to avoid collision with PR #9/#10; reconcile on
+  next `main` sync. — impl in progress (Tasks 1-3) / Syafieqah
 
 ### P2
-
 - BL-004 — Emulator smoke executed and passing (script + `firebase.py`
   anonymous-credential fix in PR #7). — in review / Airil
 - BL-008 — Sync the planner's proposed action vocabulary with Aidan's

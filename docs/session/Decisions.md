@@ -172,10 +172,10 @@ test-provable. Integration depends on PR #9 (state_manager.py); its
 timezone-aware timeline sorting and simulator-result behaviour must be
 preserved on rebase.
 
-**Numbering note:** DEC-010 (and BL-020) were chosen with a deliberate gap
+**Numbering note:** DEC-010 (and BL-024) were chosen with a deliberate gap
 to avoid colliding with DEC/BL numbers introduced by PR #9 / PR #10, which
 are not yet in this local tree. Reconcile on next `main` sync.
 
 **Links:** `.kiro/specs/caventas-gas-lite/` (requirements.md, design.md,
 tasks.md); `.kiro/steering/structure.md`, `.kiro/steering/tech.md`;
-DEC-001; BL-020; arXiv 2608.09524.
+DEC-001; BL-024; arXiv 2608.09524.

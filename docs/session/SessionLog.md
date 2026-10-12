@@ -36,8 +36,8 @@
 - INTEGRATION WARNING: PR #9 modifies `state_manager.py` and must be
   merged/rebased before the state-manager and execution-flow integration
   (tasks 4.x, 6.x) are finalized; preserve PR #9's timezone-aware timeline
-  sorting and simulator-result behaviour. See BL-020.
-- Numbering note: DEC-010 and BL-020 were chosen with a deliberate gap to
+  sorting and simulator-result behaviour. See BL-024.
+- Numbering note: DEC-010 and BL-024 were chosen with a deliberate gap to
   avoid colliding with DEC/BL numbers introduced by PR #9 / PR #10 (not yet
   in this local tree). Reconcile numbering on next `main` sync.
 - Branch intended for implementation: `feat/gas-lite-state-fieqah`. Not yet

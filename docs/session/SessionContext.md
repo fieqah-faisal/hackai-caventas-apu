@@ -51,7 +51,7 @@ Firestore; no credentials needed).
   (React + Vite + Tailwind, DEC-005) — dashboard shell + 5 regions on
   synthetic data; `npm run build` green. Approvals/activity not yet wired to
   live endpoints (BL-003). Product record + palette in root `PRODUCT.md`.
-- GAS-lite incident-state (BL-020): STAIR-inspired enrichment of the
+- GAS-lite incident-state (BL-024): STAIR-inspired enrichment of the
   versioned incident state is **specified, implementation pending**. Spec at
   `.kiro/specs/caventas-gas-lite/` (requirements/design/tasks, format-valid);
   decisions in DEC-010. Core = enriched Entity/Relationship schemas, a pure
