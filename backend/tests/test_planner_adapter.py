@@ -176,11 +176,33 @@ def test_unknown_tool_and_unknown_target_actions_are_dropped():
     assert plan.actions == []
 
 
-def test_invalid_stage_falls_back_to_assessment():
-    llm = ScriptedLLM([_analysis(), _proposal(stage="combat")])
+def test_proposal_stage_does_not_override_the_analyzed_stage():
+    llm = ScriptedLLM([_analysis(stage="containment"), _proposal(stage="combat")])
     plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
 
+    assert plan.stage is Stage.CONTAINMENT
+
+
+def test_invalid_analysis_stage_falls_back_to_assessment():
+    guidance = {
+        "policy_rules": [
+            {"rule_id": "POL-ASSESS", "phase": ["assessment"]},
+            {"rule_id": "POL-CONTAIN", "phase": ["containment"]},
+        ],
+        "approved_tools": ["isolate_host"],
+    }
+    llm = ScriptedLLM(
+        [
+            _analysis(stage="combat"),
+            _proposal(policy_refs=["POL-ASSESS"]),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), guidance)
+
     assert plan.stage is Stage.ASSESSMENT
+    proposal_payload = json.dumps(llm.calls[1][0])
+    assert "POL-ASSESS" in proposal_payload
+    assert "POL-CONTAIN" not in proposal_payload
 
 
 def test_malformed_llm_output_raises_planner_error():
@@ -340,3 +362,37 @@ def test_off_stage_policy_refs_are_dropped_and_not_shown():
     proposal_payload = json.dumps(llm.calls[1][0])
     assert "POL-03" not in proposal_payload
     assert "POL-99" not in proposal_payload
+
+
+def test_rules_without_rule_id_are_dropped():
+    guidance = {
+        "policy_rules": [
+            {
+                "statement": "Malformed rule must not be retrieved.",
+                "phase": ["containment"],
+            },
+            {"rule_id": "POL-VALID", "statement": "Valid rule.", "phase": ["containment"]},
+        ]
+    }
+
+    selected = select_guidance(guidance, "containment")
+
+    assert selected["policy_rules"] == [guidance["policy_rules"][1]]
+
+
+def test_empty_selection_yields_no_refs():
+    guidance = {
+        "policy_rules": [{"rule_id": "POL-01", "phase": ["containment"]}],
+        "approved_tools": ["isolate_host"],
+    }
+    llm = ScriptedLLM(
+        [
+            _analysis(stage="restoration"),
+            _proposal(policy_refs=["POL-01"]),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), guidance)
+
+    assert plan.actions[0].policy_refs == []
+    proposal_payload = json.dumps(llm.calls[1][0])
+    assert "POL-01" not in proposal_payload

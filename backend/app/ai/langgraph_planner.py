@@ -279,7 +279,7 @@ class LangGraphPlannerAdapter:
         return {
             "analysis": analysis,
             "sufficient": bool(analysis.get("sufficient", False)),
-            "stage": str(analysis.get("stage", Stage.ASSESSMENT.value)),
+            "stage": _coerce_stage(analysis.get("stage", "")).value,
             "missing_evidence": _str_list(analysis.get("missing_evidence")),
         }
 
@@ -313,7 +313,6 @@ class LangGraphPlannerAdapter:
         if not isinstance(actions, list):
             raise PlannerError("planner 'actions' must be a list")
         return {
-            "stage": str(proposal.get("stage", state.get("stage", ""))),
             "actions": [a for a in actions if isinstance(a, dict)],
         }
 
@@ -355,7 +354,9 @@ def select_guidance(guidance: dict[str, Any], stage: str) -> dict[str, Any]:
     rules = [
         rule
         for rule in guidance.get("policy_rules", [])
-        if not rule.get("phase") or stage in rule["phase"]
+        if isinstance(rule.get("rule_id"), str)
+        and rule["rule_id"]
+        and (not rule.get("phase") or stage in rule["phase"])
     ]
     return {
         **guidance,
