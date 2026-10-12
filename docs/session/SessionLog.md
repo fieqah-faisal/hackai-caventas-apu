@@ -17,7 +17,7 @@
 - Registered BL-038 (post-pack `planner_smoke` rerun — live numbers predate
   the pack) and BL-039 (Aidan: trigger event types + tool gaps). Registry
   next free: BL-040 / DEC-014.
-- Checks: backend `../.venv/bin/python -m pytest -q` → **140 passed** (the
+- Checks: backend `../.venv/bin/python -m pytest -q` → **143 passed** (the
   exact number the post-Task-2 run reports; expected 137 + 3 new tests).
   Live rerun is BL-038. Next: merge this branch; then BL-038.
 
