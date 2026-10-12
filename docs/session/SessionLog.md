@@ -3,6 +3,18 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 Root README refreshed for submission (IN PROGRESS)
+
+- Rewrote root `README.md` as a complete project README: description and
+  human-in-the-loop safety statement, the end-to-end loop diagram, repo
+  layout, getting-started (backend + emulator, frontend modes, demo
+  walkthrough, evaluation commands with the current calibration table),
+  status snapshot (2026-10-12), safety/data rules, project-memory/workflow
+  pointers, team, the original planning timeline with statuses updated, and
+  the HackAI security/testing constraints.
+- Branch `docs/readme-refresh` (worktree `Caventas-2`, from `main`
+  `5e53c66`); PR open for review. No code changes.
+
 ### 2026-10-12 `link` merged `origin/main` (PR #9); conflicts resolved (DONE)
 
 - Merged `origin/main` (`909bcfe` — simulator, scenarios, evaluation harness
