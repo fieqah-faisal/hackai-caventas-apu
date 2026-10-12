@@ -3,6 +3,28 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 README current-state refresh + retrieval gap (DONE)
+
+- Started `docs/readme-status-refresh` from `main`@`bae3f66` after PR #10
+  (policy pack) and PR #13 (live evaluation) merged.
+- Corrected the root README: the planner loads the complete guidance fixture
+  rather than selecting relevant passages; the real decision endpoint is
+  approve/reject only; actions have validation checks, not an approval-level
+  field; live calibration is 8/12 checkpoints across 2/5 scenarios.
+- The proposal requires relevant approved passages with source references
+  (pp. 12, 26, 33 and 42). Added BL-037 for incident/stage retrieval and
+  filtered policy-reference validation; registry next free is BL-038 /
+  DEC-013. SessionContext now reflects the bounded simulator and merged
+  policy pack.
+- Closed BL-010: the real frontend provider and contract tests use the
+  BL-003 `{decision, analyst, reason}` payload. Closed BL-011: PR #8 and
+  PR #11 merged its frontend/API integration scope; remaining gaps stay in
+  BL-013 and BL-025–BL-029.
+- Checks: `cd backend && ../.venv/bin/python -m pytest -q` → **137 passed**;
+  `git diff --check` clean; all relative links in the four touched docs
+  resolve. Next: merge this docs branch; implement BL-037 only within the
+  agreed post-freeze scope.
+
 ### 2026-10-12 `feat/policy-pack-v1` merged `origin/main`; PR #10 conflicts resolved (DONE)
 
 - Merged `origin/main` (`4145f41` — includes PR #13 live results, PR #12

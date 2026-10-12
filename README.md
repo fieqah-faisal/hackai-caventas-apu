@@ -5,13 +5,13 @@
 Caventas turns fragmented incident evidence and organization-approved
 guidance into an adaptive, evidence-backed incident-response plan with
 explicit human approval gates. The agent reconstructs what happened,
-assesses the incident, identifies missing evidence, retrieves approved
-playbooks and policies, and proposes prioritized response actions — each
-with its supporting evidence, rationale, policy references, risk and
-required approval level. A human analyst decides; consequential actions are
+assesses the incident, identifies missing evidence, uses the approved
+playbook and policy pack, and proposes prioritized response actions. Each
+action includes supporting evidence, rationale, policy references, risk and
+validation checks. A human analyst decides; consequential actions are
 never executed by the system, and selected actions are demonstrated in a
 bounded simulator. The output is a continuously updated, traceable incident
-report — not a chatbot answer.
+report, not a chatbot answer.
 
 > **Human-in-the-loop by design.** The AI recommends only. Every
 > consequential action needs an analyst decision, execution is simulated in
@@ -33,12 +33,12 @@ report — not a chatbot answer.
         │                               │yes                        ▲
         │                               ▼                           │
         │            IR phase router (assessment … restoration) ◄───┘
-        │            → Retrieve approved guidance
+        │            → Load approved guidance
         │            → Propose prioritized actions (evidence, rationale,
-        │              policy refs, risk, approval level, validation method)
+        │              policy refs, risk, validation method)
         │                               │
         ▼                               ▼
-   Human approval (approve / edit / reject) ──► Bounded simulator (approved
+   Human approval (approve / reject) ──► Bounded simulator (approved
         │                                        catalogue, fictional org)
         ▼                                             │
    Outcome validation → new incident-state version → Re-plan ──► Report
@@ -46,6 +46,11 @@ report — not a chatbot answer.
 
 The loop continues until analyst-verified closure. Every version of the
 state, every decision and every outcome is kept for traceability.
+
+The current planner loads the complete approved guidance fixture into the
+proposal prompt. It does not yet select incident- and stage-relevant
+passages. BL-037 tracks that retrieval step and validation of returned
+`policy_refs` against the selected rule IDs.
 
 ## Repository layout
 
@@ -122,9 +127,10 @@ cd backend
 ```
 
 Calibration (see `backend/evaluation/results/SUMMARY.md`): `oracle` 12/12
-checkpoints (upper bound), `unsafe` 0/12 (every gate fires), `fake` 0/12
-(mean 48.2). **Live-planner results are pending** — the committed numbers
-say nothing about the real agent until that run lands.
+checkpoints (upper bound), `unsafe` 0/12, `fake` 0/12 (mean 48.2), and
+`live` 8/12 across 2/5 scenarios (mean 86.4). The live failures were
+`no_collateral_targets` and `no_forbidden_actions`; BL-031 tracks the
+target-scope hardening.
 
 ## Status snapshot (2026-10-12)
 
@@ -135,12 +141,17 @@ say nothing about the real agent until that run lands.
   Firestore emulator support; bounded simulator with an approved 9-tool
   catalogue; five synthetic scenarios plus evaluation harness, scorer and
   safety gates; React analyst workspace in fixture and API modes with
-  read-only action/result list endpoints.
-- **In review:** PR #10 — policy pack v1.0 (19 structured rules + asset list).
-- **In progress:** live-planner calibration (`feat/bl-014-live-evaluation`).
-- **Known pending work** — tracked in [`docs/session/Backlog.md`](docs/session/Backlog.md):
-  DOMAIN/IP entity extraction; approver roles (IT-manager rule); report read
-  endpoint; global case list; cloud Firebase project (optional).
+  read-only action/result list endpoints; policy pack v1.0 (19 structured
+  rules + 8 assets); first live-planner calibration.
+- **Measured:** the live planner passed 8/12 checkpoints across 2/5
+  scenarios. Safety and policy-reference follow-ups are BL-020, BL-031 and
+  BL-034.
+- **Next:** incident-relevant guidance retrieval (BL-037); persisted planner
+  analysis/findings/ATT&CK for deterministic reports (BL-017); policy
+  enforcement (BL-032, BL-033); remaining reads (BL-013, BL-025).
+- **Decisions/deferred:** record the Firestore divergence (BL-001), ratify
+  React over Streamlit (BL-012), optional cloud Firebase (BL-009), and
+  approval invalidation after state changes (BL-024).
 
 ## Safety and data rules
 
@@ -201,5 +212,5 @@ Raajshreedhar Sathia Murthy
 | **11** | **Use provided data ethically**                        | For research collaborations using HackAI data, the site requires ethical use and adherence to privacy standards. ([Hack AI][2])                                                             |
 | **12** | **Attribute HackAI data when used for research**       | Researchers using HackAI-provided datasets are required to identify HackAI as the data source. ([Hack AI][2])                                                                               |
 
-[1]: https://hackai.fi/?utm_source=chatgpt.com "Hack AI – Learn to understand AI, test it, and break it if necessary"
-[2]: https://hackai.fi/index.php/data-handling-at-hackai/?utm_source=chatgpt.com "Policies and Guidelines – Hack AI"
+[1]: https://hackai.fi/ "Hack AI – Learn to understand AI, test it, and break it if necessary"
+[2]: https://hackai.fi/index.php/data-handling-at-hackai/ "Policies and Guidelines – Hack AI"

@@ -5,20 +5,19 @@
 > Protocol: [README.md](README.md).
 >
 > **ID registry (2026-10-12):** PR #9 (security-lead) is merged: BL-014..024
-> and DEC-006/DEC-007 are on `main`. `feat/policy-pack-v1` merged `main`
-> and renumbered its items to BL-032..BL-036 / DEC-012 (was BL-014..018 /
-> DEC-006, colliding with merged #9).
+> and DEC-006/DEC-007 are on `main`; PR #10 adds BL-032..BL-036 and DEC-012.
 > `feat/gas-lite-state-fieqah` claims BL-020 (collides with merged BL-020)
 > and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
-> npm-audit item was renumbered BL-024 → BL-030 on this merge, because
+> npm-audit item was renumbered BL-024 → BL-030 on that merge because
 > main's BL-024 is the approval-invalidation item. Next free IDs:
-> **BL-037** and **DEC-013**.
+> **BL-038** and **DEC-013**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
 > (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done
 > (PR #5); BL-008 resolved by PR #9's simulator catalogue (tool names = the
-> guidance allowlist, drift pinned by a test).
+> guidance allowlist, drift pinned by a test); BL-010 payload contract is
+> consumed by the frontend; BL-011 superseded by merged PRs #8 and #11.
 
 ## Open Items
 
@@ -38,15 +37,6 @@
   placed at `backend/secrets/serviceAccount.json` (gitignored) to enable an
   optional cloud-Firestore run path; ask her to preserve the emulator
   config in `firebase.json` when initializing. — open / team
-- BL-010 — Share the BL-003 decision payload contract (`decision`,
-  `analyst`, `reason`) with Syafieqah's approval UI work. — open / Airil
-- BL-011 — Frontend branch (`feat/frontend-workspace-fieqah`): pull `main`
-  and resolve conflicts before opening the PR, wire approvals/activity to
-  the live BL-003 endpoints, align action-state/audit names, fix the BL-009
-  numbering collision, update the stale "stubs" notes. Merge order agreed:
-  frontend branch first; PR #7 rebased onto `main` afterwards (its only
-  overlap with the frontend branch is `docs/session/`). — open /
-  Syafieqah + Airil
 - BL-012 — Ratify or veto DEC-005 (React + Vite + Tailwind vs the
   steering's Streamlit note); if ratified, update `.kiro/steering/tech.md`
   + `structure.md` and the proposal §9 row. — open / team
@@ -76,7 +66,7 @@
   plus regression coverage. — open / Airil + Aidan
 - BL-032 — Policy check: enforce required_approver in approval_service
   and order rules (POL-01) in execution_service; add approver_role to
-  the BL-010 decision payload. — open / Raaj
+  the decision payload. — open / Raaj
 - BL-033 — Fill report notifications, policy_conformance and asset
   criticality from guidance.json. — open / Raaj
 - BL-034 — Drop planner policy_refs not in policy_rules (e.g.
@@ -85,6 +75,11 @@
   (SALES-LT-07, FS-01, …). — open / Aida + Aidan
 - BL-036 — Align frontend demo fixture (infostealer.ts) with policy pack
   v1.0: rule IDs, roles, tool names, asset IDs. — open / Syafieqah
+- BL-037 — Incident-relevant policy/playbook retrieval: select approved
+  guidance using the incident state and current response stage, pass only
+  the selected passages with source references to the planner, and reject
+  returned `policy_refs` outside the selected rule IDs. Current code passes
+  all of `load_guidance()` to the proposal prompt. — open / Airil + Aida
 
 ### P3
 

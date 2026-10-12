@@ -33,15 +33,12 @@ Firestore; no credentials needed).
 - Planning implemented and merged (BL-002, PR #3): real LangGraph adapter
   + `/runs` + `/plans` endpoints, guidance fixture, 24 tests passing on
   `main`.
-- Approval → simulated execution → reporting merged (BL-003, PR #6
-  `b93fa6c`): decision binding + security preconditions + outcome→state
-  rebuild + v1.2 report JSON/PDF; suite **44 passed** on `main`@`3cecd3e`.
-  Tool catalogue still provisional (BL-008). Without a key the planner
-  falls back to the fake adapter; the simulator on `main` is still the fake
-  (bounded simulator pending on `security-scenario-simulation-evaluation-lead`).
-  Merged via PR #11 (`5e53c66`): read-only `GET /cases/{id}/actions` +
-  `/action-results` (BL-027, DEC-011) and newest-plan-by-`created_at` in
-  reports. Missing reads: BL-013, BL-025.
+- Approval → bounded simulated execution → reporting merged (BL-003, PR #6;
+  simulator PR #9): decision binding + security preconditions +
+  outcome→state rebuild + v1.2 report JSON/PDF. The simulator defaults to
+  `clean` and uses the approved 9-tool catalogue; `demo` is explicit.
+  Read-only actions/results and newest-plan report selection merged in PR
+  #11 (`5e53c66`). Missing reads: BL-013, BL-025.
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).
@@ -59,18 +56,19 @@ Firestore; no credentials needed).
   approvals deferred to GAS-lite (DEC-007, BL-024).
   Suite **137 passed** after syncing with main. Live results merged via
   PR #13 (`4145f41`).
-- Policy pack v1.0 (Aida, `feat/policy-pack-v1`, DEC-012): 19 structured
-  rules (ten fields) + 8-asset list in `backend/fixtures/guidance.json`
-  (`policy_pack_version` 1.0); branch merged `main` with PR #10 conflicts
-  resolved, items renumbered BL-032..BL-036. Enforcement follow-ups are
-  BL-032..BL-034; asset/fixture alignment BL-035 and BL-036.
+- Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
+  structured rules (ten fields) + 8-asset list in
+  `backend/fixtures/guidance.json` (`policy_pack_version` 1.0). The planner
+  still receives the complete fixture; incident/stage retrieval and filtered
+  `policy_refs` are BL-037. Enforcement follow-ups are BL-032..BL-034;
+  asset/fixture alignment BL-035 and BL-036.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).
 - Storage: Google Cloud Firestore via Firebase Admin SDK; uploaded
   originals on the local filesystem (`backend/uploads/`, gitignored) with
   SHA-256 recorded in Firestore.
-- Code-review graph built (148 nodes / 658 edges); local data in
+- Code-review graph built (966 nodes / 7335 edges); local data in
   `.code-review-graph/` (gitignored).
 - Frontend (BL-009): analyst workspace under `frontend/` (React + Vite +
   Tailwind, DEC-005), merged in PR #8 (`3a6a323`): dashboard, create-case
