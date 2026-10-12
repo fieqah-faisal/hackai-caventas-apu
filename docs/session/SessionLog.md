@@ -18,6 +18,7 @@
 - Teardown: stopped vite, uvicorn and the emulator. Deleted `/tmp/caventas-e2e`, the untracked S1–S5 scratch under `.agents/tasks/link-e2e-2026-10-09/` (so the "(local)" artifact links in earlier entries no longer resolve), `firestore-debug.log`, and today's E2E/pytest copies in `backend/uploads` + `backend/reports` (gitignored).
   - New: BL-028 (the "Senior approval" badge is a UI heuristic) and BL-029 (pytest writes into `backend/uploads`).
   - Final report committed at `.agents/tasks/link-e2e-2026-10-09/s6-final-report.md`. Nothing pushed; the user decides push/PR.
+  - Commits on `link`: `a8a0e12` (S6 notebook + final report), then a notebook-only commit that records this SHA.
 
 ### 2026-10-09 `link` S5 API-mode Approvals queue via read-only action lists (DONE)
 - Decision DEC-011, backlog item BL-027 (owner Raaj). The brief's suggested IDs, DEC-006 and BL-010, were already taken; the registry gave DEC-011 / BL-027, and the next free IDs are now BL-028 / DEC-012. Backend: added read-only `GET /cases/{id}/actions` and `GET /cases/{id}/action-results` (in `planning.py` and `execution.py`). Both use the existing repository list functions, sort by `created_at` in Python, return 404 for an unknown case, and write nothing. The decision and execute paths are untouched. BL-013 is narrowed to the global case list and plan detail.
