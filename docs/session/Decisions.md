@@ -117,6 +117,60 @@ Python backend. If vetoed, revisit before investing further in the shell.
 
 **Links:** `PRODUCT.md`, `frontend/`, `.kiro/steering/structure.md`, BL-009.
 
+## DEC-006: Simulator, scenarios and evaluation live in backend/, no new store (2026-10-11)
+
+**Context:** Aidan's WBS deliverables (bounded simulator, synthetic
+incidents, ground truth, evaluation) were first designed as a standalone
+`security_eval/` folder with its own SQLite store, approval table and
+guessed HTTP routes. That folder never reached the repo, `tech.md` forbids
+SQLite, and the backend already owns approvals and action results.
+
+**Options considered:** (1) standalone folder + SQLite (conflicts with
+`tech.md`, duplicates approvals); (2) a Firestore collection for simulator
+state (duplicates `action_results`); (3) a stateless simulator that reads
+the case's stored evidence and action results, plus `backend/scenarios/` and
+`backend/evaluation/` running against the real endpoints - chosen.
+
+**Decision:** Option 3. The simulator catalogue adopts the planner's tool
+names (resolves BL-008). Simulated time = latest evidence + 5 min per
+executed action. A `demo` fault profile injects the CRM-maintenance failure.
+
+**Tradeoff:** The simulator's behaviour depends on stored records (so it is
+only as correct as they are); evaluation tooling imports the test fake
+Firestore. Evaluator answer keys sit in the repo, guarded by a test that
+`app/` never reads them.
+
+**Links:** `backend/app/simulator/`, `backend/scenarios/README.md`,
+`backend/evaluation/SCORING_SHEET.md`.
+
+## DEC-007: Approvals stay bound to the original state version for now (2026-10-12)
+
+**Context:** Executing an approved action rebuilds the incident state, so
+every other approval in the same plan goes stale (execute answers 409
+"re-approval required") and an approved action cannot be decided again:
+only one action per plan can run. Aidan's branch first added re-approval of
+stale approvals bound to the current state version.
+
+**Options considered:** (1) re-approval bound to the current state
+(prototyped in `abab1c4`); (2) only new evidence invalidates approvals;
+(3) keep approvals bound to the action's `based_on_state_version` and
+re-plan after each execution until GAS-lite records state lineage -
+chosen.
+
+**Decision:** Option 3 for PR #9 (Aidan's review, 2026-10-12): the
+re-approval change was reverted; `approval_service.py` matches `main`.
+GAS-lite will add `parent_version`, `change_reason` and `created_from`,
+which are needed to decide which state changes should invalidate an
+approval (BL-024). The evaluation harness re-plans before each further
+approved action.
+
+**Tradeoff:** One planner run per additional action (slower demo, more LLM
+calls in the live evaluation); approved-but-stale actions stay visible as
+`approved` in reports.
+
+**Links:** `backend/app/services/approval_service.py`,
+`backend/evaluation/harness.py`, BL-024.
+
 ## DEC-010: GAS-lite incident-state model (STAIR-inspired) (2026-10-09)
 
 **Context:** The incident state needed to become the complete, versioned
@@ -172,10 +226,10 @@ test-provable. Integration depends on PR #9 (state_manager.py); its
 timezone-aware timeline sorting and simulator-result behaviour must be
 preserved on rebase.
 
-**Numbering note:** DEC-010 (and BL-024) were chosen with a deliberate gap
+**Numbering note:** DEC-010 (and the GAS-lite backlog item) were chosen with a deliberate gap
 to avoid colliding with DEC/BL numbers introduced by PR #9 / PR #10, which
 are not yet in this local tree. Reconcile on next `main` sync.
 
 **Links:** `.kiro/specs/caventas-gas-lite/` (requirements.md, design.md,
 tasks.md); `.kiro/steering/structure.md`, `.kiro/steering/tech.md`;
-DEC-001; BL-024; arXiv 2608.09524.
+DEC-001; BL-030; arXiv 2608.09524.

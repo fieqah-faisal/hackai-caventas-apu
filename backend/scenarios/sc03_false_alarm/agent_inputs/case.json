@@ -1,0 +1,4 @@
+{
+  "title": "SIEM alert: large outbound transfer from FS-01",
+  "description": "Overnight alert: unusual outbound volume from file server FS-01. No user complaints."
+}

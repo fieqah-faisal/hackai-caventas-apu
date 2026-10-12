@@ -1,0 +1,4 @@
+technique_id,technique_name,tactic,status,record_ids,confidence,reasoning,missing_evidence,url
+T1053.005,Scheduled Task/Job: Scheduled Task,"execution, persistence",false_positive,SC3-B1-01,0.9,Created by the IT admin under CHG-2026-118 (benign once verified).,,https://attack.mitre.org/techniques/T1053/005/
+T1048,Exfiltration Over Alternative Protocol,exfiltration,false_positive,SC3-B1-08,0.1,Volume matches the approved migration to the backup provider.,,https://attack.mitre.org/techniques/T1048/
+T1567.002,Exfiltration Over Web Service: Exfiltration to Cloud Storage,exfiltration,false_positive,SC3-B1-05 SC3-B1-08,0.1,Acceptable as a hypothesis at CP1 only; refuted by the change record.,,https://attack.mitre.org/techniques/T1567/002/

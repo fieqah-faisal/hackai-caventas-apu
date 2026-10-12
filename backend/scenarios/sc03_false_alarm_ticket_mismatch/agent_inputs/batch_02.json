@@ -1,0 +1,44 @@
+[
+  {
+    "event_time": "2026-10-07T10:05:00+08:00",
+    "event_type": "change_record",
+    "host": "FS-01",
+    "account": "ravi.adm",
+    "source": "itsm",
+    "note": "CHG-2026-118 approved 3 Oct: migrate the FS-01 Finance-share backup to offsite-vault.example (203.0.113.80), window 7 Oct 01:00-03:00, ~120 GB, job runs as svc_backup. HR share not in scope.",
+    "change_id": "CHG-2026-118",
+    "record_id": "SC3V-B2-01"
+  },
+  {
+    "event_time": "2026-10-07T10:12:00+08:00",
+    "event_type": "analyst_note",
+    "host": "FS-01",
+    "source": "analyst_note",
+    "note": "VaultSync confirms job fs01-nightly received 120 GB by 02:41.",
+    "author": "soc.analyst",
+    "record_id": "SC3V-B2-02"
+  },
+  {
+    "event_time": "2026-10-07T10:16:00+08:00",
+    "event_type": "flow_summary",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "firewall",
+    "dst_ip": "198.51.100.200",
+    "dst_port": 443,
+    "bytes_out": 64424509440,
+    "window": "02:45-03:28",
+    "verdict": "allowed",
+    "first_seen": "true",
+    "record_id": "SC3V-B2-03"
+  },
+  {
+    "event_time": "2026-10-07T10:20:00+08:00",
+    "event_type": "analyst_note",
+    "account": "ravi.adm",
+    "source": "analyst_note",
+    "note": "Ravi: the task should only copy the Finance share. He does not recognise the HR share reads or 198.51.100.200.",
+    "author": "soc.analyst",
+    "record_id": "SC3V-B2-04"
+  }
+]
