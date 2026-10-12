@@ -64,8 +64,13 @@ Known backend gaps are surfaced explicitly rather than faked:
   endpoint).
 - `/execute` renders `execution_status` and `validation_status` separately;
   the UI never calls a non-existent `/validate` endpoint.
-- Historical plan-action detail renders an honest "unavailable" state when the
-  backend exposes only action IDs.
+- `GET /plans` returns only action IDs, so plans are ordered by `created_at`
+  and their actions render as an honest "N actions unavailable" count.
+  Full action detail comes only from the `POST /runs` response; the
+  Approvals queue is "unsupported" in API mode until a stored-action read
+  endpoint exists (BL-013).
+- Audit events map the backend shape (`audit_id`, `event_type`,
+  `timestamp`, `details`); evidence lists in upload order.
 - The Report uses the actual backend report DTO; PDF download is disabled
   because `pdf_path` is not downloadable over the API.
 - Opening the Report tab only reads. A report is generated only when the

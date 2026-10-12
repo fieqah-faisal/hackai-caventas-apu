@@ -6,7 +6,7 @@ audit trail and reports.
 
 Owner: Raaj (Backend, Incident State, Data & Integration).
 
-## Status: Milestone 1 + AI planning working
+## Status: Milestone 1, AI planning and BL-003 working
 
 **Functional now:**
 
@@ -40,16 +40,19 @@ the backend validates every id before persisting. With no
 `OPENCODE_GO_API_KEY` configured it falls back to `FakePlannerAdapter`, so
 the backend works without a key.
 
-**Stubbed for later milestones (return HTTP 501):**
+Approvals, simulated execution and reports (BL-003):
 
-- `POST /cases/{case_id}/actions/{action_id}/decision` — analyst approval
-- `POST /cases/{case_id}/actions/{action_id}/execute` — simulated execution
-- `POST /cases/{case_id}/reports`, `GET .../reports/{report_id}` — reporting
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/cases/{case_id}/actions/{action_id}/decision` | Analyst decision (`approve` / `reject`) |
+| POST | `/cases/{case_id}/actions/{action_id}/execute` | Run an approved action in the bounded simulator |
+| POST | `/cases/{case_id}/reports` | Generate and store a new report version (JSON + PDF) |
+| GET | `/cases/{case_id}/reports/{report_id}` | Retrieve a stored report |
 
-The service/adapter interfaces for these exist (`approval_service`,
-`execution_service`, `reporting`, `simulator_adapter`) with the agreed
-contracts and `Fake*` implementations, so integration can proceed against
-stable shapes.
+Execution goes through `simulator_adapter` (currently
+`FakeSimulatorAdapter`; the real simulator drops in behind the same
+interface). There is no list endpoint for stored actions, execution results
+or reports yet (see BL-013 / BL-025 in `docs/session/Backlog.md`).
 
 ## Architecture
 
@@ -69,7 +72,7 @@ data model):
 app/
   api/        FastAPI routers
   schemas/    Pydantic models (case, evidence, incident_state, plan, report)
-  services/   ingestion, state_manager, audit, planning (+ stubbed approval/execution/reporting)
+  services/   ingestion, state_manager, audit, planning, approval, execution, reporting
   database/   firebase.py (client), repositories.py (all Firestore access)
   ai/         planner_adapter.py (Protocol + fake), langgraph_planner.py (real adapter)
   simulator/  simulator_adapter.py (SimulatorAdapter + FakeSimulatorAdapter)
@@ -104,11 +107,11 @@ cd backend
 Tests use an in-memory fake Firestore (`tests/fake_firestore.py`), so they
 run without the emulator or any credentials. The suite covers the Milestone 1
 endpoints, persistence, state versioning, malformed/unsupported uploads,
-404s, the audit trail, the planner adapter (scripted LLM) and the planning
-endpoints.
+404s, the audit trail, the planner adapter (scripted LLM), the planning
+endpoints, and the approval, execution and reporting endpoints.
 
 ## Next steps (handoff)
 
 1. Smoke-test against the Firestore emulator (tests use a fake only).
-2. Implement approvals → execution (bounded simulator) → reporting in order
-   (the real `PlannerAdapter` is wired — see "AI planning" above).
+2. Add the read endpoints the UI still lacks (BL-013 stored actions /
+   execution results, BL-025 report list).
