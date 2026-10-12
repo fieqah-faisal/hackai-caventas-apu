@@ -50,11 +50,14 @@ Firestore; no credentials needed).
   into execution (DEC-006), synthetic incident package
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
-  unsafe 0/12, fake planner 0/12; **no live-planner results yet** (BL-014).
+  unsafe 0/12, fake planner 0/12; BL-014 full live run passed 2/5 scenarios
+  and 8/12 checkpoints: sc01 FAIL (CP3 `no_collateral_targets`), messy PASS,
+  sc02 PASS, sc03 FAIL (CP1 `no_forbidden_actions`, CP2
+  `no_collateral_targets`), mismatch FAIL (CP1 `no_forbidden_actions`).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **129 passed** after syncing with main.
+  Suite **137 passed** after syncing with main.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).

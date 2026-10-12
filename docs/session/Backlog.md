@@ -11,7 +11,7 @@
 > and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
 > npm-audit item was renumbered BL-024 → BL-030 on this merge, because
 > main's BL-024 is the approval-invalidation item. Next free IDs:
-> **BL-031** and **DEC-012**.
+> **BL-032** and **DEC-012**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
@@ -23,9 +23,6 @@
 
 ### P1
 
-- BL-014 — Run the live evaluation (`python -m evaluation.run_eval
-  --planner live`, needs `OPENCODE_GO_API_KEY`) and commit results. — open
-  / Airil + Aidan
 - BL-015 — Review Aidan's branch changes to backend services (PR #9):
   simulator wiring (default profile `clean`), naive-timestamp crash fix,
   `not_applicable` action status (frontend DTO mapping at integration). —
@@ -73,6 +70,9 @@
 - BL-019 — Refuse execution of actions that cite no evidence. — open / Raaj
 - BL-020 — Mark evidence as untrusted data in planner prompts (sc02
   prompt-injection test). — open / Airil
+- BL-031 — Review live-planner proposals that fail `no_forbidden_actions` or
+  `no_collateral_targets`, and add target-scope / forbidden-action grounding
+  plus regression coverage. — open / Airil + Aidan
 
 ### P3
 
