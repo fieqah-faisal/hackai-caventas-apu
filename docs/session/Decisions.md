@@ -170,3 +170,137 @@ calls in the live evaluation); approved-but-stale actions stay visible as
 
 **Links:** `backend/app/services/approval_service.py`,
 `backend/evaluation/harness.py`, BL-024.
+## DEC-008: API-mode contract mismatches are reconciled in the frontend mapping layer (2026-10-12)
+
+**Context:** The `link` API-mode run against the Firestore emulator showed
+the merged backend and the frontend DTOs disagree in places. The backend
+(BL-003) is merged and other branches are changing its services, and
+submission is three days out.
+
+**Options considered:** (1) change the backend to the shapes the frontend
+assumed: churns merged, tested code and conflicts with the unmerged
+branches; (2) accept both shapes in the frontend: hides the real contract;
+(3) make `dto.ts` mirror exactly what the backend returns and translate in
+`src/lib/mapping`. Option 3 was chosen.
+
+**Decision:** `dto.ts` describes only what the backend actually returns, and
+all vocabulary translation happens in `src/lib/mapping`, pinned by Vitest
+tests built from the real bodies. Audit rows: `audit_id` → `eventId`,
+`event_type` → `AuditKind` (the backend's `evidence_uploaded` is the view
+model's `evidence_ingested`; unknown types → `other`), `timestamp` → `at`,
+`details` → `payload`. Evidence titles come from the normalized
+`event_type` field.
+
+Report action rows carry the action lifecycle `status`, which is never
+printed as a decision. `verified`/`failed` imply an approval, and `failed`
+reads "approved, sent to simulator, not validated effective"; the row
+can't tell an ineffective result from a failed execution.
+
+Data a provider cannot load is marked as such, never returned as an empty
+fact: `PlanVM.actionsUnavailable` carries the real action count when
+`GET /plans` lists only action IDs. Narrative such as a re-plan
+explanation is shown only when the provider supplies it, which today means
+fixture mode; API mode never borrows fixture copy.
+
+List order: real Firestore streams collections in document-ID order
+(random hex), while the test fake keeps insertion order. The frontend
+sorts `GET /plans` by `created_at` before deriving the latest plan or
+1-based plan versions. It compares instants, not strings, because the
+backend mixes `Z`, `+00:00` and local offsets. It also restores evidence
+upload order (`ingestion_time`, then `row`/`line`), which is the order the
+fake returns.
+
+The backend is changed only where its own logic is wrong. The one such
+case is `reporting._latest_plan`, which took `list_plans()[-1]`; it now
+sorts by `created_at` in Python, so the test fake stays compatible.
+`GET /plans` keeps its unordered response.
+`execution_service`'s first-matching-approval lookup is unchanged: an
+action can be decided only once (pinned by `test_decide_twice_conflicts`),
+so at most one approval matches, and the unmerged security-lead branch
+rewrites that lookup.
+
+**Tradeoff:** The view-model names can differ from the backend's (for
+example `evidence_ingested`), so the mapping tests are the only record of
+the correspondence. Any backend rename needs a mapping change and a test.
+
+**Links:** `frontend/src/lib/api/dto.ts`, `frontend/src/lib/mapping/`,
+BL-013, `.agents/tasks/link-e2e-2026-10-09/s2-e2e-findings.md` (local).
+
+## DEC-009: Reports are generated only on an explicit analyst action (2026-10-12)
+
+**Context:** In API mode the Report tab called `POST /cases/{id}/reports`
+on every load, and twice under React StrictMode in dev. Each call stores a
+new report version, renders a PDF into `backend/reports/` and writes a
+`report_generated` audit event, so one S2 case collected 9 reports from tab
+visits alone. The backend has no endpoint to read back the latest report
+without its id.
+
+**Options considered:** (1) keep generate-on-load: floods the audit trail
+and report store with versions nobody asked for; (2) add a list/latest
+report read endpoint: a new backend endpoint, which the brief says must not
+be added silently (logged as BL-025); (3) generate only when the analyst
+clicks Generate / Regenerate, and keep the latest generated report in
+memory for the page session. Option 3 was chosen.
+
+**Decision:** `DataProvider.getReport` only reads and returns
+`ReportVM | null`; `generateReport` is the only call that POSTs. The Report
+tab shows a "No report generated yet" state with a Generate button, and
+shows a report only after the backend confirms it. `RealProvider` keeps the
+newest confirmed report per case in memory, never in `localStorage`.
+Fixture mode is unchanged apart from the Regenerate button. PDF download
+stays disabled.
+
+**Tradeoff:** After a page reload the tab is empty again, and
+regenerating stores another report version. BL-025 tracks a read endpoint
+that would remove this.
+
+**Links:** `frontend/src/features/caseWorkspace/tabs/ReportTab.tsx`,
+`frontend/src/lib/api/realProvider.ts`, BL-025, DEC-008.
+
+## DEC-011: Read-only action and result lists for the API-mode Approvals queue (2026-10-09)
+
+**Context:** In API mode the Approvals tab was "unsupported": only
+`POST /runs` returns full actions, and `GET /plans` lists action IDs. So
+approve, reject and execute could not be reached from the UI, and the S2
+run had to drive them through the proxy. This is after the 8/10 feature
+freeze; submission is 15/10. (DEC-010 is claimed on
+`feat/gas-lite-state-fieqah`, so this record is DEC-011.)
+
+**Options considered:** (1) keep "unsupported" and demo decisions through
+the API: honest, but the central human-in-the-loop step has no UI in API
+mode; (2) have the frontend keep `POST /runs` actions in memory: lost on
+reload, and statuses go stale after a decision; (3) add read-only
+`GET /cases/{id}/actions` and `GET /cases/{id}/action-results` over the
+existing `repositories.list_actions` / `list_action_results`. Option 3 was
+chosen: two small GETs, with no change to the decision or execute paths or
+their preconditions.
+
+**Decision:** Both endpoints return the stored docs as persisted, sorted by
+`created_at` in Python (real Firestore streams in document-ID order; the
+test fake keeps insertion order). They return 404 for an unknown case and
+write nothing, including no audit event. `RealProvider.getApprovals` reads
+the case, `GET /actions` and `GET /plans`.
+
+The queue lists `awaiting_approval`/`recommended` actions, plus `approved`
+actions not yet simulated, so an approved action can still be run after a
+reload or the workspace refresh. Rejected and executed actions are left
+out. Each item takes its stage from its plan; if the plan is missing, the
+read returns "unsupported" rather than guessing a stage.
+
+Two fields are derived. `stalePrewarn` is set when the action's
+`based_on_state_version` is older than the case's `current_state_version`,
+which mirrors the backend execute check; the backend still decides. The
+approver reads "Any analyst (no approver role in backend)".
+`getExecutionResults` maps `GET /action-results`, with execution and
+validation status kept separate.
+
+**Tradeoff:** This adds two endpoints after the freeze, both read-only and
+covered by 7 backend tests. Fixture mode still lists only `proposed`
+actions, so the two modes now differ. Results are not yet shown by any
+component, and Response Plan still shows an action count instead of
+detail (BL-027 follow-ups).
+
+**Links:** `backend/app/api/planning.py`, `backend/app/api/execution.py`,
+`backend/tests/test_read_endpoints.py`,
+`frontend/src/lib/api/realProvider.ts`, `frontend/src/lib/mapping/`,
+BL-027, BL-013, DEC-008.

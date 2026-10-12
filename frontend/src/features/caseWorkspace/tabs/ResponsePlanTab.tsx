@@ -30,17 +30,22 @@ function PlanView({ plans }: { plans: PlanVM[] }) {
   const [planIdx, setPlanIdx] = useState(latest);
   const [stage, setStage] = useState<Stage>(plans[latest].actions[0]?.stage ?? "containment");
   const [detail, setDetail] = useState<ResponsePlanActionVM | null>(null);
-  const [showDiff, setShowDiff] = useState(plans.length > 1);
+
+  // Re-plan copy, diff and "new evidence" badge only when the provider
+  // recorded why the latest version replaced the previous one (the fixture
+  // scenario). The backend stores no re-plan rationale, so API mode shows none.
+  const latestPlan = plans[latest];
+  const replanExplanation = plans.length > 1 ? latestPlan.replanExplanation ?? null : null;
+  const diff = replanExplanation ? computePlanDiff(plans[latest - 1], latestPlan, replanExplanation) : null;
+  const [showDiff, setShowDiff] = useState(diff !== null);
 
   const plan = plans[planIdx];
   const stagesWithActions = useMemo(
     () => STAGE_ORDER.filter((s) => plan.actions.some((a) => a.stage === s)),
     [plan],
   );
-  const effectiveStage = stagesWithActions.includes(stage) ? stage : stagesWithActions[0] ?? stage;
+  const effectiveStage = stagesWithActions.includes(stage) ? stage : stagesWithActions[0] ?? plan.stage;
   const stageActions = plan.actions.filter((a) => a.stage === effectiveStage);
-
-  const diff = plans.length > 1 ? computePlanDiff(plans[plans.length - 2], plans[plans.length - 1]) : null;
 
   return (
     <div className="space-y-4">
@@ -61,7 +66,7 @@ function PlanView({ plans }: { plans: PlanVM[] }) {
               Plan v{pl.version}
             </button>
           ))}
-          {plans.length > 1 && (
+          {diff && (
             <button
               onClick={() => setShowDiff((d) => !d)}
               className={cx("ml-2 inline-flex items-center gap-1 rounded border px-2.5 py-1 text-meta font-medium", showDiff ? "border-accent/40 text-accent" : "border-border-subtle text-text-secondary")}
@@ -70,7 +75,7 @@ function PlanView({ plans }: { plans: PlanVM[] }) {
             </button>
           )}
         </div>
-        {plans.length > 1 && planIdx === plans.length - 1 && (
+        {diff && planIdx === plans.length - 1 && (
           <StatusBadge tone="warning"><Icon name="warning" size={18} className="mr-1" />New evidence received</StatusBadge>
         )}
       </div>
@@ -106,7 +111,13 @@ function PlanView({ plans }: { plans: PlanVM[] }) {
 
       {/* Actions for the selected stage */}
       <div className="rounded-md border border-border-subtle bg-surface overflow-hidden">
-        {stageActions.length === 0 ? (
+        {plan.actionsUnavailable ? (
+          // The plan has actions we cannot load; never present that as "no actions".
+          <p className="px-4 py-6 text-center text-meta text-text-muted">
+            Plan v{plan.version} proposed {plan.actionsUnavailable.count} action{plan.actionsUnavailable.count === 1 ? "" : "s"} ({stageLabel[plan.stage]} stage).{" "}
+            {plan.actionsUnavailable.reason}
+          </p>
+        ) : stageActions.length === 0 ? (
           <p className="px-4 py-6 text-center text-meta text-text-muted">No actions in the {stageLabel[effectiveStage]} stage.</p>
         ) : (
           <ul>

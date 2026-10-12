@@ -1,0 +1,90 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { Outcome } from "@/lib/api/provider";
+import type { ReportVM } from "@/lib/types";
+import { toReportVM } from "@/lib/mapping";
+import { reportBody } from "@/test/realBackendBodies";
+import { WorkspaceContext, type WorkspaceCtx } from "../context";
+
+const provider = vi.hoisted(() => ({
+  getReport: vi.fn(),
+  generateReport: vi.fn(),
+}));
+vi.mock("@/lib/api", () => ({ getProvider: () => provider }));
+
+import { ReportTab } from "./ReportTab";
+
+const ctx: WorkspaceCtx = {
+  caseId: "CASE-TEST0001",
+  header: {
+    caseId: "CASE-TEST0001",
+    title: "Synthetic login anomaly",
+    status: "investigating",
+    severity: null,
+    stage: "containment",
+    recoveryStatus: "investigating",
+    updatedAt: "2026-10-12T02:45:53.508441+00:00",
+    agentState: null,
+  },
+  facts: {
+    evidenceUploaded: true,
+    timelineReconstructed: true,
+    planningRunStarted: true,
+    proposalExists: true,
+    actionAwaitingDecision: true,
+    reportEligible: true,
+  },
+  synthetic: false,
+  refresh: () => {},
+};
+
+function renderTab() {
+  return render(
+    <WorkspaceContext.Provider value={ctx}>
+      <ReportTab />
+    </WorkspaceContext.Provider>,
+  );
+}
+
+const REPORT: ReportVM = toReportVM(reportBody("RPT-000000000001"));
+const okNull: Outcome<ReportVM | null> = { kind: "ok", value: { data: null, source: "real" } };
+
+describe("ReportTab (H4: generate only on explicit action)", () => {
+  beforeEach(() => {
+    provider.getReport.mockReset();
+    provider.generateReport.mockReset();
+  });
+
+  it("loading the tab only reads; it never generates a report", async () => {
+    provider.getReport.mockResolvedValue(okNull);
+    renderTab();
+    expect(await screen.findByText("No report generated yet")).toBeInTheDocument();
+    expect(provider.getReport).toHaveBeenCalledWith("CASE-TEST0001");
+    expect(provider.generateReport).not.toHaveBeenCalled();
+  });
+
+  it("Generate report calls the backend once and shows the confirmed report", async () => {
+    provider.getReport.mockResolvedValueOnce(okNull).mockResolvedValue({ kind: "ok", value: { data: REPORT, source: "real" } });
+    provider.generateReport.mockResolvedValue({ kind: "ok", value: { data: REPORT, source: "real" } });
+    renderTab();
+
+    await userEvent.click(await screen.findByRole("button", { name: /generate report/i }));
+
+    expect(await screen.findByRole("heading", { name: "Synthetic login anomaly" })).toBeInTheDocument();
+    expect(provider.generateReport).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: /pdf \(unavailable\)/i })).toBeDisabled();
+  });
+
+  it("a failed generation shows an error and no report", async () => {
+    provider.getReport.mockResolvedValue(okNull);
+    provider.generateReport.mockResolvedValue({ kind: "http_error", status: 500, detail: "Internal Server Error" });
+    renderTab();
+
+    await userEvent.click(await screen.findByRole("button", { name: /generate report/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Report not generated: Internal Server Error");
+    await waitFor(() => expect(screen.getByText("No report generated yet")).toBeInTheDocument());
+    expect(screen.queryByRole("heading", { name: "Synthetic login anomaly" })).not.toBeInTheDocument();
+  });
+});

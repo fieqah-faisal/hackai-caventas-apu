@@ -3,6 +3,21 @@
 > BL-nnn items. Format: `BL-nnn (P1/P2/P3) — description — status/owner`.
 > Completed items are removed (their history lives in `SessionLog.md`).
 > Protocol: [README.md](README.md).
+>
+> **ID registry (2026-10-12):** PR #9 (security-lead) is merged: BL-014..024
+> and DEC-006/DEC-007 are on `main`. `feat/policy-pack-v1` still claims
+> BL-014..018 and DEC-006 (collides with merged #9).
+> `feat/gas-lite-state-fieqah` claims BL-020 (collides with merged BL-020)
+> and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
+> npm-audit item was renumbered BL-024 → BL-030 on this merge, because
+> main's BL-024 is the approval-invalidation item. Next free IDs:
+> **BL-031** and **DEC-012**.
+> API-mode frontend↔backend gaps are tracked in BL-013.
+>
+> **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
+> (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done
+> (PR #5); BL-008 resolved by PR #9's simulator catalogue (tool names = the
+> guidance allowlist, drift pinned by a test).
 
 ## Open Items
 
@@ -17,13 +32,9 @@
   open / Raaj + Syafieqah
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
-- BL-003 — Approvals → bounded simulated execution → reporting implemented;
-  PR open for review/merge. — in review / Airil
 
 ### P2
 
-- BL-004 — Emulator smoke executed and passing (script + `firebase.py`
-  anonymous-credential fix in PR #7). — in review / Airil
 - BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
   created; if so, obtain the project ID and have the service-account key
   placed at `backend/secrets/serviceAccount.json` (gitignored) to enable an
@@ -42,10 +53,10 @@
   steering's Streamlit note); if ratified, update `.kiro/steering/tech.md`
   + `structure.md` and the proposal §9 row. — open / team
 - BL-013 — API-mode read endpoints the frontend needs: global `GET /cases`
-  (dashboard), `GET /cases/{id}/actions` (stored actions for the approvals
-  queue), plan-detail, execution-results list; align the frontend audit DTO
-  to the real fields (`event_type`/`timestamp`/`audit_id`). — open /
-  Airil + Syafieqah
+  (dashboard) and plan-detail. Stored actions and execution results are
+  split out to BL-027 (on `link`); the audit DTO is aligned on `link`
+  (DEC-008). — open / Airil + Syafieqah
+
 - BL-024 — Decide which state changes invalidate an approval once
   GAS-lite adds `parent_version`, `change_reason` and `created_from`.
   Today one execution strands the plan's other approvals (only one action
@@ -72,6 +83,63 @@
   the build environment), esp. T1213.004. — open / Aidan
 - BL-023 — Decide whether POL-03 gets a record-only `notify_dpo` action
   (guidance + simulator catalogue together). — open / Aida + Aidan
+
+- BL-030 — `npm audit --omit=dev` (2026-10-12): 2 moderate runtime
+  advisories in `react-router` / `react-router-dom` 6.x (GHSA-wrjc-x8rr-h8h6
+  open redirect via backslash in `<Link>`/`useNavigate`; GHSA-337j-9hxr-rhxg
+  SSR hydration, which should not apply to this client-rendered SPA). Fix
+  needs react-router-dom 7.x (breaking); not fixed on `link`. The other 13
+  `npm audit` findings are dev-only tooling. — open / frontend
+- BL-025 — Report read endpoint: `GET /cases/{id}/reports` (list or
+  latest). Without it, the Report tab shows only reports generated in the
+  current page session, and after a reload the analyst must regenerate,
+  which stores a new version (DEC-009). — open / Raaj
+- BL-026 — API-mode UI follow-ups from the `link` emulator run, deferred
+  because each changes what the analyst sees. Do (a) first, because its
+  label is untrue:
+  - (a) Create case: "Analyst note (captured as evidence)" is held in form
+    state only and never sent. Send it as evidence, or change the label.
+  - (b) The Start step shows the file count as "Accepted records".
+  - (c) The dashboard summary cards show a generic "Could not load …"
+    instead of the unsupported reason.
+  - (d) Overview says "start a planning run" when a run exists but wrote
+    no findings.
+  - (e) Evidence categorisation puts nearly every row under Endpoint,
+    because every row has a `host` field.
+  - (f) API mode shows no synthetic flag (`RealProvider.synthetic = false`)
+    although all data is synthetic by rule. This is a product call.
+  - (g) `mapActionState` shows unknown statuses as "proposed"; the
+    security-lead branch's `not_applicable` would be mislabelled after
+    merge. Evidence detail shows a placeholder "State version v0".
+
+  — open / frontend
+- BL-027 — Read-only `GET /cases/{id}/actions` and
+  `GET /cases/{id}/action-results` (DEC-011) for the API-mode Approvals
+  queue. Implemented on `link`, closes on merge to `main`. Follow-ups left
+  open, all UI changes:
+  - (a) after "Run bounded simulation" the workspace refresh remounts the
+    tab and the executed action leaves the queue, so the result card is
+    replaced at once; only the toast shows execution / validation. No
+    component calls `getExecutionResults` yet.
+  - (b) Response Plan still shows "N actions unavailable"; `getPlans` could
+    join `GET /actions`.
+  - (c) by code reading only, not run: fixture mode lists only `proposed`
+    actions, so the same refresh may hide an approved card before it is
+    simulated.
+
+  (a) and (b) were seen again in the S6 live re-walk.
+  — implemented on `link` / Raaj; (a)–(c) open / frontend
+- BL-028 — The Approvals card shows a "Senior approval" badge next to
+  "Approver: Any analyst (no approver role in backend)". The badge comes
+  from a frontend tool-name regex in `toApprovalItemVM`
+  (`isolate|disable|block|revoke|reset`), not from the backend, which
+  enforces no approver role. Make it a hint or drop it in API mode. This
+  changes what the analyst sees. Seen in S6 on `isolate_host`. — open /
+  frontend
+- BL-029 — `pytest` writes uploaded copies into the gitignored
+  `backend/uploads/` (24 files per run, measured in S6), because the
+  evidence tests don't redirect `upload_dir` to `tmp_path` the way the
+  report tests redirect `report_path`. — open / Raaj
 
 ## Deferred
 
