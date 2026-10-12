@@ -135,8 +135,12 @@ all vocabulary translation happens in `src/lib/mapping`, pinned by Vitest
 tests built from the real bodies. Audit rows: `audit_id` → `eventId`,
 `event_type` → `AuditKind` (the backend's `evidence_uploaded` is the view
 model's `evidence_ingested`; unknown types → `other`), `timestamp` → `at`,
-`details` → `payload`. The backend is changed only where its own logic is
-wrong.
+`details` → `payload`. List order: real Firestore streams collections in
+document-ID order (random hex) where the test fake keeps insertion order,
+so the frontend sorts `GET /plans` by `created_at` (compared as instants,
+because the backend mixes `Z`, `+00:00` and local offsets) before deriving
+the latest plan or 1-based plan versions. The backend is changed only where
+its own logic is wrong.
 
 **Tradeoff:** The view-model names can differ from the backend's (for
 example `evidence_ingested`), so the mapping tests are the only record of

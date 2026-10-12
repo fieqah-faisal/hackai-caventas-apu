@@ -84,13 +84,45 @@ export function mapSeverity(raw: string | null | undefined): Severity | null {
   return KNOWN_SEVERITIES.includes(s as Severity) ? (s as Severity) : null;
 }
 
+// ---- Ordering -------------------------------------------------------------
+
+/** [epoch ms, microseconds within that ms] for an ISO string, or null. */
+function isoInstant(s: string): [number, number] | null {
+  const ms = Date.parse(s);
+  if (Number.isNaN(ms)) return null;
+  // Date.parse truncates to milliseconds; keep digits 4-6 of the fraction.
+  const frac = /T\d{2}:\d{2}:\d{2}\.(\d+)/.exec(s)?.[1] ?? "";
+  return [ms, Number((frac + "000000").slice(3, 6))];
+}
+
+/**
+ * Compare two ISO-8601 instants. The backend mixes `Z`, `+00:00` and local
+ * offsets and keeps microseconds, so instants are compared, not strings.
+ * Unparsable values fall back to comparing the raw strings.
+ */
+export function compareIsoInstants(a: string, b: string): number {
+  const ia = isoInstant(a);
+  const ib = isoInstant(b);
+  if (ia && ib) return ia[0] - ib[0] || ia[1] - ib[1];
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
+ * Plans oldest first by `created_at`. Real Firestore streams GET /plans in
+ * document-ID order (random hex), not creation order, so the list must be
+ * sorted before "latest" or 1-based version numbers are derived from it.
+ */
+export function sortPlansOldestFirst<T extends { created_at: string }>(plans: T[]): T[] {
+  return [...plans].sort((a, b) => compareIsoInstants(a.created_at, b.created_at));
+}
+
 // ---- Stage ----------------------------------------------------------------
 
-/** Derive the current stage from the latest plan; null when no plan exists. */
+/** Derive the current stage from the newest plan; null when no plan exists. */
 export function stageFromPlans(plans: PlanDocDTO[]): Stage | null {
   if (plans.length === 0) return null;
-  const latest = plans[plans.length - 1];
-  return latest.stage;
+  const sorted = sortPlansOldestFirst(plans);
+  return sorted[sorted.length - 1].stage;
 }
 
 // ---- Recovery -------------------------------------------------------------

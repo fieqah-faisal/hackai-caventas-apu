@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { apiGet } from "./apiClient";
 import { RealProvider } from "./realProvider";
 import type { AuditEventDTO, DecisionResponseDTO, StoredActionDTO } from "./dto";
+import { PLANS_IN_DOC_ID_ORDER } from "@/test/realBackendBodies";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -228,5 +229,70 @@ describe("RealProvider contract (real backend bodies)", () => {
     );
     expect(out.kind).toBe("unsupported");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // ---- Plan order: GET /plans comes back in Firestore document-ID order ----
+
+  /** Respond per "METHOD /api/path"; unknown routes are a test failure (404). */
+  function routeFetch(routes: Record<string, { status: number; body: unknown }>) {
+    return vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+      const key = `${init?.method ?? "GET"} ${url}`;
+      const hit = routes[key] ?? { status: 404, body: { detail: `unrouted ${key}` } };
+      return {
+        ok: hit.status >= 200 && hit.status < 300,
+        status: hit.status,
+        statusText: `HTTP ${hit.status}`,
+        json: async () => hit.body,
+        text: async () => JSON.stringify(hit.body),
+      } as unknown as Response;
+    });
+  }
+
+  it("getPlans numbers versions by created_at, not by the backend list order", async () => {
+    globalThis.fetch = mockFetch(200, PLANS_IN_DOC_ID_ORDER);
+    const out = await new RealProvider().getPlans("CASE-TEST0001");
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data.map((p) => [p.version, p.planId, p.stage])).toEqual([
+      [1, "PLAN-f10000000001", "assessment"],
+      [2, "PLAN-730000000002", "containment"],
+      [3, "PLAN-4e0000000003", "eradication"],
+    ]);
+  });
+
+  it("getPlanRefs uses the same created_at ordinals", async () => {
+    globalThis.fetch = mockFetch(200, PLANS_IN_DOC_ID_ORDER);
+    const out = await new RealProvider().getPlanRefs("CASE-TEST0001");
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data.map((r) => [r.version, r.planId])).toEqual([
+      [1, "PLAN-f10000000001"],
+      [2, "PLAN-730000000002"],
+      [3, "PLAN-4e0000000003"],
+    ]);
+  });
+
+  it("getCaseHeader takes the stage from the newest plan", async () => {
+    globalThis.fetch = routeFetch({
+      "GET /api/cases/CASE-TEST0001": {
+        status: 200,
+        body: {
+          case_id: "CASE-TEST0001",
+          title: "Synthetic login anomaly",
+          description: "",
+          status: "investigating",
+          current_state_version: 2,
+          created_at: "2026-10-12T02:43:36.585974Z",
+          updated_at: "2026-10-12T10:43:36.733154+08:00",
+        },
+      },
+      "GET /api/cases/CASE-TEST0001/state": { status: 404, body: { detail: "no incident state" } },
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: PLANS_IN_DOC_ID_ORDER },
+    });
+    const out = await new RealProvider().getCaseHeader("CASE-TEST0001");
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data.stage).toBe("eradication");
+    expect(out.value.data.agentState).toBe("Plan v3 ready");
   });
 });

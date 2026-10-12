@@ -5,7 +5,15 @@
  */
 import { describe, it, expect } from "vitest";
 import type { AuditEventDTO } from "../api/dto";
-import { auditSummary, mapAuditKind, toAuditEventVM } from "./index";
+import { PLANS_IN_DOC_ID_ORDER } from "@/test/realBackendBodies";
+import {
+  auditSummary,
+  compareIsoInstants,
+  mapAuditKind,
+  sortPlansOldestFirst,
+  stageFromPlans,
+  toAuditEventVM,
+} from "./index";
 
 // Real GET /cases/{id}/audit rows: {audit_id, case_id, event_type, details, timestamp}.
 const AUDIT_ROWS: AuditEventDTO[] = [
@@ -117,5 +125,32 @@ describe("audit mapping (real backend shape)", () => {
 
   it("summarises an unknown event type by its own name only", () => {
     expect(auditSummary("policy_checked", { secret_path: "/srv/x" })).toBe("policy checked");
+  });
+});
+
+describe("plan ordering (real Firestore streams in document-ID order)", () => {
+  it("compares the mixed timestamp formats the backend emits by instant", () => {
+    // Same instant written three ways: Pydantic `Z`, isoformat `+00:00`, local `+08:00`.
+    expect(compareIsoInstants("2026-10-12T02:45:53.458164Z", "2026-10-12T02:45:53.458164+00:00")).toBe(0);
+    expect(compareIsoInstants("2026-10-12T10:45:53.470000+08:00", "2026-10-12T02:45:53.460138+00:00")).toBeGreaterThan(0);
+    expect(compareIsoInstants("2026-10-12T02:45:53.458164Z", "2026-10-12T10:45:53.470000+08:00")).toBeLessThan(0);
+    // Same millisecond: microseconds still order, across offsets too.
+    expect(compareIsoInstants("2026-10-12T02:45:53.467100+00:00", "2026-10-12T02:45:53.467460+00:00")).toBeLessThan(0);
+    expect(compareIsoInstants("2026-10-12T10:45:53.467900+08:00", "2026-10-12T02:45:53.467100Z")).toBeGreaterThan(0);
+    // isoformat() drops the fraction when microsecond == 0.
+    expect(compareIsoInstants("2026-10-12T02:45:53+00:00", "2026-10-12T02:45:53.000001+00:00")).toBeLessThan(0);
+  });
+
+  it("sorts plans oldest first by created_at without mutating the input", () => {
+    const input = [...PLANS_IN_DOC_ID_ORDER];
+    const sorted = sortPlansOldestFirst(input);
+    expect(sorted.map((p) => p.plan_id)).toEqual(["PLAN-f10000000001", "PLAN-730000000002", "PLAN-4e0000000003"]);
+    expect(input.map((p) => p.plan_id)).toEqual(PLANS_IN_DOC_ID_ORDER.map((p) => p.plan_id));
+  });
+
+  it("takes the stage from the newest plan, whatever the list order", () => {
+    expect(stageFromPlans(PLANS_IN_DOC_ID_ORDER)).toBe("eradication");
+    expect(stageFromPlans([...PLANS_IN_DOC_ID_ORDER].reverse())).toBe("eradication");
+    expect(stageFromPlans([])).toBeNull();
   });
 });

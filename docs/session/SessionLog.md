@@ -8,9 +8,10 @@
 - Scope: fix the mismatches the S2 emulator run exposed, frontend mapping layer first (findings: `.agents/tasks/link-e2e-2026-10-09/s2-e2e-findings.md`, local). H0 (emulator credentials) needs no change: PR #7's anonymous-credential path is already on `link`.
 - Audit (H1): `AuditEventDTO` is now the real `{audit_id, case_id, event_type, details, timestamp}`. The new `toAuditEventVM` maps `event_type` → `AuditKind` (`evidence_uploaded` → `evidence_ingested`, unknown → `other`), `timestamp` → `at` and `details` → `payload`; summaries never include server paths. `RealProvider.getAudit` no longer throws on the real body (live probe on `CASE-DAD8F8C3`: 21 events mapped). Decision: DEC-008.
 - Decision enum (H2): no mismatch. The UI sends `approve`/`reject`, matching the backend `Decision` enum. Pinned by contract tests: the exact request body, a 409 is shown as an error, and request-more-investigation never reaches the backend. The request body is now typed as `DecisionRequestDTO`, and `ApprovalRecordDTO.decision` is the stored past tense (`approved`/`rejected`).
-- Commits on `link`: `91b3717` (audit).
-- Tests: `cd frontend && npm run build && npm run test` → build green, **37 passed** (7 files; +14 audit/decision tests). `cd backend && ../.venv/bin/python -m pytest -q` → 44 passed (backend untouched).
-- Next: plan order (H3), report generation (H4) and the API-mode honesty fixes.
+- Plan order (H3, frontend): `RealProvider` now sorts `GET /plans` by `created_at` (`sortPlansOldestFirst`, compared as instants) before numbering versions or taking the header stage. Live probe: v1..v3 now follow creation order (S2 showed v3 as the oldest plan).
+- Commits on `link`: `91b3717` (audit), `5aa1b09` (decision pin).
+- Tests: `cd frontend && npm run build && npm run test` → build green, **43 passed** (7 files; +20 audit/decision/plan-order tests). `cd backend && ../.venv/bin/python -m pytest -q` → 44 passed (backend untouched).
+- Next: backend report `_latest_plan` order (H3), report generation (H4) and the API-mode honesty fixes.
 
 ### 2026-10-12 `link` API-mode end-to-end run on the Firestore emulator (IN PROGRESS)
 

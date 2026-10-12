@@ -29,6 +29,7 @@ import {
   mapActionState,
   mapRisk,
   recoveryFromState,
+  sortPlansOldestFirst,
   stageFromPlans,
   toAuditEventVM,
   toEvidenceItemVM,
@@ -117,7 +118,7 @@ export class RealProvider implements DataProvider {
   }
   private async loadPlans(caseId: string): Promise<PlanDocDTO[]> {
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
-    return r.kind === "ok" ? r.data : [];
+    return r.kind === "ok" ? sortPlansOldestFirst(r.data) : [];
   }
 
   async getCaseHeader(caseId: string): Promise<Outcome<CaseHeaderVM>> {
@@ -199,7 +200,8 @@ export class RealProvider implements DataProvider {
     // endpoint that does not exist, so plan ACTIONS are unavailable here.
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
     if (r.kind !== "ok") return fromApi<PlanVM[]>(r as ApiResult<never>, "real");
-    const vms: PlanVM[] = r.data.map((p, idx) => ({
+    // Version numbers are ordinals by created_at (the backend list is unordered).
+    const vms: PlanVM[] = sortPlansOldestFirst(r.data).map((p, idx) => ({
       planId: p.plan_id,
       version: idx + 1,
       basedOnStateVersion: p.based_on_state_version,
@@ -215,7 +217,7 @@ export class RealProvider implements DataProvider {
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
     if (r.kind !== "ok") return fromApi<PlanRef[]>(r as ApiResult<never>, "real");
     return ok(
-      r.data.map((p, idx) => ({ planId: p.plan_id, version: idx + 1, stage: p.stage, createdAt: p.created_at, actionCount: p.action_ids.length })),
+      sortPlansOldestFirst(r.data).map((p, idx) => ({ planId: p.plan_id, version: idx + 1, stage: p.stage, createdAt: p.created_at, actionCount: p.action_ids.length })),
       "real",
     );
   }
