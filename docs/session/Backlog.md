@@ -3,6 +3,13 @@
 > BL-nnn items. Format: `BL-nnn (P1/P2/P3) — description — status/owner`.
 > Completed items are removed (their history lives in `SessionLog.md`).
 > Protocol: [README.md](README.md).
+>
+> **ID registry (2026-10-12):** BL-014..BL-023 and DEC-006/DEC-007 are
+> claimed on unmerged branches `feat/policy-pack-v1` (BL-014..018, DEC-006)
+> and `security-scenario-simulation-evaluation-lead` (BL-014..023, DEC-006,
+> DEC-007); the two branches collide with each other. BL-024 is used on
+> `link`; next free IDs: **BL-025** and **DEC-008**. API-mode
+> frontend↔backend gaps are tracked in BL-013.
 
 ## Open Items
 
@@ -10,13 +17,9 @@
 
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
-- BL-003 — Approvals → bounded simulated execution → reporting implemented;
-  PR open for review/merge. — in review / Airil
 
 ### P2
 
-- BL-004 — Emulator smoke executed and passing (script + `firebase.py`
-  anonymous-credential fix in PR #7). — in review / Airil
 - BL-008 — Sync the planner's proposed action vocabulary with Aidan's
   approved simulator catalogue (defer to system integration, 6–8 Oct). —
   open / Airil + Aidan
@@ -45,7 +48,12 @@
 
 ### P3
 
-- (none open)
+- BL-024 — `npm audit --omit=dev` (2026-10-12): 2 moderate runtime
+  advisories in `react-router` / `react-router-dom` 6.x (GHSA-wrjc-x8rr-h8h6
+  open redirect via backslash in `<Link>`/`useNavigate`; GHSA-337j-9hxr-rhxg
+  SSR hydration, which should not apply to this client-rendered SPA). Fix
+  needs react-router-dom 7.x (breaking); not fixed on `link`. The other 13
+  `npm audit` findings are dev-only tooling. — open / frontend
 
 ## Deferred
 

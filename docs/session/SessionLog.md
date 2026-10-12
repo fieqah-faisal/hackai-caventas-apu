@@ -3,6 +3,39 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 `link` preflight baseline + notebook reconcile (IN PROGRESS)
+
+- Branch `link`: created 2026-10-09 by the orchestrator off `main`@`3a6a323`
+  (the orchestrator also installed Node v26.11.0 / npm 11.20.0 via Homebrew,
+  `/opt/homebrew/bin`), then fast-forwarded to `origin/main`@`3cecd3e`
+  (PR #7); local `main` untouched, nothing pushed. Backend deps installed
+  into `.venv` (Python 3.12.7). S1 commit: pending (recorded by follow-up).
+- Tests: `cd backend && ../.venv/bin/python -m pytest -q` → 43 passed
+  @`3a6a323`, **44 passed** @`3cecd3e`. `cd frontend && npm ci && npm run
+  build && npm run test` → build green, **23 passed** (6 files) at both;
+  lockfile unchanged. `npm audit`: 15 findings, 2 runtime → BL-024 (P3).
+- Notebook fixes (code wins) in `docs/session/{SessionLog,SessionContext,
+  Backlog}.md`: BL-003 (PR #6 `b93fa6c`) and BL-004 (PR #7) are merged →
+  removed from Backlog; SessionContext BL-003 / frontend / services lines
+  corrected; ID registry line added under the Backlog header (BL-014..023 +
+  DEC-006/007 claimed on unmerged branches; next free BL-025 / DEC-008;
+  API-mode gaps stay in BL-013).
+- Noted, not edited (append-only / other owners): the 2026-10-07 entry sits
+  above three 2026-10-08 entries and ends with a stray `t.`; "PR #8 merged"
+  is dated 2026-10-08 but `3a6a323` is 2026-10-09; the frontend "BL-009"
+  label collides with Backlog BL-009 (tracked in BL-011).
+- Duplicate-work check (report only, nothing merged):
+  `security-scenario-simulation-evaluation-lead` changes
+  `approval_service.py` (stale re-approval), `execution_service.py` (bounded
+  simulator, `not_applicable` status, extra result fields) and
+  `state_manager.py` (naive/aware timestamp fix); `feat/policy-pack-v1`
+  touches only `guidance.json`. Neither touches `app/api/`,
+  `repositories.py`, `audit_service.py`, `reporting.py` or
+  `frontend/src/lib/{api,mapping}/`, so `link` keeps backend changes additive.
+- Overrides to the original brief for S2–S6 (dates, IDs, emulator, BL-004,
+  BL-013, scope): `.agents/tasks/link-e2e-2026-10-09/s1-report.md` (local,
+  untracked). Next: S2 API-mode end-to-end run on the Firestore emulator.
+
 ### 2026-10-08 PR #8 (frontend) merged; PR #7 synced (DONE)
 
 - PR #8 merged (`3a6a323`): React/Vite frontend — dashboard, create-case

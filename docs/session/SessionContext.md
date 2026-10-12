@@ -33,10 +33,12 @@ Firestore; no credentials needed).
 - Planning implemented and merged (BL-002, PR #3): real LangGraph adapter
   + `/runs` + `/plans` endpoints, guidance fixture, 24 tests passing on
   `main`.
-- Approval → simulated execution → reporting implemented (BL-003, PR open):
-  decision binding + security preconditions + outcome→state rebuild +
-  v1.2 report JSON/PDF; suite now **43 passed**. Tool catalogue still
-  provisional (BL-008); fake adapters remain the fallback without a key.
+- Approval → simulated execution → reporting merged (BL-003, PR #6
+  `b93fa6c`): decision binding + security preconditions + outcome→state
+  rebuild + v1.2 report JSON/PDF; suite **44 passed** on `main`@`3cecd3e`.
+  Tool catalogue still provisional (BL-008). Without a key the planner
+  falls back to the fake adapter; the simulator on `main` is still the fake
+  (bounded simulator pending on `security-scenario-simulation-evaluation-lead`).
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).
@@ -47,17 +49,19 @@ Firestore; no credentials needed).
   SHA-256 recorded in Firestore.
 - Code-review graph built (148 nodes / 658 edges); local data in
   `.code-review-graph/` (gitignored).
-- Frontend (BL-009): analyst workspace scaffolded under `frontend/`
-  (React + Vite + Tailwind, DEC-005) — dashboard shell + 5 regions on
-  synthetic data; `npm run build` green. Approvals/activity not yet wired to
-  live endpoints (BL-003). Product record + palette in root `PRODUCT.md`.
+- Frontend (BL-009): analyst workspace under `frontend/` (React + Vite +
+  Tailwind, DEC-005), merged in PR #8 (`3a6a323`): dashboard, create-case
+  flow, 7-tab case workspace, fixture|api data providers (`VITE_DATA_MODE`);
+  `npm run build` + `npm run test` (23 passed) green. API-mode wiring gaps
+  vs the live backend: BL-013 (being verified on `link`). Product record +
+  palette in root `PRODUCT.md`.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture
 
 - `backend/app/api/` — FastAPI routers
-- `backend/app/services/` — ingestion, state_manager, audit; approval /
-  execution / reporting stubs
+- `backend/app/services/` — ingestion, state_manager, planning_service,
+  approval_service, execution_service, audit_service, reporting
 - `backend/app/database/` — Firestore client + repositories
 - `backend/app/ai/planner_adapter.py` — AI boundary (LangGraph + DeepSeek
   V4.1 Flash)
