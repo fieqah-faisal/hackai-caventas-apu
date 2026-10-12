@@ -57,7 +57,7 @@ Firestore; no credentials needed).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **129 passed** after syncing with main.
+  Suite **137 passed** after syncing with main.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).
