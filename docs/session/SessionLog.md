@@ -3,6 +3,13 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 `link` S3 contract fixes from the API-mode run (IN PROGRESS)
+
+- Scope: fix the mismatches the S2 emulator run exposed, frontend mapping layer first (findings: `.agents/tasks/link-e2e-2026-10-09/s2-e2e-findings.md`, local). H0 (emulator credentials) needs no change: PR #7's anonymous-credential path is already on `link`.
+- Audit (H1): `AuditEventDTO` is now the real `{audit_id, case_id, event_type, details, timestamp}`. The new `toAuditEventVM` maps `event_type` → `AuditKind` (`evidence_uploaded` → `evidence_ingested`, unknown → `other`), `timestamp` → `at` and `details` → `payload`; summaries never include server paths. `RealProvider.getAudit` no longer throws on the real body (live probe on `CASE-DAD8F8C3`: 21 events mapped). Decision: DEC-008.
+- Tests: `cd frontend && npm run build && npm run test` → build green, **33 passed** (7 files; +10 audit mapping/contract tests). `cd backend && ../.venv/bin/python -m pytest -q` → 44 passed (backend untouched).
+- Next: pin the approve/reject decision contract (H2), then plan order (H3), report generation (H4) and the API-mode honesty fixes.
+
 ### 2026-10-12 `link` API-mode end-to-end run on the Firestore emulator (IN PROGRESS)
 
 - Ran the emulator (firebase-tools 15.33.0 via npx, `--project ir-planner-dev`, JDK `openjdk@21`), uvicorn :8000 (`FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`, fake planner and fake simulator, no key) and `VITE_DATA_MODE=api npm run dev` :5173. Drove the UI with Playwright 1.64.0 from `/tmp`, outside the repo: created a case, uploaded `login_logs.csv` + `planner_smoke_evidence.json` (10 records), ran planning, and walked all 7 tabs twice. Approve, reject and execute were driven through the `/api` proxy, because the UI can't reach them in API mode.

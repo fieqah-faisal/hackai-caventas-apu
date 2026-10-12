@@ -116,3 +116,31 @@ veto in PRODUCT.md `## Stack`); adds a Node/npm toolchain alongside the
 Python backend. If vetoed, revisit before investing further in the shell.
 
 **Links:** `PRODUCT.md`, `frontend/`, `.kiro/steering/structure.md`, BL-009.
+
+## DEC-008: API-mode contract mismatches are reconciled in the frontend mapping layer (2026-10-12)
+
+**Context:** The `link` API-mode run against the Firestore emulator showed
+the merged backend and the frontend DTOs disagree in places. The backend
+(BL-003) is merged and other branches are changing its services, and
+submission is three days out.
+
+**Options considered:** (1) change the backend to the shapes the frontend
+assumed: churns merged, tested code and conflicts with the unmerged
+branches; (2) accept both shapes in the frontend: hides the real contract;
+(3) make `dto.ts` mirror exactly what the backend returns and translate in
+`src/lib/mapping`. Option 3 was chosen.
+
+**Decision:** `dto.ts` describes only what the backend actually returns, and
+all vocabulary translation happens in `src/lib/mapping`, pinned by Vitest
+tests built from the real bodies. Audit rows: `audit_id` → `eventId`,
+`event_type` → `AuditKind` (the backend's `evidence_uploaded` is the view
+model's `evidence_ingested`; unknown types → `other`), `timestamp` → `at`,
+`details` → `payload`. The backend is changed only where its own logic is
+wrong.
+
+**Tradeoff:** The view-model names can differ from the backend's (for
+example `evidence_ingested`), so the mapping tests are the only record of
+the correspondence. Any backend rename needs a mapping change and a test.
+
+**Links:** `frontend/src/lib/api/dto.ts`, `frontend/src/lib/mapping/`,
+BL-013, `.agents/tasks/link-e2e-2026-10-09/s2-e2e-findings.md` (local).

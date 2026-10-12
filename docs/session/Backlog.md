@@ -7,9 +7,10 @@
 > **ID registry (2026-10-12):** BL-014..BL-023 and DEC-006/DEC-007 are
 > claimed on unmerged branches `feat/policy-pack-v1` (BL-014..018, DEC-006)
 > and `security-scenario-simulation-evaluation-lead` (BL-014..023, DEC-006,
-> DEC-007); the two branches collide with each other. BL-024 is used on
-> `link`; next free IDs: **BL-025** and **DEC-008**. API-mode
-> frontend↔backend gaps are tracked in BL-013.
+> DEC-007); the two branches collide with each other.
+> `feat/gas-lite-state-fieqah` claims BL-020 and DEC-010. BL-024 and
+> DEC-008 are used on `link`; next free IDs: **BL-025** and **DEC-009**.
+> API-mode frontend↔backend gaps are tracked in BL-013.
 
 ## Open Items
 

@@ -30,6 +30,7 @@ import {
   mapRisk,
   recoveryFromState,
   stageFromPlans,
+  toAuditEventVM,
   toEvidenceItemVM,
   toReportVM,
   toResponsePlanActionVM,
@@ -52,7 +53,6 @@ import type {
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
-  AuditKind,
   CaseActivityVM,
   CaseFacts,
   CaseHeaderVM,
@@ -249,14 +249,8 @@ export class RealProvider implements DataProvider {
   async getAudit(caseId: string): Promise<Outcome<AuditEventVM[]>> {
     const r = await apiGet<AuditEventDTO[]>(`/cases/${caseId}/audit`);
     if (r.kind !== "ok") return fromApi<AuditEventVM[]>(r as ApiResult<never>, "real");
-    const vms: AuditEventVM[] = r.data.map((e, i) => ({
-      eventId: e.event_id ?? `AE-${i}`,
-      kind: (e.kind as AuditKind) ?? "other",
-      caseId: e.case_id ?? caseId,
-      summary: e.kind.replace(/_/g, " "),
-      at: e.at ?? e.created_at ?? "",
-    }));
-    return ok(vms, "real");
+    // Backend order is kept: audit_service sorts by timestamp, oldest first.
+    return ok(r.data.map((e) => toAuditEventVM(e, caseId)), "real");
   }
 
   async getReport(caseId: string): Promise<Outcome<ReportVM>> {

@@ -319,6 +319,11 @@ export interface AuditEventVM {
   caseId: string;
   summary: string;
   at: string;
+  /**
+   * The backend audit `details`, verbatim (API mode only). It can hold
+   * server-local paths; never render those as links.
+   */
+  payload?: Record<string, unknown>;
 }
 
 // ---- Dashboard aggregate view models --------------------------------------

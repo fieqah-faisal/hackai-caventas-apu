@@ -10,6 +10,7 @@
  */
 import type {
   ActionStatusDTO,
+  AuditEventDTO,
   CaseDTO,
   EvidenceItemDTO,
   IncidentStateDTO,
@@ -20,6 +21,8 @@ import type {
   StructuredReportDTO,
 } from "../api/dto";
 import type {
+  AuditEventVM,
+  AuditKind,
   CaseHeaderVM,
   CaseStatus,
   EntityType,
@@ -315,5 +318,87 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
       total: sections.length,
     },
     pdfAvailable: false,
+  };
+}
+
+// ---- Audit ----------------------------------------------------------------
+
+/**
+ * Backend audit `event_type` -> canonical AuditKind. The backend calls an
+ * evidence upload `evidence_uploaded`; the view model's name for the same
+ * event is `evidence_ingested`. Unknown event types map to "other".
+ */
+export function mapAuditKind(eventType: string): AuditKind {
+  switch (eventType) {
+    case "case_created":
+      return "case_created";
+    case "evidence_uploaded":
+      return "evidence_ingested";
+    case "state_version_created":
+      return "state_version_created";
+    case "plan_created":
+      return "plan_created";
+    case "action_approved":
+      return "action_approved";
+    case "action_rejected":
+      return "action_rejected";
+    case "action_executed":
+      return "action_executed";
+    case "report_generated":
+      return "report_generated";
+    default:
+      return "other";
+  }
+}
+
+/** Detail keys worth summarising per event type. Paths are never listed. */
+function auditSummaryKeys(eventType: string): string[] {
+  switch (eventType) {
+    case "case_created":
+      return ["title"];
+    case "evidence_uploaded":
+      return ["source_file", "item_count"];
+    case "state_version_created":
+      return ["version"];
+    case "plan_created":
+      return ["plan_id", "stage", "action_count"];
+    case "action_approved":
+    case "action_rejected":
+      return ["action_id", "analyst", "reason"];
+    case "action_executed":
+      // Execution and validation stay separate facts.
+      return ["action_id", "execution_status", "validation_status"];
+    case "report_generated":
+      return ["report_id"];
+    default:
+      return [];
+  }
+}
+
+/** One-line summary built only from the recorded event type and details. */
+export function auditSummary(eventType: string, details: Record<string, unknown>): string {
+  const label = eventType ? eventType.replace(/_/g, " ") : "audit event";
+  const parts = auditSummaryKeys(eventType).flatMap((key) => {
+    const v = details[key];
+    const text = typeof v === "number" ? String(v) : typeof v === "string" ? v : "";
+    return text ? [`${key.replace(/_/g, " ")}: ${text}`] : [];
+  });
+  return parts.length ? `${label} — ${parts.join(", ")}` : label;
+}
+
+/**
+ * Map one real audit row ({audit_id, case_id, event_type, details,
+ * timestamp}) into the view model: audit_id -> eventId, event_type -> kind,
+ * timestamp -> at, details -> payload.
+ */
+export function toAuditEventVM(dto: AuditEventDTO, fallbackCaseId: string): AuditEventVM {
+  const details = dto.details ?? {};
+  return {
+    eventId: dto.audit_id,
+    kind: mapAuditKind(dto.event_type),
+    caseId: dto.case_id || fallbackCaseId,
+    summary: auditSummary(dto.event_type, details),
+    at: dto.timestamp,
+    payload: details,
   };
 }
