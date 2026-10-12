@@ -326,3 +326,31 @@ notified within 24 h (fictional internal policy, stricter than PDPA's
 are built.
 
 **Links:** `backend/fixtures/guidance.json`; BL-032–BL-036.
+
+## DEC-013: Stage-scoped guidance retrieval and policy-ref validation (2026-10-13)
+
+**Context:** The planner received the complete guidance fixture (19 rules
+since the v1.0 pack), although the proposal specifies a Retrieve stage that
+selects organization-approved guidance relevant to the response focus and
+current incident conditions (pp. 12/26/33/42). The response stage is produced
+inside the adapter by the analyze step, so selection cannot happen in
+`planning_service` before `generate_plan`.
+
+**Options considered:** (1) pre-filter in `planning_service` on incident
+signals without the stage; (2) a deterministic `retrieve` node between
+`analyze` and `propose`; (3) an extra LLM call to rank rules. (2) chosen:
+stage-aware, deterministic, no added model cost.
+
+**Decision:** `select_guidance()` keeps rules whose `phase` matches the
+selected stage plus empty-phase (always-on) rules, and narrows
+`stage_guidance` to that stage; tools and assets stay complete. Returned
+`policy_refs` are filtered to the selected rule ids in the adapter, and
+`planning_service` drops any ref not present in the pack (covers any adapter;
+the POL-99 case). Trigger-based condition matching is deferred: not
+derivable from the current `IncidentState` schema.
+
+**Tradeoff:** stage-pure filtering hides assessment-phase rules (e.g. POL-03
+DPO notification) from containment-stage prompts; revisit if live runs show
+missed notifications.
+
+**Links:** `backend/app/ai/langgraph_planner.py`, `backend/app/services/planning_service.py`, BL-037, BL-034, BL-038.

@@ -3,6 +3,24 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 BL-037 + BL-034: stage-scoped guidance retrieval (DONE)
+
+- Added `select_guidance()` and a deterministic `retrieve` node between
+  `analyze` and `propose` in `langgraph_planner.py`: rules filtered by the
+  analyzed stage (empty `phase` = always on), `stage_guidance` narrowed to
+  the stage; tools and assets unchanged. The proposal prompt now carries only
+  the selected passages — the post-pack prompt shrinks by roughly half.
+- Returned `policy_refs` are filtered to the selected rule ids in the adapter;
+  `planning_service` additionally drops refs not in the pack at all (BL-034's
+  POL-99 case; covers any adapter). DEC-013. Trigger matching deferred (no
+  trigger fields in `IncidentState`).
+- Registered BL-038 (post-pack `planner_smoke` rerun — live numbers predate
+  the pack) and BL-039 (Aidan: trigger event types + tool gaps). Registry
+  next free: BL-040 / DEC-014.
+- Checks: backend `../.venv/bin/python -m pytest -q` → **140 passed** (the
+  exact number the post-Task-2 run reports; expected 137 + 3 new tests).
+  Live rerun is BL-038. Next: merge this branch; then BL-038.
+
 ### 2026-10-12 README current-state refresh + retrieval gap (DONE)
 
 - Started `docs/readme-status-refresh` from `main`@`bae3f66` after PR #10
