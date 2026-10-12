@@ -38,6 +38,7 @@ import {
 import type {
   AuditEventDTO,
   CaseDTO,
+  DecisionRequestDTO,
   DecisionResponseDTO,
   EvidenceUploadResultDTO,
   EvidenceItemDTO,
@@ -279,9 +280,11 @@ export class RealProvider implements DataProvider {
         reason: "The backend decision endpoint supports approve/reject only.",
       };
     }
+    // Typed as the backend DecisionRequest so the compiler pins the enum.
+    const body: DecisionRequestDTO = { decision, analyst, reason };
     const r = await apiPost<DecisionResponseDTO>(
       `/cases/${caseId}/actions/${actionId}/decision`,
-      { decision, analyst, reason },
+      body,
     );
     if (r.kind !== "ok") return fromApi<{ state: string }>(r as ApiResult<never>, "real");
     return ok({ state: mapActionState(r.data.action.status) }, "real");

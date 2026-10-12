@@ -204,7 +204,11 @@ export interface ApprovalRecordDTO {
   action_id: string;
   action_version: number;
   state_version: number;
-  decision: string;
+  /**
+   * Stored in the past tense. The request enum is imperative
+   * (DecisionDTO: approve/reject); "approved"/"rejected" in a REQUEST is a 422.
+   */
+  decision: "approved" | "rejected";
   analyst: string;
   reason: string;
   created_at: string;

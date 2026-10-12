@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { apiGet } from "./apiClient";
 import { RealProvider } from "./realProvider";
-import type { AuditEventDTO } from "./dto";
+import type { AuditEventDTO, DecisionResponseDTO, StoredActionDTO } from "./dto";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -136,5 +136,97 @@ describe("RealProvider contract (real backend bodies)", () => {
     globalThis.fetch = mockFetch(404, { detail: "case not found: CASE-NOPE" });
     const out = await new RealProvider().getAudit("CASE-NOPE");
     expect(out).toEqual({ kind: "http_error", status: 404, detail: "case not found: CASE-NOPE" });
+  });
+
+  // ---- Decision contract: backend DecisionRequest enum is approve|reject ----
+
+  function storedAction(status: StoredActionDTO["status"]): StoredActionDTO {
+    return {
+      action_id: "ACT-000000000001",
+      case_id: "CASE-TEST0001",
+      plan_id: "PLAN-000000000001",
+      version: 1,
+      based_on_state_version: 2,
+      proposal: {
+        tool_name: "isolate_host",
+        target_id: "HOST::SYNTH-LT-01",
+        evidence_ids: ["EV-000000000001"],
+        policy_refs: [],
+        rationale: "Host shows suspicious activity in current state.",
+        prerequisites: [],
+        risk: "Temporary workstation connectivity loss.",
+        expected_effect: "Prevent further outbound communication.",
+        validation_checks: ["Verify suspicious outbound traffic stops."],
+      },
+      status,
+      decided_by: "Analyst A",
+      decided_at: "2026-10-12T02:45:53.479117+00:00",
+      reason: "",
+      created_at: "2026-10-12T02:45:53.458164Z",
+    };
+  }
+
+  function decisionResponse(decision: "approved" | "rejected"): DecisionResponseDTO {
+    return {
+      action: storedAction(decision),
+      approval: {
+        approval_id: "APV-000000000001",
+        case_id: "CASE-TEST0001",
+        action_id: "ACT-000000000001",
+        action_version: 1,
+        state_version: 2,
+        decision,
+        analyst: "Analyst A",
+        reason: "",
+        created_at: "2026-10-12T02:45:53.480823Z",
+      },
+    };
+  }
+
+  function sentBody(fetchMock: ReturnType<typeof vi.fn>): unknown {
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    return JSON.parse(String(init.body));
+  }
+
+  it("submitDecision sends decision 'approve' (not 'approved') to the decision endpoint", async () => {
+    const fetchMock = mockFetch(200, decisionResponse("approved"));
+    globalThis.fetch = fetchMock;
+
+    const out = await new RealProvider().submitDecision("CASE-TEST0001", "ACT-000000000001", "approve", "Analyst A", "");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/cases/CASE-TEST0001/actions/ACT-000000000001/decision");
+    expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("POST");
+    expect(sentBody(fetchMock)).toEqual({ decision: "approve", analyst: "Analyst A", reason: "" });
+    // The returned action status (not the request word) drives the state.
+    expect(out).toEqual({ kind: "ok", value: { data: { state: "approved" }, source: "real" } });
+  });
+
+  it("submitDecision sends decision 'reject' with the analyst's reason", async () => {
+    const fetchMock = mockFetch(200, decisionResponse("rejected"));
+    globalThis.fetch = fetchMock;
+
+    const out = await new RealProvider().submitDecision("CASE-TEST0001", "ACT-000000000001", "reject", "Analyst A", "Too disruptive");
+
+    expect(sentBody(fetchMock)).toEqual({ decision: "reject", analyst: "Analyst A", reason: "Too disruptive" });
+    expect(out.kind).toBe("ok");
+    if (out.kind === "ok") expect(out.value.data.state).toBe("superseded");
+  });
+
+  it("submitDecision reports a 409 precondition failure, not success", async () => {
+    globalThis.fetch = mockFetch(409, { detail: "action ACT-000000000001 is already 'approved' and cannot be decided again" });
+    const out = await new RealProvider().submitDecision("CASE-TEST0001", "ACT-000000000001", "approve", "Analyst A", "");
+    expect(out.kind).toBe("http_error");
+    if (out.kind === "http_error") expect(out.status).toBe(409);
+  });
+
+  it("request_more_investigation is unsupported and never reaches the backend", async () => {
+    const fetchMock = mockFetch(200, {});
+    globalThis.fetch = fetchMock;
+    const out = await new RealProvider().submitDecision(
+      "CASE-TEST0001", "ACT-000000000001", "request_more_investigation", "Analyst A", "need more",
+    );
+    expect(out.kind).toBe("unsupported");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
