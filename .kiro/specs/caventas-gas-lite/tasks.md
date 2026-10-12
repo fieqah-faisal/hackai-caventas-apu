@@ -88,6 +88,79 @@ Wave 10 (docs + session records):    8.1  8.2
 }
 ```
 
+## Follow-on (not this slice)`; never executed in Core.
+- **out of scope** — listed only under `## Out of scope`; never executed in Core.
+
+All Core tasks below start unchecked `- [ ]`. Tasks in the Follow-on and Out of scope
+sections are explicitly non-Core and MUST NOT be executed as part of this slice.
+
+## Overview
+
+This plan implements the backend-only GAS-lite Core slice: enriched incident-state
+schemas, a pure `app/services/gas_lite.py` graph-building service (no Firestore I/O, no
+LLM), state_manager integration, two additive state-history endpoints, their tests, and
+documentation updates. The work is test-driven, with each task building only on earlier
+ones. Follow-on and out-of-scope work are listed separately so this slice stays focused
+and backward-compatible.
+
+> **Integration warning / dependency.** PR #9 modifies `app/services/state_manager.py`
+> and must be merged/rebased before the state-manager and execution-flow integration
+> (tasks 4.x and 6.x) are finalized. When integrating GAS-lite, preserve PR #9's
+> timezone-aware timeline sorting and its simulator-result behaviour. Tasks **4.1, 4.2,
+> 4.3 and 6.1** carry this dependency.
+
+## Task Dependency Graph
+
+Ordering of Core leaf sub-tasks (each wave depends on all earlier waves; tasks within a
+wave are independent):
+
+```
+Wave 0 (schema foundation):          1.1  1.2  1.3
+Wave 1 (pure service, no I/O):       2.1
+                                      │
+Wave 2 (service, depends on 2.1):    2.2  2.3  3.1
+                                      │    │
+Wave 3 (service composition):        2.4  2.5  2.6
+                                      │
+Wave 4 (snapshot assembly):          2.7
+                                      │
+Wave 5 (state_manager integration):  4.1  4.2  4.4
+                                      │
+Wave 6 (caller wiring):              4.3
+                                      │
+Wave 7 (API + history tests):        5.1  5.2
+                                      │
+Wave 8 (end-to-end effect flow):     6.1  6.2
+                                      │
+Wave 9 (regression gate):            7.1  7.2
+                                      │
+Wave 10 (docs + session records):    8.1  8.2
+```
+
+- Nested bullet view (dependency chain):
+  - `1.*` schema → everything else
+  - `2.1` entity_id → `2.2`/`2.3` extractors → `2.4` dedupe, `2.5` edges, `2.6` effects → `2.7` build_snapshot
+  - `3.1` repository `list_state_versions` (independent, needed by wave 7)
+  - `2.7` + `3.1` → `4.*` state_manager → `5.*` API → `6.*` e2e → `7.*` regression gate → `8.*` docs
+
+```json
+{
+  "waves": [
+    { "id": 0, "tasks": ["1.1", "1.2", "1.3"] },
+    { "id": 1, "tasks": ["2.1", "2.1a"] },
+    { "id": 2, "tasks": ["2.2", "2.2a", "2.3", "2.3a", "3.1"] },
+    { "id": 3, "tasks": ["2.4", "2.4a", "2.5", "2.5a", "2.6", "2.6a"] },
+    { "id": 4, "tasks": ["2.7", "2.7a"] },
+    { "id": 5, "tasks": ["4.1", "4.2", "4.4"] },
+    { "id": 6, "tasks": ["4.3"] },
+    { "id": 7, "tasks": ["5.1", "5.2"] },
+    { "id": 8, "tasks": ["6.1", "6.2"] },
+    { "id": 9, "tasks": ["7.1", "7.2"] },
+    { "id": 10, "tasks": ["8.1", "8.2"] }
+  ]
+}
+```
+
 ## Tasks
 
 - [x] 1. Schema foundation — extend `app/schemas/incident_state.py` (backward-compatible)

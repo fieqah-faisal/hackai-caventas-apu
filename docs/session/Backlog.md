@@ -19,19 +19,6 @@
   and record the change. — open / team
 - BL-003 — Approvals → bounded simulated execution → reporting implemented;
   PR open for review/merge. — in review / Airil
-- BL-030 — GAS-lite incident-state slice: specification complete at
-  `.kiro/specs/caventas-gas-lite/` (DEC-010); implementation in progress on
-  branch `feat/gas-lite-state-fieqah`. Core = enriched Entity/Relationship
-  schemas + pure `app/services/gas_lite.py` + three-case prior-state
-  handling + additive `GET /cases/{id}/states[/{version}]`. Core Tasks 1-3
-  (schema, pure graph service, repository read) proceed now; Tasks 4.x
-  (state_manager integration) and 6.x (execution-flow integration) are
-  GATED on PR #9 for the state-manager (4.x) and execution-flow (6.x)
-  integration; PR #9 is now merged into this branch, so those tasks may
-  proceed — preserve PR #9's timezone-aware timeline sorting and
-  simulator-result behaviour. Renamed BL-020 -> BL-030 at the PR #9 merge
-  to avoid colliding with PR #9's BL-014..BL-024. — impl in progress
-  (Tasks 1-3 done; 4-8 next) / Syafieqah
 
 ### P2
 - BL-004 — Emulator smoke executed and passing (script + `firebase.py`
@@ -64,8 +51,6 @@
   per plan runs; the next needs a fresh plan). Re-approval prototype kept
   out of PR #9 (commit `abab1c4`, reverted). See DEC-007. — deferred /
   Raaj + Syafieqah + Aidan
-- BL-016 — Extract DOMAIN/IP entities into the incident state so
-  `block_domain` can be proposed. — open / Raaj
 - BL-017 — Persist planner analysis (type, severity, confidence) and fill
   report findings + ATT&CK (ground truth ready in `scenarios/`). — open /
   Airil + Raaj
@@ -84,17 +69,6 @@
   the build environment), esp. T1213.004. — open / Aidan
 - BL-023 — Decide whether POL-03 gets a record-only `notify_dpo` action
   (guidance + simulator catalogue together). — open / Aida + Aidan
-
-- BL-031 — Repository line-ending portability: on Windows checkouts
-  (`core.autocrlf=true`, no `.gitattributes`) scenario `.json`/`.md` files
-  are checked out with CRLF, so
-  `tests/test_scenarios.py::test_generated_files_are_up_to_date` fails on
-  `\n` vs `\r\n` while content is identical (148 passed / 1 failed in the
-  PR #9 merge baseline). Evaluate the smallest correct fix — a deterministic
-  `.gitattributes` (e.g. `*.json text eol=lf` for `backend/scenarios/`)
-  OR make the freshness comparison line-ending-independent while keeping
-  content validation. Do not broad-renormalize or edit Aidan's scenario
-  artifacts under this item without coordination. — open / Aidan + Syafieqah
 
 ## Deferred
 - BL-006 (P3) — Add a thin `SKILL.md` wrapper pointing to

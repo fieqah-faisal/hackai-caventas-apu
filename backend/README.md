@@ -19,13 +19,21 @@ Milestone 1 (cases, evidence, incident state, audit):
 | POST | `/cases/{case_id}/evidence` | Upload CSV / JSON / TXT evidence |
 | GET | `/cases/{case_id}/evidence` | List normalized evidence |
 | GET | `/cases/{case_id}/state` | Current incident-state version |
+| GET | `/cases/{case_id}/states` | List immutable state-version metadata (GAS-lite) |
+| GET | `/cases/{case_id}/states/{version}` | Full immutable snapshot for one version (GAS-lite) |
 | GET | `/cases/{case_id}/audit` | Audit trail |
 | GET | `/health` | Health check |
 
 Uploading evidence computes a SHA-256 of the original file, normalizes each
 record with a unique evidence id and source location, stores the original on
-the local filesystem, and automatically builds a new incident-state version
-(observed entities + relationships + timeline).
+the local filesystem, and automatically builds a new immutable incident-state version. The
+entity/relationship graph (hosts, accounts, IPs, domains, processes,
+files, sessions; typed allowlisted relations; response edges; validated
+effects; ATT&CK ids) is built by the pure `app/services/gas_lite.py`
+service (no Firestore I/O, no LLM); `state_manager` owns persistence and
+the timeline. Each change appends a new version pointed to by
+`current_state_version` — history is never overwritten (GAS-lite,
+STAIR-inspired incident-state).
 
 AI planning (BL-002):
 
@@ -40,16 +48,24 @@ the backend validates every id before persisting. With no
 `OPENCODE_GO_API_KEY` configured it falls back to `FakePlannerAdapter`, so
 the backend works without a key.
 
-**Stubbed for later milestones (return HTTP 501):**
+Approvals, bounded simulated execution and reporting (BL-003):
 
-- `POST /cases/{case_id}/actions/{action_id}/decision` — analyst approval
-- `POST /cases/{case_id}/actions/{action_id}/execute` — simulated execution
-- `POST /cases/{case_id}/reports`, `GET .../reports/{report_id}` — reporting
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/cases/{case_id}/actions/{action_id}/decision` | Analyst approve / reject |
+| POST | `/cases/{case_id}/actions/{action_id}/execute` | Run an approved action in the bounded simulator |
+| POST | `/cases/{case_id}/reports` | Generate a report from stored records |
+| GET | `/cases/{case_id}/reports/{report_id}` | Retrieve a stored report |
 
-The service/adapter interfaces for these exist (`approval_service`,
-`execution_service`, `reporting`, `simulator_adapter`) with the agreed
-contracts and `Fake*` implementations, so integration can proceed against
-stable shapes.
+Approval is created by the backend, never by AI output. Execution and
+effectiveness are distinct: a `completed` execution with an `ineffective`
+validation does NOT improve a target entity's condition — only a validated
+`effective` outcome applies its allowlisted condition change. A stale approval
+(one bound to a superseded state version) requires a new planning run and a
+replacement action rather than silent re-use. The proposal, approval,
+execution and validation records are each stored and immutable; GAS-lite adds
+an `action_attempted_on` response edge referencing the stored `action_id` and
+`execution_id` without replacing those records.
 
 ## Architecture
 
@@ -143,5 +159,7 @@ Never upload or index `scenarios/*/evaluator_only/`: those are the answer keys.
 ## Next steps (handoff)
 
 1. Smoke-test against the Firestore emulator (tests use a fake only).
-2. Implement approvals → execution (bounded simulator) → reporting in order
-   (the real `PlannerAdapter` is wired — see "AI planning" above).
+2. Follow-on GAS-lite work (not in this slice): planner-populated routing /
+   assessment fields, report-section invalidation, non-material version
+   suppression, frontend graph visualisation of the state history, and
+   policy-pack integration.

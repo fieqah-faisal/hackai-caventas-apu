@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-12.
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-12 (GAS-lite Tasks 4-8).
 
 ## Project
 
@@ -61,19 +61,29 @@ Firestore; no credentials needed).
   (React + Vite + Tailwind, DEC-005) — dashboard shell + 5 regions on
   synthetic data; `npm run build` green. Approvals/activity not yet wired to
   live endpoints (BL-003). Product record + palette in root `PRODUCT.md`.
-- GAS-lite incident-state (BL-030): STAIR-inspired enrichment of the
-  versioned incident state has its spec committed and **Core Tasks 1-3
-  implemented** (schema, pure gas_lite service, repository read; backend
-  suite 64 passed; implementation not yet committed/pushed). Spec at
-  `.kiro/specs/caventas-gas-lite/` (requirements/design/tasks, format-valid);
-  decisions in DEC-010. Core = enriched Entity/Relationship schemas, a pure
-  `app/services/gas_lite.py` graph builder, three-case prior-state handling,
-  and additive `GET /cases/{id}/states[/{version}]` endpoints; assessment,
-  routing population, report-section invalidation and non-material version
-  suppression are Follow-on. Blocked on PR #9 (state_manager.py) for the
-  state-manager / execution-flow integration; preserve its timezone-aware
-  sorting and simulator-result behaviour. Target branch
-  `feat/gas-lite-state-fieqah`.
+- GAS-lite incident-state (BL-030, **Core complete**): STAIR-inspired
+  (not a STAIR reproduction) enrichment of the versioned incident state.
+  All Core Tasks 1-8 implemented on `feat/gas-lite-state-fieqah` after
+  merging PR #9 (`2301bc2`); full backend suite **162 passed**. Caventas
+  stores immutable, versioned incident-state graph snapshots in Firestore
+  (append-only, pointed to by `current_state_version`); the graph is built
+  by the pure `app/services/gas_lite.py` (no Firestore I/O, no LLM) while
+  `state_manager` owns persistence + the record-field timeline (PR #9
+  timezone-aware sort / `simulated_at` ordering preserved). Planning is
+  bound to an exact state version; a stale approval requires a new planning
+  run and a replacement action. Evidence and response relationships are
+  record-grounded; AI recommendations are not authorization; actions are
+  bounded simulations; execution and effectiveness are distinct (only a
+  validated-`effective` outcome applies its allowlisted condition change).
+  Additive `GET /cases/{id}/states[/{version}]` expose immutable history;
+  `GET /cases/{id}/state` is unchanged. Evaluation calibration was
+  regenerated after the entity enrichment (oracle 12/12, unsafe 0/12, fake
+  mean 48.2->42.9, still 0/5). The scenario freshness test was made
+  cross-platform (newline-normalized) without weakening content validation
+  (BL-031 closed). Spec at `.kiro/specs/caventas-gas-lite/`; decisions in
+  DEC-010. Follow-on: planner-populated routing/assessment, report-section
+  invalidation, non-material version suppression, frontend graph
+  visualisation, policy-pack integration. Not yet committed/pushed.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

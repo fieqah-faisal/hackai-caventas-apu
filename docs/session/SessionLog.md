@@ -3,6 +3,58 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 GAS-lite Tasks 4-8: state-manager integration, state-history API, response/effect, full green (DONE)
+
+- Merged PR #9 earlier as `2301bc2` (simulator/scenarios/evaluation); then
+  completed GAS-lite Core Tasks 4-8 on `feat/gas-lite-state-fieqah`.
+- **Task 4** (done earlier this slice): `state_manager._reconstruct`
+  delegates the entity/relationship/response/effect graph to the pure
+  `gas_lite.build_graph`, keeping the record-field timeline and PR #9's
+  timezone-aware sort + `simulated_at` ordering. `rebuild_and_version` carries
+  provenance (`created_from`, `parent_version`, `change_reason`) with the
+  three prior-state cases (unknown case -> abort; v0 -> v1 parent None; pointer
+  >=1 but snapshot missing -> abort, pointer untouched). Callers pass the
+  trigger (ingestion -> evidence_upload, execution -> action_result). Added the
+  always-True `_is_material` hook (non-material suppression is Follow-on).
+- **Task 5**: new `app/api/state.py` with additive read-only
+  `GET /cases/{id}/states` (version-ordered `StateVersionMeta`, [] not 404 for
+  a case with no versions, 404 for unknown case) and
+  `GET /cases/{id}/states/{version}` (full immutable `IncidentState`, distinct
+  404s). Registered in `main.py`; `GET /cases/{id}/state` unchanged. Thin
+  `state_manager.list_states` computes counts from stored docs without loading
+  full snapshots. 9 tests in `test_state_history_api.py`.
+- **Task 6**: verified approve->execute (Fake simulator: completed/ineffective)
+  produces an `action_attempted_on` response edge carrying `action_id` /
+  `execution_id` with NO positive condition change, while proposal/approval/
+  result records stay intact; focused unit proves a synthetic `effective`
+  result mutates only the target entity's `condition`. 3 tests in
+  `test_response_effect_integration.py`.
+- **Task 7**: targeted suites + full backend suite **162 passed, 0 failed**.
+  `git diff --check` clean, no conflict markers, no secrets/env/service-account/
+  cache/frontend in the change set, no live LLM / real infra (Fake adapters +
+  in-memory fake Firestore).
+- **Evaluation recalibration** (accepted): GAS-lite now enriches the entity set
+  (IP/domain/process/file), so the `fake`/`unsafe` planners propose against
+  different in-state targets and their committed scores changed. Regenerated
+  Aidan-owned `evaluation/results/{fake,unsafe}.json` + `SUMMARY.md` via
+  `python -m evaluation.run_eval --planner fake oracle unsafe`. Oracle
+  unchanged 12/12 100%; unsafe still 0/12 (all gates fire); fake mean
+  48.2 -> 42.9, still 0/5 scenarios; new `no_collateral_targets` failure on
+  sc01 is expected (richer out-of-scope entities); `sc03 CP2` for fake flipped
+  no->yes (85.0) but the scenario set still fails. `oracle.json` had only a
+  line-ending diff and was reverted to avoid a meaningless change. Informational
+  for Aidan; closes BL-016 (DOMAIN/IP now extracted).
+- **BL-031 fixed**: `tests/test_scenarios.py::_generated` now compares
+  newline-normalized text instead of raw bytes, so a CRLF Windows checkout of
+  the LF-written generated files reads as current; added a regression test
+  proving LF/CRLF equivalence AND that a genuine content change still fails.
+  No scenario regeneration, no repo-wide renormalization, no weakening of
+  content validation. Scenario suite 35 passed twice (deterministic).
+- Docs: `backend/README.md` (state-history endpoints, gas_lite, execution!=
+  effectiveness, stale-approval->replan), `.kiro/steering/structure.md`
+  (`app/api/state.py`, `app/services/gas_lite.py`). `tasks.md` Tasks 4-8 marked
+  done.
+
 ### 2026-10-12 PR #9 review changes: clean default, approval change deferred (DONE)
 
 - Simulator default profile is now `clean` (`config.py`, `.env.example`,
