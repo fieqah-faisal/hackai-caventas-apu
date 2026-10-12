@@ -11,7 +11,7 @@
   - `CASE-DAD8F8C3` showed "Approval may be stale".
   - There were no console errors, and every other call was a GET. Artifacts are in `.agents/tasks/link-e2e-2026-10-09/s5-ui/` (local).
 - Tests: `cd backend && ../.venv/bin/python -m pytest -q` gave **52 passed** (45 before plus 7). `cd frontend && npm run build && npm run test` built green with **75 passed** in 9 files (65 before plus 10).
-- Commits on `link`: `ed0712a` (backend, Backlog, Decisions), then a frontend + this-entry commit whose SHA is recorded in `.agents/tasks/link-e2e-2026-10-09/s5-report.md` (local).
+- Commits on `link`: `ed0712a` (backend, Backlog, Decisions) and `e5e604b` (frontend, READMEs, this entry), then a notebook-only commit that records these SHAs. Report: `.agents/tasks/link-e2e-2026-10-09/s5-report.md` (local).
 - Next, in BL-027: (a) the result card is replaced at once after a simulation, and no UI calls `getExecutionResults`; (b) Response Plan could join `GET /actions`; (c) fixture mode may hide approved cards after a refresh (seen by code reading only).
 ### 2026-10-09 `link` S4 tidy: router comments and API-mode READMEs (DONE)
 - `backend/app/main.py`: router comments now say every router (cases, evidence, planning, approvals, execution, reports) is implemented, with no "Milestone 1"/"stubbed" wording. Comment only, no behavior change.
