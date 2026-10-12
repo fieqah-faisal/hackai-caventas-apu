@@ -12,9 +12,9 @@
   --planner live`, needs `OPENCODE_GO_API_KEY`) and commit results. — open
   / Airil + Aidan
 - BL-015 — Review Aidan's branch changes to backend services (PR #9):
-  simulator wiring, naive-timestamp crash fix, re-approval of stale
-  approvals (DEC-007); the approval UI must offer "Re-approve" on a 409
-  (extends the BL-010 decision contract). — open / Raaj + Syafieqah
+  simulator wiring (default profile `clean`), naive-timestamp crash fix,
+  `not_applicable` action status (frontend DTO mapping at integration). —
+  open / Raaj + Syafieqah
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
 - BL-003 — Approvals → bounded simulated execution → reporting implemented;
@@ -46,6 +46,12 @@
   queue), plan-detail, execution-results list; align the frontend audit DTO
   to the real fields (`event_type`/`timestamp`/`audit_id`). — open /
   Airil + Syafieqah
+- BL-024 — Decide which state changes invalidate an approval once
+  GAS-lite adds `parent_version`, `change_reason` and `created_from`.
+  Today one execution strands the plan's other approvals (only one action
+  per plan runs; the next needs a fresh plan). Re-approval prototype kept
+  out of PR #9 (commit `abab1c4`, reverted). See DEC-007. — deferred /
+  Raaj + Syafieqah + Aidan
 - BL-016 — Extract DOMAIN/IP entities into the incident state so
   `block_domain` can be proposed. — open / Raaj
 - BL-017 — Persist planner analysis (type, severity, confidence) and fill

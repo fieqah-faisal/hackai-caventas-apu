@@ -30,13 +30,14 @@ class SimulatorAdapter(Protocol):
 class BoundedSimulatorAdapter:
     """Runs approved actions through the deterministic simulator engine.
 
-    ``profile`` selects injected faults: ``demo`` (the CRM admin API is in
-    vendor maintenance until 10:30 on the infostealer day, so an early CRM
-    session revocation partially fails) or ``clean`` (no faults).
+    ``profile`` selects injected faults: ``clean`` (default, no faults) or
+    ``demo`` (scenario-specific: the CRM admin API is in vendor maintenance
+    until 10:30 on the infostealer day, so an early CRM session revocation
+    partially fails). Only the demo and the evaluation harness enable ``demo``.
     """
 
     def __init__(
-        self, profile: str = "demo", environment: Optional[dict[str, Any]] = None
+        self, profile: str = "clean", environment: Optional[dict[str, Any]] = None
     ) -> None:
         if profile not in engine.PROFILES:
             raise ValueError(f"unknown simulator profile '{profile}'")

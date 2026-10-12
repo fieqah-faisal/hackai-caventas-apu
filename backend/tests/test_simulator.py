@@ -4,7 +4,10 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta
 
+import pytest
+
 from app.ai.langgraph_planner import DEFAULT_ALLOWED_TOOLS, load_guidance
+from app.config import get_settings
 from app.schemas.plan import PlanProposal, ProposedAction, Stage
 from app.simulator import catalog, engine
 from app.simulator.simulator_adapter import BoundedSimulatorAdapter
@@ -220,10 +223,43 @@ def _execute(client, monkeypatch, tool: str, target: str) -> dict:
     return {"case_id": case_id, **resp.json()}
 
 
-def test_backend_uses_the_bounded_simulator_by_default(client, monkeypatch):
+@pytest.fixture
+def simulator_profile(monkeypatch):
+    """Set SIMULATOR_PROFILE for one test; settings are re-read and restored."""
+
+    def apply(profile: str | None) -> None:
+        if profile is None:
+            monkeypatch.delenv("SIMULATOR_PROFILE", raising=False)
+        else:
+            monkeypatch.setenv("SIMULATOR_PROFILE", profile)
+        get_settings.cache_clear()
+
+    yield apply
+    get_settings.cache_clear()
+
+
+def test_default_profile_is_clean(simulator_profile):
+    simulator_profile(None)
+    assert get_settings().simulator_profile == "clean"
+    assert BoundedSimulatorAdapter().profile == "clean"
+
+
+def test_backend_uses_the_clean_bounded_simulator_by_default(
+    client, monkeypatch, simulator_profile
+):
+    simulator_profile(None)
     out = _execute(client, monkeypatch, "revoke_sessions", "ACCOUNT::farah")
     result = out["result"]
     assert result["simulated_at"] == "2026-10-05T08:45:00+08:00"
+    assert result["services"] == {"idp": "succeeded", "mail": "succeeded", "crm": "succeeded"}
+    assert result["execution_status"] == "completed"
+    assert out["action"]["status"] == "verified"
+
+
+def test_demo_fault_only_when_explicitly_enabled(client, monkeypatch, simulator_profile):
+    simulator_profile("demo")
+    out = _execute(client, monkeypatch, "revoke_sessions", "ACCOUNT::farah")
+    result = out["result"]
     assert result["services"]["crm"] == "failed"
     assert result["execution_status"] == "partially_completed"
     assert out["action"]["status"] == "failed"  # ran, but objective not achieved

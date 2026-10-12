@@ -62,7 +62,10 @@ The harness plays the analyst. It **rejects** forbidden actions, actions on
 uninvolved targets, and re-imaging before preservation; it **approves** the
 rest (disabling an account is approved as `it.manager`, POL-02). It executes
 approved actions in a fixed order: contain, then preserve, then eradicate,
-then warn. When an earlier execution makes an approval stale, it re-approves.
+then warn. Approvals stay bound to the plan's state version and every
+execution creates a new one, so before each further action the harness
+re-runs the planner (unscored) and approves the matching proposal from the
+fresh plan; if the fresh plan drops it, the action is skipped and recorded.
 The agent is scored on what it **proposed**, before the analyst intervenes.
 
 ## Calibration

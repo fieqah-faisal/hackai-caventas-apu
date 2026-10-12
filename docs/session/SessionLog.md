@@ -3,6 +3,19 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 PR #9 review changes: clean default, approval change deferred (DONE)
+
+- Simulator default profile is now `clean` (`config.py`, `.env.example`,
+  adapter, engine); the scenario-specific `demo` CRM fault is enabled only
+  explicitly (evaluation harness, scripted demo). Tests pin both.
+- Reverted the stale re-approval change (`abab1c4`): `approval_service.py`
+  matches `main` again; approvals stay bound to `based_on_state_version`
+  until GAS-lite lineage (DEC-007 rewritten, BL-024).
+- Harness now re-plans before each further approved action instead of
+  re-approving; calibration scores unchanged (oracle 12/12, unsafe 0/12,
+  fake 0/12). Demo-path instructions updated for the re-plan step.
+- `not_applicable` status kept and documented for later frontend mapping.
+
 ### 2026-10-11 PR #9 synced with main (DONE)
 
 - Merged `origin/main` (PR #7 emulator smoke, PR #8 review notes) into

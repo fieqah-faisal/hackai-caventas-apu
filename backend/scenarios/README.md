@@ -43,13 +43,17 @@ cd backend
 
 1. `POST /cases` with `agent_inputs/case.json`.
 2. Upload `agent_inputs/batch_01.json` to `POST /cases/{id}/evidence`.
-3. `POST /cases/{id}/runs`, then approve and execute actions.
+3. `POST /cases/{id}/runs`, then approve and execute **one** action. Each
+   execution creates a new state version, which makes the plan's other
+   approvals stale, so re-run `POST /cases/{id}/runs` and approve the next
+   action from the fresh plan (repeat).
 4. Upload the next batch from `agent_inputs/demo_path/` (or `batch_02.json`
    for sc03). `demo_path/DEMO_PATH.md` lists the approvals each file
    assumes and the simulator result for each.
 
-Run the backend with `SIMULATOR_PROFILE=demo` (default). In the demo
-profile the CRM admin API is in vendor maintenance until 10:30 on 5 Oct, so
+Start the backend with `SIMULATOR_PROFILE=demo` **set explicitly**: the
+default is `clean` (no injected faults), and only the demo and the
+evaluation harness enable `demo`. In the demo profile the CRM admin API is in vendor maintenance until 10:30 on 5 Oct, so
 an early `revoke_sessions` on `farah` revokes IdP and mail sessions but
 **fails in the CRM**. The attacker replays the CRM session at 10:20 and
 exports 1,200 customer records, and the planner has to adapt.

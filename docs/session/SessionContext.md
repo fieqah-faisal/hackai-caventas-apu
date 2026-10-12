@@ -46,7 +46,9 @@ Firestore; no credentials needed).
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
   unsafe 0/12, fake planner 0/12; **no live-planner results yet** (BL-014).
-  Two backend bugs fixed (naive timestamps; stale approvals, DEC-007).
+  Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
+  explicitly by the demo / harness. Naive-timestamp crash fixed; stale
+  approvals deferred to GAS-lite (DEC-007, BL-024).
   Suite **129 passed** after syncing with main.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).

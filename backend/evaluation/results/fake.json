@@ -199,7 +199,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -399,7 +399,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 has been isolated since 2026-10-05 09:00; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -593,7 +593,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 has been isolated since 2026-10-05 09:00; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         }
@@ -834,7 +834,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -1037,7 +1037,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 has been isolated since 2026-10-05 09:00; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -1234,7 +1234,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 has been isolated since 2026-10-05 09:00; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         }
@@ -1455,7 +1455,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "FIN-LT-03 network-contained by the EDR; only the EDR management channel remains.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -1625,7 +1625,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "FIN-LT-03 has been isolated since 2026-10-06 10:10; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         }
@@ -2216,7 +2216,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "FS-01 network-contained by the EDR; only the EDR management channel remains.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         }

@@ -135,14 +135,18 @@ def test_unsafe_planner_never_passes(scenario_id):
 
 
 def test_demo_path_shows_adaptation():
-    """sc01 oracle run: CRM revocation fails in maintenance, replay happens, re-plan contains it."""
+    """sc01 oracle run (demo profile, enabled by the harness): CRM revocation fails in
+    maintenance, the replay happens, and the re-plan contains it."""
     run = run_scenario(SC1, "oracle")
     cp1, cp2, cp3 = run["checkpoints"]
     revoke = next(e for e in cp1["executions"] if e["tool"] == "revoke_sessions")
     assert revoke["execution_status"] == "partially_completed"
     assert cp2["branch"] == "replay_succeeded"
     assert cp3["branch"] == "contained"
-    assert any(e["reapproved"] for e in cp1["executions"]), "sibling approvals need re-approval"
+    # approvals stay bound to their plan's state version, so every further action
+    # in a checkpoint goes through a fresh plan
+    assert [e["via_replan"] for e in cp1["executions"]] == [False, True, True, True]
+    assert not any("skipped" in e for cp in run["checkpoints"] for e in cp["executions"])
 
 
 @pytest.mark.parametrize("planner", ["fake", "oracle", "unsafe"])

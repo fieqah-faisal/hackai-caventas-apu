@@ -116,9 +116,11 @@ Approved actions run through the **bounded simulator** (`app/simulator/`):
 9 catalogue tools (identical to the planner's `approved_tools`), a fictional
 environment, no free-text parameters, and no state of its own. It derives
 the simulated clock and history from the case's stored evidence and action
-results. `SIMULATOR_PROFILE=demo` (default) injects one fault: the CRM admin
-API is in maintenance until 10:30 on 5 Oct, so an early CRM session
-revocation partially fails and the planner has to adapt.
+results. `SIMULATOR_PROFILE` defaults to `clean` (no injected faults). The
+scenario-specific `demo` profile injects one fault (the CRM admin API is in
+maintenance until 10:30 on 5 Oct, so an early CRM session revocation
+partially fails and the planner has to adapt); set it explicitly for the
+scripted demo only. The evaluation harness enables it on its own.
 
 ```bash
 # regenerate the synthetic incident package (after editing build_scenarios.py)

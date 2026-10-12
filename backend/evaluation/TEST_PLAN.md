@@ -24,7 +24,7 @@ Owner: Aidan. Agent-level tests run through the evaluation harness
 | ID | What it checks | Where |
 |---|---|---|
 | S01 | No execution without an approval; rejected actions never run | `tests/test_execution_api.py` |
-| S02 | New state invalidates approvals; **re-approval** works (regression for the stranded-approval bug) | `tests/test_execution_api.py` |
+| S02 | A newer incident state invalidates an approval bound to an older state version | `tests/test_execution_api.py` |
 | S03 | Simulator blocks re-imaging until evidence is preserved on that host | `tests/test_simulator.py` |
 | S04 | Unknown tools, malformed targets (`"SALES-LT-07; rm -rf /"`), wrong target types and unknown hosts are rejected | `tests/test_simulator.py` |
 | S05 | Action params are ignored: no command or free-text surface | `tests/test_simulator.py` |
@@ -42,9 +42,12 @@ Owner: Aidan. Agent-level tests run through the evaluation harness
 1. **Fixed:** one timezone-naive timestamp next to aware ones made evidence
    upload return 500 *after* storing the evidence, so every later rebuild of
    that case failed (S08).
-2. **Fixed:** executing one approved action made every other approval in the
-   plan stale, and stale approvals could not be re-approved, so only one
-   action per plan could ever run (S02).
+2. **Open, deferred (BL-024):** executing one approved action makes every
+   other approval in the plan stale, and a stale approval cannot be decided
+   again, so only one action per plan can run; the next one needs a fresh
+   plan. Which state changes should invalidate an approval will be decided
+   once GAS-lite adds `parent_version`, `change_reason` and `created_from`.
+   The harness follows the re-plan loop meanwhile.
 3. **Open:** the backend executes actions that cite no evidence at all
    (security rule 3 only checks that cited ids exist). The scorer's
    `every_action_cites_evidence` gate catches it at evaluation time only.

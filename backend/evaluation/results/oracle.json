@@ -244,7 +244,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "revoke_sessions",
@@ -254,7 +254,7 @@
               "validation_status": "ineffective",
               "action_status": "failed",
               "observed_effect": "Sessions for farah revoked in: idp, mail. FAILED in crm (CRM admin API unavailable: scheduled vendor maintenance until 10:30). Sessions in crm remain valid.",
-              "reapproved": true
+              "via_replan": true
             },
             {
               "tool": "reset_password",
@@ -264,7 +264,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Password for farah reset at the identity provider (user-assisted). Existing sessions stay valid until revoked.",
-              "reapproved": true
+              "via_replan": true
             },
             {
               "tool": "preserve_evidence",
@@ -274,7 +274,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Memory image (sha256 03d9a61bc642e5eb...) and disk image (sha256 5b10657c3383147a...) of SALES-LT-07 captured; chain of custody recorded.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         },
@@ -489,7 +489,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Active sessions for farah revoked in: idp, mail, crm.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "disable_account",
@@ -499,7 +499,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "farah disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         },
@@ -695,7 +695,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 rebuilt from the gold image; malicious files and persistence removed. Stolen passwords and session tokens are not affected by a re-image.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "warn_staff",
@@ -705,7 +705,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Security advisory sent to farah and the Sales team.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         }
@@ -734,7 +734,7 @@
       ],
       "report": {
         "status": "draft",
-        "actions": 8,
+        "actions": 18,
         "timeline_rows": 43,
         "findings": 0,
         "attack_techniques": [],
@@ -994,7 +994,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "revoke_sessions",
@@ -1004,7 +1004,7 @@
               "validation_status": "ineffective",
               "action_status": "failed",
               "observed_effect": "Sessions for farah revoked in: idp, mail. FAILED in crm (CRM admin API unavailable: scheduled vendor maintenance until 10:30). Sessions in crm remain valid.",
-              "reapproved": true
+              "via_replan": true
             },
             {
               "tool": "reset_password",
@@ -1014,7 +1014,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Password for farah reset at the identity provider (user-assisted). Existing sessions stay valid until revoked.",
-              "reapproved": true
+              "via_replan": true
             },
             {
               "tool": "preserve_evidence",
@@ -1024,7 +1024,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Memory image (sha256 03d9a61bc642e5eb...) and disk image (sha256 5b10657c3383147a...) of SALES-LT-07 captured; chain of custody recorded.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         },
@@ -1239,7 +1239,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Active sessions for farah revoked in: idp, mail, crm.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "disable_account",
@@ -1249,7 +1249,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "farah disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         },
@@ -1445,7 +1445,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "SALES-LT-07 rebuilt from the gold image; malicious files and persistence removed. Stolen passwords and session tokens are not affected by a re-image.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "warn_staff",
@@ -1455,7 +1455,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Security advisory sent to farah and the Sales team.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         }
@@ -1484,7 +1484,7 @@
       ],
       "report": {
         "status": "draft",
-        "actions": 8,
+        "actions": 18,
         "timeline_rows": 46,
         "findings": 0,
         "attack_techniques": [],
@@ -1725,7 +1725,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Active sessions for hakim revoked in: idp, mail, erp.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "reset_password",
@@ -1735,7 +1735,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Password for hakim reset at the identity provider (user-assisted). Existing sessions stay valid until revoked.",
-              "reapproved": true
+              "via_replan": true
             },
             {
               "tool": "remove_mail_forwarding_rule",
@@ -1745,7 +1745,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Removed inbox rule(s) from hakim's mailbox: '..' (forward messages containing 'invoice' or 'payment' to hakim.backup@mailbox-relay.example and move them to RSS Feeds).",
-              "reapproved": true
+              "via_replan": true
             },
             {
               "tool": "warn_staff",
@@ -1755,7 +1755,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Security advisory sent to hakim and the Finance team.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         },
@@ -1916,7 +1916,7 @@
       ],
       "report": {
         "status": "draft",
-        "actions": 4,
+        "actions": 10,
         "timeline_rows": 22,
         "findings": 0,
         "attack_techniques": [],
@@ -2401,7 +2401,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Active sessions for svc_backup revoked in: backup.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "preserve_evidence",
@@ -2411,7 +2411,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Memory image (sha256 2156552df898bb00...) and disk image (sha256 0006b0e0a457b6de...) of FS-01 captured; chain of custody recorded.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         }
@@ -2440,7 +2440,7 @@
       ],
       "report": {
         "status": "draft",
-        "actions": 2,
+        "actions": 3,
         "timeline_rows": 19,
         "findings": 0,
         "attack_techniques": [],

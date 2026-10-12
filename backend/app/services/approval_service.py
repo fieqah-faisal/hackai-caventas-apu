@@ -4,11 +4,6 @@ Approval is created by the backend after an explicit analyst decision. It is
 NEVER derived from AI output. An approval binds to the exact
 (action_id, action_version, incident_state_version): approving version 1
 must not authorize version 2.
-
-The state version is the one current when the analyst decides. When a newer
-state invalidates an approval (new evidence, or another action's result),
-the analyst may decide again: re-approval binds to the new state, so an
-approved-but-stale action is never stuck.
 """
 from __future__ import annotations
 
@@ -31,16 +26,6 @@ class ApprovalError(RuntimeError):
         self.kind = kind
 
 
-def _approval_is_stale(case_id: str, action_id: str, current_version: int) -> bool:
-    """True when no approval of this action is bound to the current state."""
-    return not any(
-        record.get("action_id") == action_id
-        and record.get("decision") == "approved"
-        and int(record.get("state_version", -1)) == current_version
-        for record in repositories.list_approvals(case_id)
-    )
-
-
 def record_decision(
     case_id: str, action_id: str, request: DecisionRequest
 ) -> dict[str, Any]:
@@ -52,11 +37,7 @@ def record_decision(
         raise ApprovalError(f"action not found: {action_id}", "not_found")
 
     status = action.get("status", "awaiting_approval")
-    current_version = int(case.get("current_state_version", 0))
-    reapproval = status == "approved" and _approval_is_stale(
-        case_id, action_id, current_version
-    )
-    if status not in _DECIDABLE and not reapproval:
+    if status not in _DECIDABLE:
         raise ApprovalError(
             f"action {action_id} is already '{status}' and cannot be decided again",
             "conflict",
@@ -80,7 +61,7 @@ def record_decision(
         case_id=case_id,
         action_id=action_id,
         action_version=int(action.get("version", 1)),
-        state_version=current_version,
+        state_version=int(action.get("based_on_state_version", 0)),
         decision="approved" if approved else "rejected",
         analyst=request.analyst,
         reason=request.reason,
@@ -94,8 +75,6 @@ def record_decision(
             "approval_id": approval_id,
             "analyst": request.analyst,
             "reason": request.reason,
-            "state_version": current_version,
-            "reapproval": reapproval,
         },
     )
 

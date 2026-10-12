@@ -293,7 +293,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "farah disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -585,7 +585,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "farah has been disabled since 2026-10-05 09:00; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -871,7 +871,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "farah has been disabled since 2026-10-05 09:00; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         }
@@ -1203,7 +1203,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "farah disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -1495,7 +1495,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "farah has been disabled since 2026-10-05 09:00; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -1781,7 +1781,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "farah has been disabled since 2026-10-05 09:00; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         }
@@ -2156,7 +2156,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "hakim disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         },
@@ -2480,7 +2480,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "hakim has been disabled since 2026-10-06 10:10; no change.",
-              "reapproved": false
+              "via_replan": false
             }
           ]
         }
@@ -3472,7 +3472,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "ravi.adm disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "reapproved": false
+              "via_replan": false
             },
             {
               "tool": "disable_account",
@@ -3482,7 +3482,7 @@
               "validation_status": "effective",
               "action_status": "verified",
               "observed_effect": "Service account svc_backup disabled.",
-              "reapproved": true
+              "via_replan": true
             }
           ]
         }
@@ -3511,7 +3511,7 @@
       ],
       "report": {
         "status": "draft",
-        "actions": 12,
+        "actions": 18,
         "timeline_rows": 29,
         "findings": 0,
         "attack_techniques": [],

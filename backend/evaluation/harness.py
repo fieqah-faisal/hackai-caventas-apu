@@ -5,10 +5,16 @@ For each checkpoint the harness
 1. renders the next evidence batch from the case's stored action results
    (``scenarios/conditions.py``) and uploads it via ``POST /evidence``;
 2. runs the planner via ``POST /runs`` and scores the stored plan;
-3. lets a scripted analyst decide every proposed action via
-   ``POST /decision`` and executes approved ones via ``POST /execute``
-   (the bounded simulator), re-approving when an earlier execution made an
-   approval stale.
+3. lets a scripted analyst decide every proposed action and executes the
+   approved ones one by one through the bounded simulator.
+
+Approvals stay bound to the action's ``based_on_state_version``, and every
+execution creates a new state version, so a plan's other approvals go stale
+after its first execution. The harness therefore follows the product's
+re-plan loop: before each further approved action it re-runs the planner
+(``POST /runs``, not scored) and approves the matching proposal from that
+fresh plan. If the fresh plan no longer proposes it, the action is skipped
+and recorded.
 
 At the end it generates the report and runs system-level checks. Everything
 runs in-process against the FastAPI app with the in-memory Firestore fake,
@@ -106,20 +112,26 @@ def _evidence_map(client: TestClient, case_id: str) -> dict[str, str]:
     }
 
 
-def _execute(client: TestClient, case_id: str, action: dict[str, Any], analyst: str) -> dict:
-    url = f"/cases/{case_id}/actions/{action['action_id']}"
-    resp = client.post(f"{url}/execute")
-    reapproved = False
-    if resp.status_code == 409 and "re-approval" in resp.json().get("detail", ""):
-        client.post(f"{url}/decision", json={"decision": "approve", "analyst": analyst,
-                                             "reason": "Re-approved after a state change."})
-        reapproved = True
-        resp = client.post(f"{url}/execute")
+def _decide(client: TestClient, case_id: str, action_id: str, decision: str, analyst: str,
+            reason: str) -> None:
+    resp = client.post(f"/cases/{case_id}/actions/{action_id}/decision",
+                       json={"decision": decision, "analyst": analyst, "reason": reason})
+    resp.raise_for_status()
+
+
+def _execute(client: TestClient, case_id: str, action_id: str) -> dict:
+    resp = client.post(f"/cases/{case_id}/actions/{action_id}/execute")
     body = resp.json()
     if resp.status_code != 200:
-        return {"status_code": resp.status_code, "detail": body.get("detail"), "reapproved": reapproved}
-    return {"status_code": 200, "reapproved": reapproved, "result": body["result"],
-            "action_status": body["action"]["status"]}
+        return {"status_code": resp.status_code, "detail": body.get("detail")}
+    return {"status_code": 200, "result": body["result"], "action_status": body["action"]["status"]}
+
+
+def _matching(plan: dict[str, Any] | None, tool: str, target: str) -> dict[str, Any] | None:
+    for action in (plan or {}).get("actions", []):
+        if action["proposal"]["tool_name"] == tool and action["proposal"]["target_id"] == target:
+            return action
+    return None
 
 
 def _system_checks(client: TestClient, case_id: str, report: dict[str, Any]) -> list[dict]:
@@ -211,35 +223,46 @@ def run_scenario(scenario: dict[str, Any], planner: str, profile: str = "demo") 
             )
 
             decisions, executions = [], []
-            approved: list[tuple[dict, str]] = []
+            intents: list[tuple[dict, str, str]] = []
             for action in plan["actions"]:
                 decision, analyst, reason = analyst_decision(
                     action["proposal"], checkpoint, scenario, context, plan["actions"])
-                client.post(f"/cases/{case_id}/actions/{action['action_id']}/decision",
-                            json={"decision": decision, "analyst": analyst, "reason": reason})
                 decisions.append({"tool": action["proposal"]["tool_name"],
                                   "target": action["proposal"]["target_id"],
                                   "decision": decision, "analyst": analyst, "reason": reason})
                 if decision == "approve":
-                    approved.append((action, analyst))
-            approved.sort(key=lambda pair: EXECUTION_ORDER.index(pair[0]["proposal"]["tool_name"]))
-            for action, analyst in approved:
-                outcome = _execute(client, case_id, action, analyst)
-                if "result" in outcome:
-                    context.results.append(outcome["result"])
-                    result = outcome["result"]
-                    executions.append({
-                        "tool": result["tool_name"], "target": result["target_id"],
-                        "simulated_at": result.get("simulated_at"),
-                        "execution_status": result["execution_status"],
-                        "validation_status": result["validation_status"],
-                        "action_status": outcome["action_status"],
-                        "observed_effect": result["observed_effect"],
-                        "reapproved": outcome["reapproved"],
-                    })
+                    intents.append((action, analyst, reason))
                 else:
-                    executions.append({"tool": action["proposal"]["tool_name"],
-                                        "target": action["proposal"]["target_id"], **outcome})
+                    _decide(client, case_id, action["action_id"], decision, analyst, reason)
+            intents.sort(key=lambda item: EXECUTION_ORDER.index(item[0]["proposal"]["tool_name"]))
+            for position, (action, analyst, reason) in enumerate(intents):
+                tool, target = action["proposal"]["tool_name"], action["proposal"]["target_id"]
+                if position > 0:
+                    # the previous execution made this plan's approvals stale: re-plan
+                    follow_up = client.post(f"/cases/{case_id}/runs")
+                    action = _matching(follow_up.json() if follow_up.status_code == 200 else None,
+                                       tool, target)
+                    if action is None:
+                        executions.append({"tool": tool, "target": target, "via_replan": True,
+                                           "skipped": "not re-proposed after re-plan"})
+                        continue
+                _decide(client, case_id, action["action_id"], "approve", analyst, reason)
+                outcome = _execute(client, case_id, action["action_id"])
+                if "result" not in outcome:
+                    executions.append({"tool": tool, "target": target,
+                                       "via_replan": position > 0, **outcome})
+                    continue
+                result = outcome["result"]
+                context.results.append(result)
+                executions.append({
+                    "tool": result["tool_name"], "target": result["target_id"],
+                    "simulated_at": result.get("simulated_at"),
+                    "execution_status": result["execution_status"],
+                    "validation_status": result["validation_status"],
+                    "action_status": outcome["action_status"],
+                    "observed_effect": result["observed_effect"],
+                    "via_replan": position > 0,
+                })
             run["checkpoints"].append({**scored, "branch": branch, "batch_records": len(records),
                                        "decisions": decisions, "executions": executions})
 

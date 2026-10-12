@@ -1098,9 +1098,13 @@ def _demo_path(scenario: dict[str, Any]) -> tuple[dict[str, bytes], str]:
         "",
         f"> {NOTE}",
         "",
-        "Upload `../batch_01.json`, then approve and execute these actions in order with "
-        f"`SIMULATOR_PROFILE={scenario['profile']}`. If you approve different actions, the "
-        "evaluation harness renders the matching batches instead.",
+        f"Start the backend with `SIMULATOR_PROFILE={scenario['profile']}` set explicitly "
+        "(the default is `clean`, which has no injected faults). Upload `../batch_01.json`, "
+        "then approve and execute these actions in order. Approvals are bound to the plan's "
+        "state version and each execution creates a new one, so after each execution re-run "
+        "the planner (`POST /runs`) and approve the next action from the fresh plan. If you "
+        "approve different actions, the evaluation harness renders the matching batches "
+        "instead.",
         "",
     ]
     for batch_no, batch in enumerate(scenario["batches"], start=1):

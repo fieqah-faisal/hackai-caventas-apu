@@ -366,7 +366,7 @@ def simulate(
     simulated_at: datetime,
     history: Iterable[dict[str, Any]] = (),
     environment: Optional[dict[str, Any]] = None,
-    profile: str = "demo",
+    profile: str = "clean",
 ) -> dict[str, Any]:
     """Run one approved action against the simulated environment."""
     if profile not in PROFILES:

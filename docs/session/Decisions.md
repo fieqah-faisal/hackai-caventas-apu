@@ -143,25 +143,30 @@ Firestore. Evaluator answer keys sit in the repo, guarded by a test that
 **Links:** `backend/app/simulator/`, `backend/scenarios/README.md`,
 `backend/evaluation/SCORING_SHEET.md`.
 
-## DEC-007: Stale approvals can be re-approved (2026-10-11)
+## DEC-007: Approvals stay bound to the original state version for now (2026-10-12)
 
-**Context:** Executing one approved action rebuilds the state, which made
-every other approval in the plan stale; execute answered "re-approval
-required" but the decision endpoint refused already-approved actions, so
-only one action per plan could ever run.
+**Context:** Executing an approved action rebuilds the incident state, so
+every other approval in the same plan goes stale (execute answers 409
+"re-approval required") and an approved action cannot be decided again:
+only one action per plan can run. Aidan's branch first added re-approval of
+stale approvals bound to the current state version.
 
-**Options considered:** (1) only new evidence invalidates approvals (smoother,
-but weakens "any state change invalidates"); (2) re-plan after every
-execution (many LLM calls); (3) allow a fresh decision on an approved action
-only when no approval is bound to the current state - chosen.
+**Options considered:** (1) re-approval bound to the current state
+(prototyped in `abab1c4`); (2) only new evidence invalidates approvals;
+(3) keep approvals bound to the action's `based_on_state_version` and
+re-plan after each execution until GAS-lite records state lineage -
+chosen.
 
-**Decision:** Option 3. Approvals bind to the state version current at
-decision time; execution uses the latest approval. Deciding twice against
-the same state is still a conflict.
+**Decision:** Option 3 for PR #9 (Aidan's review, 2026-10-12): the
+re-approval change was reverted; `approval_service.py` matches `main`.
+GAS-lite will add `parent_version`, `change_reason` and `created_from`,
+which are needed to decide which state changes should invalidate an
+approval (BL-024). The evaluation harness re-plans before each further
+approved action.
 
-**Tradeoff:** One extra analyst click per remaining action after each
-execution; the approval UI must offer "Re-approve" on a 409. Needs Raaj's
-and Syafieqah's confirmation (BL-015).
+**Tradeoff:** One planner run per additional action (slower demo, more LLM
+calls in the live evaluation); approved-but-stale actions stay visible as
+`approved` in reports.
 
 **Links:** `backend/app/services/approval_service.py`,
-`tests/test_execution_api.py::test_sibling_action_needs_and_accepts_reapproval`.
+`backend/evaluation/harness.py`, BL-024.
