@@ -183,10 +183,12 @@ describe("report action wording keeps proposed / approved / executed / effective
     expect(lines("actions")).toEqual([
       "Rejected: Host shows suspicious activity in current state.",
       "Proposed, awaiting approval: Host shows suspicious activity in current state.",
-      "Approved, simulated, not validated effective: Host shows suspicious activity in current state.",
+      "Approved, sent to simulator, not validated effective: Host shows suspicious activity in current state.",
     ]);
     expect(reportActionStage("approved")).toBe("Approved, not yet simulated");
     expect(reportActionStage("verified")).toBe("Approved, simulated, validated effective");
+    // "failed" also covers an execution that did not complete: never claim it ran.
+    expect(reportActionStage("failed")).not.toMatch(/simulated|completed|executed/);
   });
 
   it("validation: shows the verdict next to the observed effect, only for executed actions", () => {

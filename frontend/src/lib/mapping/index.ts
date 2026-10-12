@@ -309,7 +309,8 @@ export function reportActionStage(status: string): string {
     case "verified":
       return "Approved, simulated, validated effective";
     case "failed":
-      return "Approved, simulated, not validated effective";
+      // Not "simulated": the row cannot show whether the simulation completed.
+      return "Approved, sent to simulator, not validated effective";
     default:
       return `Status ${status}`;
   }
