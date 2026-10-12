@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-06.
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-09.
 
 ## Project
 
@@ -39,11 +39,15 @@ Firestore; no credentials needed).
   Tool catalogue still provisional (BL-008). Without a key the planner
   falls back to the fake adapter; the simulator on `main` is still the fake
   (bounded simulator pending on `security-scenario-simulation-evaluation-lead`).
+  On `link` (unmerged): read-only `GET /cases/{id}/actions` +
+  `/action-results` (BL-027, DEC-011) and newest-plan-by-`created_at` in
+  reports; suite **52 passed**. Missing reads: BL-013, BL-025.
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
+  Re-confirmed by the `link` UI runs (S2/S5/S6).
 - Storage: Google Cloud Firestore via Firebase Admin SDK; uploaded
   originals on the local filesystem (`backend/uploads/`, gitignored) with
   SHA-256 recorded in Firestore.
@@ -59,6 +63,12 @@ Firestore; no credentials needed).
   read-only `GET /actions` / `GET /action-results` (BL-027, DEC-011);
   follow-ups are BL-025, BL-026 and BL-027 (a)–(c). On `link`: backend
   52 tests, frontend 75. Product record + palette in root `PRODUCT.md`.
+- Frontend↔backend link (`link`, unmerged, not pushed): API mode verified
+  end to end on the Firestore emulator (2026-10-09 S6). All 7 case tabs
+  load real data; approve/reject/execute/report run from the UI with
+  execution and validation shown apart; audit maps the real shape (no UI
+  surface yet). Dashboard is honestly "unsupported" (BL-013). Open:
+  BL-013, BL-025..BL-029.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

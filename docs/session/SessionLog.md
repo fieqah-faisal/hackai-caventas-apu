@@ -2,6 +2,23 @@
 
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
+### 2026-10-09 `link` S6 final API-mode verification and teardown (DONE)
+- Live re-walk of the S3/S5 fixes: emulator `--project demo-ir-planner` (:8080), uvicorn :8000 (`FIRESTORE_EMULATOR_HOST=localhost:8080`, `FIREBASE_PROJECT_ID=demo-ir-planner`, fake planner/simulator), `VITE_DATA_MODE=api npm run dev`. Playwright on synthetic case `CASE-EE17E1B1` (fixtures `login_logs.csv` + `planner_smoke_evidence.json`, 10 records), with 0 console errors. The UI sent approve, reject (with reason), execute and Generate report. A second run was sent via `POST /api/…/runs` because the UI has no re-plan button.
+- Per tab:
+  - Overview: ok, but the "start a planning run" copy is still there (BL-026 d).
+  - Evidence: ok (upload order, `event_type` titles).
+  - Timeline: ok.
+  - Analysis: ok/empty (fake planner).
+  - Response Plan: ok, honest. It shows v1/v2 in `created_at` order with "N action(s) … detail is not loaded" (BL-027 b).
+  - Approvals: ok. Approve → one `POST …/decision`, and the action stays queued after a reload. Simulate → one `POST …/execute`, toast "completed / ineffective". Reject → `POST …/decision`. Then the queue is empty (BL-027 a).
+  - Report: ok. Loading the tab sends no POST, and Generate sends one. The report shows Approved/Rejected (with reason), "Approved, sent to simulator, not validated effective", and validation listed separately. After a reload: "No report generated yet" (BL-025).
+  - Audit has no UI surface. The live probe, through the real `RealProvider` and mapping, mapped all 12 events (`action_approved`, `action_rejected`, `action_executed`, `report_generated`, …).
+- Backend preconditions still held: execute after reject → 409; re-execute → same `EXEC-dbad5df0a197`, with 1 result and 1 `action_executed`; decision `"approved"` → 422.
+- Tests: `cd backend && ../.venv/bin/python -m pytest -q` → **52 passed**. `cd frontend && npm run build && npm run test` → build green, **75 passed** (9 files).
+- Teardown: stopped vite, uvicorn and the emulator. Deleted `/tmp/caventas-e2e`, the untracked S1–S5 scratch under `.agents/tasks/link-e2e-2026-10-09/` (so the "(local)" artifact links in earlier entries no longer resolve), `firestore-debug.log`, and today's E2E/pytest copies in `backend/uploads` + `backend/reports` (gitignored).
+  - New: BL-028 (the "Senior approval" badge is a UI heuristic) and BL-029 (pytest writes into `backend/uploads`).
+  - Final report committed at `.agents/tasks/link-e2e-2026-10-09/s6-final-report.md`. Nothing pushed; the user decides push/PR.
+
 ### 2026-10-09 `link` S5 API-mode Approvals queue via read-only action lists (DONE)
 - Decision DEC-011, backlog item BL-027 (owner Raaj). The brief's suggested IDs, DEC-006 and BL-010, were already taken; the registry gave DEC-011 / BL-027, and the next free IDs are now BL-028 / DEC-012. Backend: added read-only `GET /cases/{id}/actions` and `GET /cases/{id}/action-results` (in `planning.py` and `execution.py`). Both use the existing repository list functions, sort by `created_at` in Python, return 404 for an unknown case, and write nothing. The decision and execute paths are untouched. BL-013 is narrowed to the global case list and plan detail.
 - Frontend: `RealProvider.getApprovals` now reads the case, actions and plans. The queue lists awaiting actions plus approved actions not yet simulated; it shows a stale pre-warning when an action's state version is older than the case's, and the approver reads "Any analyst (no approver role in backend)". `getExecutionResults` reads `/action-results`. The new mappers are `toApprovalItemVM` and `toExecutionResultVM`, which `executeAction` now reuses. Contract tests use the bodies from `src/test/realBackendBodies.ts`.

@@ -12,8 +12,13 @@
 > BL-024 (npm audit), BL-025, BL-026, BL-027, DEC-008, DEC-009 and DEC-011.
 > `link`'s BL-024 also collides with security-lead's BL-024 (approval
 > invalidation); it is not renumbered here and must be resolved when the
-> branches merge. Next free IDs: **BL-028** and **DEC-012**.
+> branches merge. `link` S6 adds BL-028 and BL-029. Next free IDs:
+> **BL-030** and **DEC-012**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
+>
+> **Closed (removed):** BL-003 is merged on `main` (PR #6 `b93fa6c`).
+> BL-004 is done: the emulator smoke test is merged (PR #7, `3cecd3e`) and
+> was re-confirmed by the `link` UI runs on the emulator (S2/S5/S6).
 
 ## Open Items
 
@@ -94,7 +99,19 @@
     actions, so the same refresh may hide an approved card before it is
     simulated.
 
+  (a) and (b) were seen again in the S6 live re-walk.
   — implemented on `link` / Raaj; (a)–(c) open / frontend
+- BL-028 — The Approvals card shows a "Senior approval" badge next to
+  "Approver: Any analyst (no approver role in backend)". The badge comes
+  from a frontend tool-name regex in `toApprovalItemVM`
+  (`isolate|disable|block|revoke|reset`), not from the backend, which
+  enforces no approver role. Make it a hint or drop it in API mode. This
+  changes what the analyst sees. Seen in S6 on `isolate_host`. — open /
+  frontend
+- BL-029 — `pytest` writes uploaded copies into the gitignored
+  `backend/uploads/` (24 files per run, measured in S6), because the
+  evidence tests don't redirect `upload_dir` to `tmp_path` the way the
+  report tests redirect `report_path`. — open / Raaj
 
 ## Deferred
 
