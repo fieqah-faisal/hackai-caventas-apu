@@ -90,14 +90,14 @@ Wave 10 (docs + session records):    8.1  8.2
 
 ## Tasks
 
-- [ ] 1. Schema foundation — extend `app/schemas/incident_state.py` (backward-compatible)
-  - [ ] 1.1 Add new enums and the `SESSION` entity type
+- [x] 1. Schema foundation — extend `app/schemas/incident_state.py` (backward-compatible)
+  - [x] 1.1 Add new enums and the `SESSION` entity type
     - In `app/schemas/incident_state.py` add `SESSION = "session"` to `EntityType`, keeping every existing value.
     - Add `RelationshipType(str, Enum)` capturing the closed allowlist (`logged_into, authenticated_from, connected_to, resolved_domain, executed_on, found_on, session_used_by, action_attempted_on, evidence_preserved, session_revoked, host_isolated`) and type `Relationship.relation` as `RelationshipType`. Backward-compat is safe: the current free-text `relation` is only ever written as `"logged_into"`, which is in the set, so existing stored data deserializes unchanged.
     - Add `RelationshipCategory` (`context | attack | response`), `ResponseFocus` (`assessment, preservation, containment, eradication, hardening, restoration`), `RoutingTransition` (`initial, stay, advance, rollback, re_enter` — member `RE_ENTER` stored as `"re_enter"`), `CreatedFrom` (Core three: `initial_reconstruction, evidence_upload, action_result`), and `ReportStatus` (`draft, in_review, finalized`).
     - _Requirements: 2.3, 2.4, 2.5, 5.1, 5.2, 5.7, 6.1, 6.4, 6.5, 9.1_
     - _Design: Data Models → New enums; EntityType; RelationshipType_
-  - [ ] 1.2 Enrich `Entity`, `Relationship`, `IncidentState` and add `StateVersionMeta`
+  - [x] 1.2 Enrich `Entity`, `Relationship`, `IncidentState` and add `StateVersionMeta`
     - `Entity`: add `evidence_ids: list[str] = []`, `first_seen`, `last_seen` (optional datetime), `condition: Optional[str] = None`.
     - `Relationship`: add `id`, `category: RelationshipCategory = CONTEXT`, `first_seen`, `last_seen`, `attributes: dict = {}`, `action_id`, `execution_id`; retain `source, relation, target, evidence_ids, status`.
     - `IncidentState`: add provenance (`parent_version`, `change_reason`, `created_from`), response-situation block (`observed_response_status`, `recommended_response_focus`, `response_objective`, `response_prerequisites`, `routing_rationale`, `routing_evidence_ids`, `routing_confidence`, `routing_transition`), report-status block (`report_sections_complete/pending/invalidated`, `latest_report_id`, `latest_report_version`, `report_status`); keep every existing field incl. `recovery_status`. Core only *carries* the response-situation, routing and report-status fields as optional/defaulted (empty/None); Core does NOT populate analytical assessment, routing decisions, or report-section invalidation — populating those is Follow-on.
@@ -105,65 +105,65 @@ Wave 10 (docs + session records):    8.1  8.2
     - All new fields optional or defaulted.
     - _Requirements: 1.1, 2.1, 2.2, 2.8, 4.4, 6.2, 6.3, 9.1, 13.7, 14.1_
     - _Design: Data Models → Entity / Relationship / IncidentState / StateVersionMeta_
-  - [ ] 1.3 Unit test: backward-compatible schema load (obligation precursor)
+  - [x] 1.3 Unit test: backward-compatible schema load (obligation precursor)
     - In a new or existing schema test, assert a pre-slice snapshot dict (no new keys) still validates and that new fields take their defaults (`condition=None`, `category=context`, empty lists), and that out-of-enum `created_from` / `recommended_response_focus` / `routing_transition` are rejected.
     - **Validates: Requirements 1.4, 2.5, 2.8, 5.7, 14.1**
     - _Design: Data Models → Backward-compatibility statement; Error Handling_
 
-- [ ] 2. Pure GAS-lite service — create `app/services/gas_lite.py` (no Firestore I/O, no LLM), TDD with `backend/tests/test_gas_lite.py`
-  - [ ] 2.1 Implement `entity_id` with type-aware normalization and skip-on-missing-key
+- [x] 2. Pure GAS-lite service — create `app/services/gas_lite.py` (no Firestore I/O, no LLM), TDD with `backend/tests/test_gas_lite.py`
+  - [x] 2.1 Implement `entity_id` with type-aware normalization and skip-on-missing-key
     - `entity_id(entity_type, *key_parts)`: uppercase type prefix + `"::"` + type-aware normalized parts joined by `"::"`; trim/collapse whitespace; **host** UPPERCASE, **account** lowercase, **domain** lowercase, **ip** canonical (trimmed; IPv4 as-is), **process** `PROCESS::<HOST-normalized>::<process-name trimmed, lowercased>`, **file** `FILE::<HOST-normalized>::<normalized-path>` (unify `\`→`/`, trim); the original readable value is preserved by the caller in `Entity.name`; return no id when any required part is empty (caller creates no entity).
     - _Requirements: 7.1, 7.2, 7.5_
     - _Design: Components → gas_lite.entity_id; Normalization table_
-  - [ ] 2.1a Unit tests for `entity_id`
+  - [x] 2.1a Unit tests for `entity_id`
     - Deterministic ids for `HOST::SALES-LT-07`, `ACCOUNT::farah`, `IP::203.0.113.45`, `DOMAIN::example.test`, `PROCESS::SALES-LT-07::installer.exe`, `FILE::SALES-LT-07::c:/users/farah/downloads/installer.exe`; empty key part yields no id; `Entity.name` keeps the source form.
     - **Validates: Requirements 7.1, 7.2, 7.5**
-  - [ ] 2.2 Implement `extract_entities` field→entity mapping (incl. file & session)
+  - [x] 2.2 Implement `extract_entities` field→entity mapping (incl. file & session)
     - Map per the documented table: `host`→HOST, `account`→ACCOUNT, `process_start.process`→PROCESS::HOST::process, `process_start.path`→FILE::HOST::normalized-path, `dns_query.query`→DOMAIN, `dns_query.source_ip`→IP, `network_upload.destination_ip`→IP; map SESSION **only** from an explicitly present allowlisted session field (`session_id` or `session_cookie_id`) → SESSION::account::session_id — never derive or fabricate a session id; accumulate `evidence_ids`, `first_seen`/`last_seen` from `event_time`; preserve the original readable value in `Entity.name`; never create entities from fields outside the mapping.
     - _Requirements: 6.8, 6.9, 7.4_
     - _Design: Components → gas_lite.extract_entities_
-  - [ ] 2.2a Unit tests for `extract_entities` (obligations 1 & 2)
+  - [x] 2.2a Unit tests for `extract_entities` (obligations 1 & 2)
     - From `backend/fixtures/planner_smoke_evidence.json`: `HOST::SALES-LT-07` and `ACCOUNT::farah` extracted (obligation 1); IP/domain/process/file extracted for supported fields (obligation 2).
     - Because `planner_smoke_evidence.json` has **no** session field, the session-extraction check uses a small dedicated **synthetic** test record (a `session_id`-bearing record constructed in the test) to assert `SESSION::<account>::<session_id>` is produced; no session id is fabricated from the planner_smoke fixture.
     - **Validates: Requirements 6.8, 7.4** (Test obligations 15.1, 15.2)
-  - [ ] 2.3 Implement `extract_relationships` (allowlisted context/attack, provenance, ids)
+  - [x] 2.3 Implement `extract_relationships` (allowlisted context/attack, provenance, ids)
     - Emit only allowlisted relations supported by the fixture (`logged_into`, `resolved_domain`, `connected_to`, `executed_on`), each typed as a `RelationshipType` member, each `OBSERVED` with `evidence_ids` and a deterministic `REL::` id; feed `alert.technique` into `attack_mapping` not a fabricated relation; drop edges whose endpoints are not both in `entities`. Any relation value outside the allowlist is rejected at the schema layer (`RelationshipType` validation) and `gas_lite` only ever emits allowlisted members.
     - _Requirements: 6.4, 6.5, 6.6, 6.7_
     - _Design: Components → gas_lite.extract_relationships; Data Models → RelationshipType_
-  - [ ] 2.3a Unit tests for `extract_relationships` (obligations 5 & 6)
+  - [x] 2.3a Unit tests for `extract_relationships` (obligations 5 & 6)
     - Every observed relationship carries ≥1 `evidence_id` (obligation 5); observed vs inferred remain distinguishable via `status` (obligation 6); constructing a `Relationship` with an out-of-allowlist `relation` raises a `RelationshipType` validation error.
     - **Validates: Requirements 6.4, 6.5, 6.7** (Test obligations 15.5, 15.6)
-  - [ ] 2.4 Implement `dedupe_and_merge` (idempotent merge by deterministic id)
+  - [x] 2.4 Implement `dedupe_and_merge` (idempotent merge by deterministic id)
     - Merge duplicate entities/relationships by id: union `evidence_ids`, widen `first_seen`/`last_seen` (min/max), keep a single instance; idempotent on identical input.
     - _Requirements: 5.5, 6.7, 11.5_
     - _Design: Components → gas_lite.dedupe_and_merge_
-  - [ ] 2.4a Unit test for dedup idempotence (obligation 4)
+  - [x] 2.4a Unit test for dedup idempotence (obligation 4)
     - Passing identical evidence twice adds no new elements and unions provenance.
     - **Validates: Requirements 6.7, 11.5** (Test obligation 15.4)
-  - [ ] 2.5 Implement `build_response_edges`
+  - [x] 2.5 Implement `build_response_edges`
     - One response edge per executed action (per `action_result`): relation `action_attempted_on`, `category=response`, carrying `action_id` and `execution_id`, targeting the action's target entity; deterministic id includes `execution_id`.
     - _Requirements: 12.1, 12.5_
     - _Design: Components → gas_lite.build_response_edges_
-  - [ ] 2.5a Unit test for response edge (obligation 10)
+  - [x] 2.5a Unit test for response edge (obligation 10)
     - `build_response_edges` emits one `action_attempted_on` (category=response) with `action_id`/`execution_id` per executed action.
     - **Validates: Requirements 12.1, 12.5** (Test obligation 15.10)
-  - [ ] 2.6 Implement `apply_validated_effects`
+  - [x] 2.6 Implement `apply_validated_effects`
     - Only `validation_status == "effective"` mutates the target entity's `condition` (documented tool→condition transitions, e.g. `isolate_host`→`isolated`, `revoke_sessions`→`contained`, `preserve_evidence`→no change); `ineffective`/`unknown` leave `condition` unchanged; mutate only the target entity and nothing else.
     - _Requirements: 12.2, 12.3, 12.4_
     - _Design: Components → gas_lite.apply_validated_effects; Traceability → Effect validation_
-  - [ ] 2.6a Unit tests for effect safety (obligations 11 & 12)
+  - [x] 2.6a Unit tests for effect safety (obligations 11 & 12)
     - `ineffective` leaves `condition` unchanged (obligation 11); a synthetic `effective` result changes only the target entity's `condition` (obligation 12).
     - **Validates: Requirements 12.2, 12.3, 12.4** (Test obligations 15.11, 15.12)
-  - [ ] 2.7 Implement `build_snapshot` (deterministic assembly + ordering)
+  - [x] 2.7 Implement `build_snapshot` (deterministic assembly + ordering)
     - Compose `extract_entities` → `extract_relationships` → `dedupe_and_merge` → `build_response_edges` → `apply_validated_effects` → timeline → provenance; stable ordering (entities by id, relationships by id, timeline by `(timestamp is None, timestamp)` + tiebreak); `REL::{relation}::{source}::{target}[::{execution_id}]` id scheme; byte-identical content for identical inputs excluding version/provenance/timestamp.
     - _Requirements: 1.5, 11.1, 11.2, 11.3_
     - _Design: Components → gas_lite.build_snapshot_
-  - [ ] 2.7a Unit test for deterministic/stable snapshot (obligation 3)
+  - [x] 2.7a Unit test for deterministic/stable snapshot (obligation 3)
     - Two `build_snapshot` calls on identical stored inputs yield byte-identical content (excluding version/provenance/timestamp); entity ids stable across the two calls.
     - **Validates: Requirements 11.1, 11.2** (Test obligations 15.3)
 
-- [ ] 3. Repository addition — `app/database/repositories.py`
-  - [ ] 3.1 Add `list_state_versions(case_id) -> list[dict]`
+- [x] 3. Repository addition — `app/database/repositories.py`
+  - [x] 3.1 Add `list_state_versions(case_id) -> list[dict]`
     - Stream the `state_versions` subcollection and return stored version documents; keep the `STATE-{version:03d}` doc-id scheme; leave `add_state_version`/`get_state_version` unchanged; caller orders by `version`.
     - _Requirements: 13.2_
     - _Design: Components → Changes to repositories.py_

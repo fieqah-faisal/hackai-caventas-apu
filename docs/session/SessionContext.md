@@ -52,7 +52,9 @@ Firestore; no credentials needed).
   synthetic data; `npm run build` green. Approvals/activity not yet wired to
   live endpoints (BL-003). Product record + palette in root `PRODUCT.md`.
 - GAS-lite incident-state (BL-024): STAIR-inspired enrichment of the
-  versioned incident state is **specified, implementation pending**. Spec at
+  versioned incident state has its spec committed and **Core Tasks 1-3
+  implemented** (schema, pure gas_lite service, repository read; backend
+  suite 64 passed; implementation not yet committed/pushed). Spec at
   `.kiro/specs/caventas-gas-lite/` (requirements/design/tasks, format-valid);
   decisions in DEC-010. Core = enriched Entity/Relationship schemas, a pure
   `app/services/gas_lite.py` graph builder, three-case prior-state handling,

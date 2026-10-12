@@ -3,6 +3,46 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-09 GAS-lite Core Tasks 1-3 implemented (DONE; 4.x/6.x gated)
+
+- Committed the corrected spec checkpoint (`f4a964f`, notebook-only: BL-024
+  renumber + the actual Backlog entry that had been missing). Not pushed.
+- Task 1 (schema foundation): extended `app/schemas/incident_state.py`
+  backward-compatibly — added `EntityType.SESSION`; new enums
+  `RelationshipType` (closed 11-value allowlist, now the type of
+  `Relationship.relation`), `RelationshipCategory`, `ResponseFocus`,
+  `RoutingTransition` (`re_enter`), `CreatedFrom` (Core three), `ReportStatus`;
+  enriched `Entity` (evidence_ids/first_seen/last_seen/condition) and
+  `Relationship` (id/category/first_seen/last_seen/attributes/action_id/
+  execution_id); `IncidentState` provenance + response-situation + report
+  blocks (carried, not computed); added `StateVersionMeta`. All new fields
+  optional/defaulted.
+- Task 2 (pure graph service): created `app/services/gas_lite.py` — pure,
+  deterministic, no Firestore I/O, no LLM. Type-aware deterministic
+  `entity_id` (host UPPER, account/domain lower, ip canonical,
+  process/file host-prefixed + path-normalized; composite PROCESS/FILE/
+  SESSION prefix handled); `extract_entities` (host/account/process/FILE from
+  path/domain/ip; SESSION only from explicit `session_id`/`session_cookie_id`,
+  never fabricated); `extract_relationships` (allowlisted observed
+  context edges with evidence + deterministic `REL::` ids, no dangling edges);
+  `dedupe_and_merge` (idempotent); `build_response_edges`
+  (`action_attempted_on`, carries action_id/execution_id); effective-only
+  `apply_validated_effects` (ineffective never improves condition; effective
+  mutates only the target); deterministic id-ordered `build_graph`.
+- Task 3 (repository read): added read-only `list_state_versions(case_id)` to
+  `app/database/repositories.py` (existing functions untouched).
+- Tests: added `backend/tests/test_gas_lite.py` (20 tests) covering mandatory
+  obligations 1-6, 10-12 and backward-compat + determinism; full backend
+  suite **64 passed** (was 44). No regressions.
+- GATE respected: Tasks 4.x (state_manager integration) and 6.x
+  (execution-flow integration) NOT started — blocked on PR #9
+  (`state_manager.py`) merge + rebase; preserve PR #9's timezone-aware
+  timeline sorting and simulator-result behaviour. `state_manager.py` and
+  `execution_service.py` were NOT modified.
+- Not committed/pushed (implementation): awaiting explicit approval. Changed
+  files: `app/schemas/incident_state.py`, `app/services/gas_lite.py`,
+  `app/database/repositories.py`, `tests/test_gas_lite.py`, `tasks.md`,
+  session notebook. See BL-024, DEC-010.
 ### 2026-10-09 GAS-lite incident-state specification complete (SPEC DONE, IMPL PENDING)
 
 - Authored the GAS-lite (Graph-as-State, STAIR-inspired) spec at
