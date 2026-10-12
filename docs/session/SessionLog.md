@@ -7,7 +7,7 @@
 - `backend/README.md`: the "Stubbed for later milestones (return HTTP 501)" list is replaced by a BL-003 endpoint table (decision `approve`/`reject`, execute, reports). The layout line, test-coverage line and next steps are updated; missing list endpoints point to BL-013 / BL-025.
 - `frontend/README.md` (api mode): plans are ordered by `created_at` and show an "N actions unavailable" count; Approvals is "unsupported" until BL-013; audit maps the real `{audit_id, event_type, timestamp, details}`; evidence is in upload order. Sections that were still correct are unchanged.
 - No backend code change beyond the comment, so no new backend test. `cd backend && ../.venv/bin/python -m pytest -q`: **45 passed**. The frontend was not rebuilt (README only).
-- Commit on `link`: see the S4 report (`.agents/tasks/link-e2e-2026-10-09/s4-report.md`, local) for the SHA.
+- Commit on `link`: `4fdfcac` (tidy + this entry), then a notebook-only commit that records this SHA. Report: `.agents/tasks/link-e2e-2026-10-09/s4-report.md` (local).
 
 ### 2026-10-12 `link` S3 contract fixes from the API-mode run (DONE)
 
