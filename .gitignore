@@ -40,6 +40,9 @@ env/
 
 # --- Local code review graph ---
 .code-review-graph/
+
+# --- Subagent-driven-development scratch ---
+.superpowers/
 # --- Local editor / design tooling (not product code) ---
 # Impeccable skill bundle (binary + references) lives only on-machine.
 .kiro/skills/
