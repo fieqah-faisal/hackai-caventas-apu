@@ -4,12 +4,15 @@
 > Completed items are removed (their history lives in `SessionLog.md`).
 > Protocol: [README.md](README.md).
 >
-> **ID registry (2026-10-12):** BL-014..BL-023 and DEC-006/DEC-007 are
+> **ID registry (2026-10-12):** BL-014..BL-024 and DEC-006/DEC-007 are
 > claimed on unmerged branches `feat/policy-pack-v1` (BL-014..018, DEC-006)
-> and `security-scenario-simulation-evaluation-lead` (BL-014..023, DEC-006,
+> and `security-scenario-simulation-evaluation-lead` (BL-014..024, DEC-006,
 > DEC-007); the two branches collide with each other.
-> `feat/gas-lite-state-fieqah` claims BL-020 and DEC-010. BL-024 and
-> DEC-008 are used on `link`; next free IDs: **BL-025** and **DEC-009**.
+> `feat/gas-lite-state-fieqah` claims BL-020 and DEC-010. `link` uses
+> BL-024 (npm audit), BL-025, DEC-008 and DEC-009. `link`'s BL-024 also
+> collides with security-lead's BL-024 (approval invalidation); it is not
+> renumbered here and must be resolved when the branches merge. Next free
+> IDs: **BL-026** and **DEC-011**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 
 ## Open Items
@@ -55,6 +58,10 @@
   SSR hydration, which should not apply to this client-rendered SPA). Fix
   needs react-router-dom 7.x (breaking); not fixed on `link`. The other 13
   `npm audit` findings are dev-only tooling. — open / frontend
+- BL-025 — Report read endpoint: `GET /cases/{id}/reports` (list or
+  latest). Without it, the Report tab shows only reports generated in the
+  current page session, and after a reload the analyst must regenerate,
+  which stores a new version (DEC-009). — open / Raaj
 
 ## Deferred
 

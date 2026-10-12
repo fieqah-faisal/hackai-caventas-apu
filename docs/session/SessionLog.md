@@ -13,10 +13,12 @@
   - Frontend: `RealProvider` sorts `GET /plans` by `created_at`, compared as instants, before numbering versions or deriving the header stage. Live, v1..v3 now follow creation order; S2 had v3 as the oldest.
   - Backend: `reporting._latest_plan` sorts in Python instead of taking `list_plans()[-1]`, pinned by `test_report_uses_newest_plan_not_stream_order`. `execution_service` is unchanged because an action has at most one approval.
   - uvicorn was relaunched for the live probes with `s3-restart-backend.sh` (same env as S2).
-- Commits on `link`: `91b3717` (audit), `5aa1b09` (decision pin), `a078663` (frontend plan order). Tests:
-  - `cd frontend && npm run build && npm run test`: build green, **43 passed** (7 files).
-  - `cd backend && ../.venv/bin/python -m pytest -q`: **45 passed** (+1).
-- Next: report generation (H4), then the API-mode honesty fixes.
+- Report (H4, DEC-009): opening the Report tab no longer POSTs. It shows "No report generated yet" with a Generate button, and Regenerate once a report exists. The newest confirmed report is kept in memory per case, never in `localStorage`. Live probe: the tab read made no `/api` call, and one Generate made one `POST /reports` (`report_generated` events went from 9 to 10). The report read endpoint is logged as BL-025.
+  - Notebook fix: the security-lead branch also uses BL-024, which S1's ID registry missed. The registry line now records the collision. Next free IDs: BL-026 / DEC-011.
+- Commits on `link`: `91b3717` (audit), `5aa1b09` (decision pin), `a078663` (frontend plan order), `b29e9bc` (report plan order). Tests:
+  - `cd frontend && npm run build && npm run test`: build green, **50 passed** (8 files; +3 `ReportTab` component tests, +4 report provider tests).
+  - `cd backend && ../.venv/bin/python -m pytest -q`: **45 passed**.
+- Next: the API-mode honesty fixes (Response Plan fixture copy and "No actions", report decision/validation wording).
 
 ### 2026-10-12 `link` API-mode end-to-end run on the Firestore emulator (IN PROGRESS)
 

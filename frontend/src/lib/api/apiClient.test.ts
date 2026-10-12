@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { apiGet } from "./apiClient";
 import { RealProvider } from "./realProvider";
 import type { AuditEventDTO, DecisionResponseDTO, StoredActionDTO } from "./dto";
-import { PLANS_IN_DOC_ID_ORDER } from "@/test/realBackendBodies";
+import { PLANS_IN_DOC_ID_ORDER, reportBody } from "@/test/realBackendBodies";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -294,5 +294,53 @@ describe("RealProvider contract (real backend bodies)", () => {
     if (out.kind !== "ok") return;
     expect(out.value.data.stage).toBe("eradication");
     expect(out.value.data.agentState).toBe("Plan v3 ready");
+  });
+
+  // ---- Report: POST /reports only on an explicit generate ----
+
+  it("getReport never calls the backend and is null before any generation", async () => {
+    const fetchMock = mockFetch(200, reportBody("RPT-000000000001"));
+    globalThis.fetch = fetchMock;
+    const out = await new RealProvider().getReport("CASE-TEST0001");
+    expect(out).toEqual({ kind: "ok", value: { data: null, source: "real" } });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("generateReport POSTs once; getReport then returns that report from memory", async () => {
+    const fetchMock = mockFetch(200, reportBody("RPT-000000000001"));
+    globalThis.fetch = fetchMock;
+    const provider = new RealProvider();
+
+    const gen = await provider.generateReport("CASE-TEST0001");
+    expect(gen.kind).toBe("ok");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/cases/CASE-TEST0001/reports");
+    expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("POST");
+
+    const again = await provider.getReport("CASE-TEST0001");
+    expect(fetchMock).toHaveBeenCalledTimes(1); // no second POST
+    expect(again.kind).toBe("ok");
+    if (again.kind === "ok") expect(again.value.data?.reportId).toBe("RPT-000000000001");
+    // Cached per case only.
+    const other = await provider.getReport("CASE-OTHER");
+    if (other.kind === "ok") expect(other.value.data).toBeNull();
+  });
+
+  it("a failed generation is reported as an error and nothing is cached", async () => {
+    globalThis.fetch = mockFetch(500, { detail: "Internal Server Error" });
+    const provider = new RealProvider();
+    const gen = await provider.generateReport("CASE-TEST0001");
+    expect(gen).toEqual({ kind: "http_error", status: 500, detail: "Internal Server Error" });
+    const after = await provider.getReport("CASE-TEST0001");
+    expect(after).toEqual({ kind: "ok", value: { data: null, source: "real" } });
+  });
+
+  it("the session report cache never touches localStorage", async () => {
+    globalThis.fetch = mockFetch(200, reportBody("RPT-000000000001"));
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const provider = new RealProvider();
+    await provider.generateReport("CASE-TEST0001");
+    await provider.getReport("CASE-TEST0001");
+    expect(setItem).not.toHaveBeenCalled();
   });
 });

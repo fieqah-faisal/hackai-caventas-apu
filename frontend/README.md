@@ -68,6 +68,11 @@ Known backend gaps are surfaced explicitly rather than faked:
   backend exposes only action IDs.
 - The Report uses the actual backend report DTO; PDF download is disabled
   because `pdf_path` is not downloadable over the API.
+- Opening the Report tab only reads. A report is generated only when the
+  analyst clicks Generate / Regenerate. Each `POST /reports` stores a new
+  report version, PDF and audit event. The latest report generated in this
+  page session is kept in memory (never `localStorage`). The backend has no
+  report-list endpoint, so earlier reports are not shown after a reload.
 - Global dashboard aggregates that have no backend endpoint are shown only in
   fixture mode, never fabricated in API mode.
 

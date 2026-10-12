@@ -13,10 +13,10 @@
  *   GET  /cases/{id}/audit                   -> AuditEventDTO[]
  *   POST /cases/{id}/actions/{aid}/decision  -> DecisionResponseDTO (approve/reject)
  *   POST /cases/{id}/actions/{aid}/execute   -> ExecuteResponseDTO
- *   POST /cases/{id}/reports                 -> StructuredReportDTO
+ *   POST /cases/{id}/reports                 -> StructuredReportDTO (explicit action only)
  *   GET  /cases/{id}/reports/{rid}           -> StructuredReportDTO
  * NOT available: global cases list, dashboard aggregates, plan-detail,
- *   run-status, request_more_investigation decision, /validate.
+ *   run-status, request_more_investigation decision, /validate, report list.
  */
 import { apiGet, apiPost, apiPostForm, type ApiResult } from "./apiClient";
 import {
@@ -256,16 +256,25 @@ export class RealProvider implements DataProvider {
     return ok(r.data.map((e) => toAuditEventVM(e, caseId)), "real");
   }
 
-  async getReport(caseId: string): Promise<Outcome<ReportVM>> {
-    // Reports are generated via POST; there is no "latest report" GET without an
-    // id, so getReport generates a fresh structured report.
-    return this.generateReport(caseId);
+  /**
+   * Reports generated in THIS page session, newest per case. Memory only
+   * (never localStorage). The backend has no "list/latest report" endpoint,
+   * so reports generated before a reload cannot be shown again.
+   */
+  private readonly sessionReports = new Map<string, ReportVM>();
+
+  async getReport(caseId: string): Promise<Outcome<ReportVM | null>> {
+    // Never POSTs: each POST /reports stores a new report version, renders a
+    // PDF and writes a report_generated audit event.
+    return ok(this.sessionReports.get(caseId) ?? null, "real");
   }
 
   async generateReport(caseId: string): Promise<Outcome<ReportVM>> {
     const r = await apiPost<StructuredReportDTO>(`/cases/${caseId}/reports`);
     if (r.kind !== "ok") return fromApi<ReportVM>(r as ApiResult<never>, "real");
-    return ok(toReportVM(r.data), "real");
+    const vm = toReportVM(r.data);
+    this.sessionReports.set(caseId, vm); // cached only after backend confirmation
+    return ok(vm, "real");
   }
 
   // ---- Mutations ----------------------------------------------------------

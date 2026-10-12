@@ -154,3 +154,34 @@ the correspondence. Any backend rename needs a mapping change and a test.
 
 **Links:** `frontend/src/lib/api/dto.ts`, `frontend/src/lib/mapping/`,
 BL-013, `.agents/tasks/link-e2e-2026-10-09/s2-e2e-findings.md` (local).
+
+## DEC-009: Reports are generated only on an explicit analyst action (2026-10-12)
+
+**Context:** In API mode the Report tab called `POST /cases/{id}/reports`
+on every load, and twice under React StrictMode in dev. Each call stores a
+new report version, renders a PDF into `backend/reports/` and writes a
+`report_generated` audit event, so one S2 case collected 9 reports from tab
+visits alone. The backend has no endpoint to read back the latest report
+without its id.
+
+**Options considered:** (1) keep generate-on-load: floods the audit trail
+and report store with versions nobody asked for; (2) add a list/latest
+report read endpoint: a new backend endpoint, which the brief says must not
+be added silently (logged as BL-025); (3) generate only when the analyst
+clicks Generate / Regenerate, and keep the latest generated report in
+memory for the page session. Option 3 was chosen.
+
+**Decision:** `DataProvider.getReport` only reads and returns
+`ReportVM | null`; `generateReport` is the only call that POSTs. The Report
+tab shows a "No report generated yet" state with a Generate button, and
+shows a report only after the backend confirms it. `RealProvider` keeps the
+newest confirmed report per case in memory, never in `localStorage`.
+Fixture mode is unchanged apart from the Regenerate button. PDF download
+stays disabled.
+
+**Tradeoff:** After a page reload the tab is empty again, and
+regenerating stores another report version. BL-025 tracks a read endpoint
+that would remove this.
+
+**Links:** `frontend/src/features/caseWorkspace/tabs/ReportTab.tsx`,
+`frontend/src/lib/api/realProvider.ts`, BL-025, DEC-008.

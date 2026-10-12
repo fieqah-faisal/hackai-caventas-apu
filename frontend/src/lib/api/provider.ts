@@ -100,7 +100,12 @@ export interface DataProvider {
   getApprovals(caseId: string): Promise<Outcome<ApprovalItemVM[]>>;
   getExecutionResults(caseId: string): Promise<Outcome<ExecutionResultVM[]>>;
   getAudit(caseId: string): Promise<Outcome<AuditEventVM[]>>;
-  getReport(caseId: string): Promise<Outcome<ReportVM>>;
+  /**
+   * The latest report already generated for the case, or null when there is
+   * none to show. Never generates one: generation is an explicit analyst
+   * action (generateReport).
+   */
+  getReport(caseId: string): Promise<Outcome<ReportVM | null>>;
 
   // Mutations
   submitDecision(
@@ -111,6 +116,7 @@ export interface DataProvider {
     reason: string,
   ): Promise<Outcome<{ state: string }>>;
   executeAction(caseId: string, actionId: string): Promise<Outcome<ExecutionResultVM>>;
+  /** Generate a new report version (explicit analyst action; one request per call). */
   generateReport(caseId: string): Promise<Outcome<ReportVM>>;
 
   /**
