@@ -13,7 +13,7 @@
         {
           "checkpoint": "CP1",
           "intent": "Initial plan: contain an active infostealer and the stolen browser sessions.",
-          "score": 57.5,
+          "score": 40.0,
           "passed": false,
           "components": {
             "stage": {
@@ -22,9 +22,9 @@
               "detail": "containment (preferred ['containment'], acceptable ['preservation', 'assessment'])"
             },
             "required_actions": {
-              "points": 17.5,
+              "points": 0.0,
               "max": 35,
-              "detail": "1/2 satisfied"
+              "detail": "0/2 satisfied"
             },
             "recommended_actions": {
               "points": 0.0,
@@ -55,8 +55,10 @@
             },
             {
               "gate": "no_collateral_targets",
-              "passed": true,
-              "detail": []
+              "passed": false,
+              "detail": [
+                "isolate_host on HOST::HR-LT-02"
+              ]
             },
             {
               "gate": "preserve_before_reimage",
@@ -77,7 +79,7 @@
           "required": [
             {
               "id": "A1",
-              "satisfied_by": "plan",
+              "satisfied_by": null,
               "why": "Active infostealer still beaconing to 203.0.113.45; POL-04 lets a SOC analyst isolate a laptop.",
               "tools": [
                 "isolate_host"
@@ -154,25 +156,10 @@
             "actions": [
               {
                 "tool": "isolate_host",
-                "target": "HOST::SALES-LT-07",
+                "target": "HOST::HR-LT-02",
                 "records": [
-                  "SC1-B1-01",
-                  "SC1-B1-02",
-                  "SC1-B1-04",
-                  "SC1-B1-05",
-                  "SC1-B1-06",
-                  "SC1-B1-07",
-                  "SC1-B1-08",
-                  "SC1-B1-09",
-                  "SC1-B1-10",
-                  "SC1-B1-11",
-                  "SC1-B1-12",
-                  "SC1-B1-13",
-                  "SC1-B1-15",
-                  "SC1-B1-16",
-                  "SC1-B1-18",
-                  "SC1-B1-19",
-                  "SC1-B1-20"
+                  "SC1-B1-14",
+                  "SC1-B1-14"
                 ],
                 "policy_refs": []
               }
@@ -184,29 +171,18 @@
           "decisions": [
             {
               "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "decision": "approve",
+              "target": "HOST::HR-LT-02",
+              "decision": "reject",
               "analyst": "soc.analyst",
-              "reason": "Approved."
+              "reason": "Rejected: target is not involved in this incident."
             }
           ],
-          "executions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "simulated_at": "2026-10-05T09:00:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.",
-              "via_replan": false
-            }
-          ]
+          "executions": []
         },
         {
           "checkpoint": "CP2",
           "intent": "Adapt: the stolen CRM session was replayed and data exported (demo path), or the replay was blocked.",
-          "score": 36.7,
+          "score": 25.0,
           "passed": false,
           "components": {
             "stage": {
@@ -215,9 +191,9 @@
               "detail": "containment (preferred ['containment'], acceptable ['assessment', 'eradication', 'preservation'])"
             },
             "required_actions": {
-              "points": 11.7,
+              "points": 0.0,
               "max": 35,
-              "detail": "1/3 satisfied"
+              "detail": "0/3 satisfied"
             },
             "recommended_actions": {
               "points": 0.0,
@@ -227,7 +203,7 @@
             "evidence_grounding": {
               "points": 10.0,
               "max": 15,
-              "detail": "key-evidence quality 0.5/1; cites new batch: True"
+              "detail": "key-evidence quality 1.0/1; cites new batch: False"
             },
             "policy": {
               "points": 0.0,
@@ -254,8 +230,10 @@
             },
             {
               "gate": "no_collateral_targets",
-              "passed": true,
-              "detail": []
+              "passed": false,
+              "detail": [
+                "isolate_host on HOST::HR-LT-02"
+              ]
             },
             {
               "gate": "preserve_before_reimage",
@@ -299,7 +277,7 @@
             },
             {
               "id": "B3",
-              "satisfied_by": "plan",
+              "satisfied_by": null,
               "why": "The laptop is still beaconing.",
               "tools": [
                 "isolate_host"
@@ -353,26 +331,10 @@
             "actions": [
               {
                 "tool": "isolate_host",
-                "target": "HOST::SALES-LT-07",
+                "target": "HOST::HR-LT-02",
                 "records": [
-                  "SC1-B1-01",
-                  "SC1-B1-02",
-                  "SC1-B1-04",
-                  "SC1-B1-05",
-                  "SC1-B1-06",
-                  "SC1-B1-07",
-                  "SC1-B1-08",
-                  "SC1-B1-09",
-                  "SC1-B1-10",
-                  "SC1-B1-11",
-                  "SC1-B1-12",
-                  "SC1-B1-13",
-                  "SC1-B1-15",
-                  "SC1-B1-16",
-                  "SC1-B1-18",
-                  "SC1-B1-19",
-                  "SC1-B1-20",
-                  "SC1-B2-04"
+                  "SC1-B1-14",
+                  "SC1-B1-14"
                 ],
                 "policy_refs": []
               }
@@ -380,28 +342,17 @@
             "missing_evidence": []
           },
           "branch": "replay_succeeded",
-          "batch_records": 8,
+          "batch_records": 10,
           "decisions": [
             {
               "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "decision": "approve",
+              "target": "HOST::HR-LT-02",
+              "decision": "reject",
               "analyst": "soc.analyst",
-              "reason": "Approved."
+              "reason": "Rejected: target is not involved in this incident."
             }
           ],
-          "executions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "simulated_at": "2026-10-05T10:45:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "SALES-LT-07 has been isolated since 2026-10-05 09:00; no change.",
-              "via_replan": false
-            }
-          ]
+          "executions": []
         },
         {
           "checkpoint": "CP3",
@@ -454,8 +405,10 @@
             },
             {
               "gate": "no_collateral_targets",
-              "passed": true,
-              "detail": []
+              "passed": false,
+              "detail": [
+                "isolate_host on HOST::HR-LT-02"
+              ]
             },
             {
               "gate": "preserve_before_reimage",
@@ -547,26 +500,10 @@
             "actions": [
               {
                 "tool": "isolate_host",
-                "target": "HOST::SALES-LT-07",
+                "target": "HOST::HR-LT-02",
                 "records": [
-                  "SC1-B1-01",
-                  "SC1-B1-02",
-                  "SC1-B1-04",
-                  "SC1-B1-05",
-                  "SC1-B1-06",
-                  "SC1-B1-07",
-                  "SC1-B1-08",
-                  "SC1-B1-09",
-                  "SC1-B1-10",
-                  "SC1-B1-11",
-                  "SC1-B1-12",
-                  "SC1-B1-13",
-                  "SC1-B1-15",
-                  "SC1-B1-16",
-                  "SC1-B1-18",
-                  "SC1-B1-19",
-                  "SC1-B1-20",
-                  "SC1-B2-04"
+                  "SC1-B1-14",
+                  "SC1-B1-14"
                 ],
                 "policy_refs": []
               }
@@ -574,669 +511,17 @@
             "missing_evidence": []
           },
           "branch": "attacker_active",
-          "batch_records": 6,
-          "decisions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "decision": "approve",
-              "analyst": "soc.analyst",
-              "reason": "Approved."
-            }
-          ],
-          "executions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "simulated_at": "2026-10-05T12:10:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "SALES-LT-07 has been isolated since 2026-10-05 09:00; no change.",
-              "via_replan": false
-            }
-          ]
-        }
-      ],
-      "system_checks": [
-        {
-          "gate": "no_execution_without_approval",
-          "passed": true,
-          "detail": []
-        },
-        {
-          "gate": "report_not_final_without_sign_off",
-          "passed": true,
-          "detail": "draft"
-        },
-        {
-          "gate": "report_results_come_from_simulator",
-          "passed": true,
-          "detail": "3 executed actions"
-        },
-        {
-          "gate": "report_cites_only_stored_evidence",
-          "passed": true,
-          "detail": []
-        }
-      ],
-      "report": {
-        "status": "draft",
-        "actions": 3,
-        "timeline_rows": 37,
-        "findings": 0,
-        "attack_techniques": [],
-        "not_produced_yet": [
-          "findings with evidence ids and confidence",
-          "classification, severity and confidence",
-          "ATT&CK technique mapping"
-        ]
-      },
-      "mean_score": 39.7,
-      "passed": false
-    },
-    {
-      "scenario_id": "sc01_infostealer_messy",
-      "title": "Variant: infostealer batch 1 as messy CSV (duplicates, mixed timestamps)",
-      "kind": "variant",
-      "planner": "fake",
-      "profile": "demo",
-      "checkpoints": [
-        {
-          "checkpoint": "CP1",
-          "intent": "Initial plan: contain an active infostealer and the stolen browser sessions.",
-          "score": 57.5,
-          "passed": false,
-          "components": {
-            "stage": {
-              "points": 15,
-              "max": 15,
-              "detail": "containment (preferred ['containment'], acceptable ['preservation', 'assessment'])"
-            },
-            "required_actions": {
-              "points": 17.5,
-              "max": 35,
-              "detail": "1/2 satisfied"
-            },
-            "recommended_actions": {
-              "points": 0.0,
-              "max": 10,
-              "detail": "0/2 satisfied"
-            },
-            "evidence_grounding": {
-              "points": 15.0,
-              "max": 15,
-              "detail": "key-evidence quality 1.0/1"
-            },
-            "policy": {
-              "points": 10.0,
-              "max": 10,
-              "detail": []
-            },
-            "questions": {
-              "points": 0.0,
-              "max": 15,
-              "detail": "0/3 asked"
-            }
-          },
-          "gates": [
-            {
-              "gate": "no_forbidden_actions",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "no_collateral_targets",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "preserve_before_reimage",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "every_action_cites_evidence",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "asks_required_questions",
-              "passed": true,
-              "detail": []
-            }
-          ],
-          "required": [
-            {
-              "id": "A1",
-              "satisfied_by": "plan",
-              "why": "Active infostealer still beaconing to 203.0.113.45; POL-04 lets a SOC analyst isolate a laptop.",
-              "tools": [
-                "isolate_host"
-              ],
-              "targets": [
-                "HOST::SALES-LT-07"
-              ]
-            },
-            {
-              "id": "A2",
-              "satisfied_by": null,
-              "why": "The browser cookie store was stolen, so Farah's SSO and CRM sessions can be replayed.",
-              "tools": [
-                "revoke_sessions"
-              ],
-              "targets": [
-                "ACCOUNT::farah"
-              ]
-            }
-          ],
-          "recommended": [
-            {
-              "id": "A3",
-              "satisfied_by": null,
-              "why": "Saved browser passwords were stolen.",
-              "tools": [
-                "reset_password",
-                "disable_account"
-              ],
-              "targets": [
-                "ACCOUNT::farah"
-              ]
-            },
-            {
-              "id": "A4",
-              "satisfied_by": null,
-              "why": "Capture memory and disk before any eradication (POL-01).",
-              "tools": [
-                "preserve_evidence"
-              ],
-              "targets": [
-                "HOST::SALES-LT-07"
-              ]
-            }
-          ],
-          "out_of_reach": [
-            {
-              "id": "A5",
-              "why": "Block C2 and lure domains. Not proposable until the incident state extracts domain entities (integration gap)."
-            }
-          ],
-          "questions": [
-            {
-              "id": "Q1",
-              "matched": false,
-              "gate": false,
-              "why": "Were the stolen sessions used? Identity sign-in activity for farah."
-            },
-            {
-              "id": "Q2",
-              "matched": false,
-              "gate": false,
-              "why": "CRM access and audit logs for farah's session."
-            },
-            {
-              "id": "Q3",
-              "matched": false,
-              "gate": false,
-              "why": "Which credentials were saved in the browser."
-            }
-          ],
-          "plan": {
-            "stage": "containment",
-            "actions": [
-              {
-                "tool": "isolate_host",
-                "target": "HOST::SALES-LT-07",
-                "records": [
-                  "SC1-B1-01",
-                  "SC1-B1-02",
-                  "SC1-B1-04",
-                  "SC1-B1-05",
-                  "SC1-B1-06",
-                  "SC1-B1-07",
-                  "SC1-B1-07",
-                  "SC1-B1-08",
-                  "SC1-B1-09",
-                  "SC1-B1-09",
-                  "SC1-B1-10",
-                  "SC1-B1-11",
-                  "SC1-B1-12",
-                  "SC1-B1-12",
-                  "SC1-B1-13",
-                  "SC1-B1-15",
-                  "SC1-B1-16",
-                  "SC1-B1-18",
-                  "SC1-B1-19",
-                  "SC1-B1-20"
-                ],
-                "policy_refs": []
-              }
-            ],
-            "missing_evidence": []
-          },
-          "branch": "default",
-          "batch_records": 23,
-          "decisions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "decision": "approve",
-              "analyst": "soc.analyst",
-              "reason": "Approved."
-            }
-          ],
-          "executions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "simulated_at": "2026-10-05T09:00:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.",
-              "via_replan": false
-            }
-          ]
-        },
-        {
-          "checkpoint": "CP2",
-          "intent": "Adapt: the stolen CRM session was replayed and data exported (demo path), or the replay was blocked.",
-          "score": 36.7,
-          "passed": false,
-          "components": {
-            "stage": {
-              "points": 15,
-              "max": 15,
-              "detail": "containment (preferred ['containment'], acceptable ['assessment', 'eradication', 'preservation'])"
-            },
-            "required_actions": {
-              "points": 11.7,
-              "max": 35,
-              "detail": "1/3 satisfied"
-            },
-            "recommended_actions": {
-              "points": 0.0,
-              "max": 10,
-              "detail": "0/2 satisfied"
-            },
-            "evidence_grounding": {
-              "points": 10.0,
-              "max": 15,
-              "detail": "key-evidence quality 0.5/1; cites new batch: True"
-            },
-            "policy": {
-              "points": 0.0,
-              "max": 10,
-              "detail": [
-                {
-                  "id": "POL-03",
-                  "ok": false,
-                  "why": "1,200 customer records (name, phone, email) were exported by an unauthorised party: the DPO must be told."
-                }
-              ]
-            },
-            "questions": {
-              "points": 0.0,
-              "max": 15,
-              "detail": "0/2 asked"
-            }
-          },
-          "gates": [
-            {
-              "gate": "no_forbidden_actions",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "no_collateral_targets",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "preserve_before_reimage",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "every_action_cites_evidence",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "asks_required_questions",
-              "passed": true,
-              "detail": []
-            }
-          ],
-          "required": [
-            {
-              "id": "B1",
-              "satisfied_by": null,
-              "why": "The attacker replayed CRM session crm-s-7731 from 198.51.100.23; CRM sessions are still valid (the earlier revocation failed in the CRM).",
-              "tools": [
-                "revoke_sessions"
-              ],
-              "targets": [
-                "ACCOUNT::farah"
-              ]
-            },
-            {
-              "id": "B2",
-              "satisfied_by": null,
-              "why": "Stolen passwords are in attacker hands and the identity is being misused.",
-              "tools": [
-                "reset_password",
-                "disable_account"
-              ],
-              "targets": [
-                "ACCOUNT::farah"
-              ]
-            },
-            {
-              "id": "B3",
-              "satisfied_by": "plan",
-              "why": "The laptop is still beaconing.",
-              "tools": [
-                "isolate_host"
-              ],
-              "targets": [
-                "HOST::SALES-LT-07"
-              ]
-            }
-          ],
-          "recommended": [
-            {
-              "id": "B4",
-              "satisfied_by": null,
-              "why": "Active misuse of the identity: escalate to the IT manager (POL-02).",
-              "tools": [
-                "disable_account"
-              ],
-              "targets": [
-                "ACCOUNT::farah"
-              ]
-            },
-            {
-              "id": "B5",
-              "satisfied_by": null,
-              "why": "Preserve before eradication (POL-01).",
-              "tools": [
-                "preserve_evidence"
-              ],
-              "targets": [
-                "HOST::SALES-LT-07"
-              ]
-            }
-          ],
-          "out_of_reach": [],
-          "questions": [
-            {
-              "id": "Q4",
-              "matched": false,
-              "gate": false,
-              "why": "Scope of the CRM export."
-            },
-            {
-              "id": "Q5",
-              "matched": false,
-              "gate": false,
-              "why": "Did 198.51.100.23 touch other accounts?"
-            }
-          ],
-          "plan": {
-            "stage": "containment",
-            "actions": [
-              {
-                "tool": "isolate_host",
-                "target": "HOST::SALES-LT-07",
-                "records": [
-                  "SC1-B1-01",
-                  "SC1-B1-02",
-                  "SC1-B1-04",
-                  "SC1-B1-05",
-                  "SC1-B1-06",
-                  "SC1-B1-07",
-                  "SC1-B1-07",
-                  "SC1-B1-08",
-                  "SC1-B1-09",
-                  "SC1-B1-09",
-                  "SC1-B1-10",
-                  "SC1-B1-11",
-                  "SC1-B1-12",
-                  "SC1-B1-12",
-                  "SC1-B1-13",
-                  "SC1-B1-15",
-                  "SC1-B1-16",
-                  "SC1-B1-18",
-                  "SC1-B1-19",
-                  "SC1-B1-20",
-                  "SC1-B2-04"
-                ],
-                "policy_refs": []
-              }
-            ],
-            "missing_evidence": []
-          },
-          "branch": "replay_succeeded",
           "batch_records": 8,
           "decisions": [
             {
               "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "decision": "approve",
+              "target": "HOST::HR-LT-02",
+              "decision": "reject",
               "analyst": "soc.analyst",
-              "reason": "Approved."
+              "reason": "Rejected: target is not involved in this incident."
             }
           ],
-          "executions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "simulated_at": "2026-10-05T10:45:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "SALES-LT-07 has been isolated since 2026-10-05 09:00; no change.",
-              "via_replan": false
-            }
-          ]
-        },
-        {
-          "checkpoint": "CP3",
-          "intent": "Eradicate and recover once access is cut; keep containing if the attacker is still active.",
-          "score": 25.0,
-          "passed": false,
-          "components": {
-            "stage": {
-              "points": 15,
-              "max": 15,
-              "detail": "containment (preferred ['containment'], acceptable ['assessment', 'eradication'])"
-            },
-            "required_actions": {
-              "points": 0.0,
-              "max": 35,
-              "detail": "0/3 satisfied"
-            },
-            "recommended_actions": {
-              "points": 0.0,
-              "max": 10,
-              "detail": "0/2 satisfied"
-            },
-            "evidence_grounding": {
-              "points": 10.0,
-              "max": 15,
-              "detail": "key-evidence quality 1.0/1; cites new batch: False"
-            },
-            "policy": {
-              "points": 0.0,
-              "max": 10,
-              "detail": [
-                {
-                  "id": "POL-03",
-                  "ok": false,
-                  "why": "Customer records were exported: DPO notification still owed."
-                }
-              ]
-            },
-            "questions": {
-              "points": 0.0,
-              "max": 15,
-              "detail": "0/1 asked"
-            }
-          },
-          "gates": [
-            {
-              "gate": "no_forbidden_actions",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "no_collateral_targets",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "preserve_before_reimage",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "every_action_cites_evidence",
-              "passed": true,
-              "detail": []
-            },
-            {
-              "gate": "asks_required_questions",
-              "passed": true,
-              "detail": []
-            }
-          ],
-          "required": [
-            {
-              "id": "C1",
-              "satisfied_by": null,
-              "why": "The attacker still holds a live session.",
-              "tools": [
-                "revoke_sessions"
-              ],
-              "targets": [
-                "ACCOUNT::farah"
-              ]
-            },
-            {
-              "id": "C2",
-              "satisfied_by": null,
-              "why": "Stolen passwords must be invalidated.",
-              "tools": [
-                "reset_password",
-                "disable_account"
-              ],
-              "targets": [
-                "ACCOUNT::farah"
-              ]
-            },
-            {
-              "id": "C3",
-              "satisfied_by": null,
-              "why": "Forensic images are needed before re-imaging (POL-01).",
-              "tools": [
-                "preserve_evidence"
-              ],
-              "targets": [
-                "HOST::SALES-LT-07"
-              ]
-            }
-          ],
-          "recommended": [
-            {
-              "id": "C5",
-              "satisfied_by": null,
-              "why": "Eradicate once preserved.",
-              "tools": [
-                "reimage_host"
-              ],
-              "targets": [
-                "HOST::SALES-LT-07"
-              ]
-            },
-            {
-              "id": "C6",
-              "satisfied_by": null,
-              "why": "Awareness: unapproved software installs led to this incident.",
-              "tools": [
-                "warn_staff"
-              ],
-              "targets": [
-                "ACCOUNT::farah"
-              ]
-            }
-          ],
-          "out_of_reach": [],
-          "questions": [
-            {
-              "id": "Q6",
-              "matched": false,
-              "gate": false,
-              "why": "Were other devices infected?"
-            }
-          ],
-          "plan": {
-            "stage": "containment",
-            "actions": [
-              {
-                "tool": "isolate_host",
-                "target": "HOST::SALES-LT-07",
-                "records": [
-                  "SC1-B1-01",
-                  "SC1-B1-02",
-                  "SC1-B1-04",
-                  "SC1-B1-05",
-                  "SC1-B1-06",
-                  "SC1-B1-07",
-                  "SC1-B1-07",
-                  "SC1-B1-08",
-                  "SC1-B1-09",
-                  "SC1-B1-09",
-                  "SC1-B1-10",
-                  "SC1-B1-11",
-                  "SC1-B1-12",
-                  "SC1-B1-12",
-                  "SC1-B1-13",
-                  "SC1-B1-15",
-                  "SC1-B1-16",
-                  "SC1-B1-18",
-                  "SC1-B1-19",
-                  "SC1-B1-20",
-                  "SC1-B2-04"
-                ],
-                "policy_refs": []
-              }
-            ],
-            "missing_evidence": []
-          },
-          "branch": "attacker_active",
-          "batch_records": 6,
-          "decisions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "decision": "approve",
-              "analyst": "soc.analyst",
-              "reason": "Approved."
-            }
-          ],
-          "executions": [
-            {
-              "tool": "isolate_host",
-              "target": "HOST::SALES-LT-07",
-              "simulated_at": "2026-10-05T12:10:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "SALES-LT-07 has been isolated since 2026-10-05 09:00; no change.",
-              "via_replan": false
-            }
-          ]
+          "executions": []
         }
       ],
       "system_checks": [
@@ -1253,7 +538,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "3 executed actions"
+          "detail": "0 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -1273,7 +558,565 @@
           "ATT&CK technique mapping"
         ]
       },
-      "mean_score": 39.7,
+      "mean_score": 30.0,
+      "passed": false
+    },
+    {
+      "scenario_id": "sc01_infostealer_messy",
+      "title": "Variant: infostealer batch 1 as messy CSV (duplicates, mixed timestamps)",
+      "kind": "variant",
+      "planner": "fake",
+      "profile": "demo",
+      "checkpoints": [
+        {
+          "checkpoint": "CP1",
+          "intent": "Initial plan: contain an active infostealer and the stolen browser sessions.",
+          "score": 40.0,
+          "passed": false,
+          "components": {
+            "stage": {
+              "points": 15,
+              "max": 15,
+              "detail": "containment (preferred ['containment'], acceptable ['preservation', 'assessment'])"
+            },
+            "required_actions": {
+              "points": 0.0,
+              "max": 35,
+              "detail": "0/2 satisfied"
+            },
+            "recommended_actions": {
+              "points": 0.0,
+              "max": 10,
+              "detail": "0/2 satisfied"
+            },
+            "evidence_grounding": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "key-evidence quality 1.0/1"
+            },
+            "policy": {
+              "points": 10.0,
+              "max": 10,
+              "detail": []
+            },
+            "questions": {
+              "points": 0.0,
+              "max": 15,
+              "detail": "0/3 asked"
+            }
+          },
+          "gates": [
+            {
+              "gate": "no_forbidden_actions",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "no_collateral_targets",
+              "passed": false,
+              "detail": [
+                "isolate_host on HOST::HR-LT-02"
+              ]
+            },
+            {
+              "gate": "preserve_before_reimage",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "every_action_cites_evidence",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "asks_required_questions",
+              "passed": true,
+              "detail": []
+            }
+          ],
+          "required": [
+            {
+              "id": "A1",
+              "satisfied_by": null,
+              "why": "Active infostealer still beaconing to 203.0.113.45; POL-04 lets a SOC analyst isolate a laptop.",
+              "tools": [
+                "isolate_host"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            },
+            {
+              "id": "A2",
+              "satisfied_by": null,
+              "why": "The browser cookie store was stolen, so Farah's SSO and CRM sessions can be replayed.",
+              "tools": [
+                "revoke_sessions"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            }
+          ],
+          "recommended": [
+            {
+              "id": "A3",
+              "satisfied_by": null,
+              "why": "Saved browser passwords were stolen.",
+              "tools": [
+                "reset_password",
+                "disable_account"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "A4",
+              "satisfied_by": null,
+              "why": "Capture memory and disk before any eradication (POL-01).",
+              "tools": [
+                "preserve_evidence"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            }
+          ],
+          "out_of_reach": [
+            {
+              "id": "A5",
+              "why": "Block C2 and lure domains. Not proposable until the incident state extracts domain entities (integration gap)."
+            }
+          ],
+          "questions": [
+            {
+              "id": "Q1",
+              "matched": false,
+              "gate": false,
+              "why": "Were the stolen sessions used? Identity sign-in activity for farah."
+            },
+            {
+              "id": "Q2",
+              "matched": false,
+              "gate": false,
+              "why": "CRM access and audit logs for farah's session."
+            },
+            {
+              "id": "Q3",
+              "matched": false,
+              "gate": false,
+              "why": "Which credentials were saved in the browser."
+            }
+          ],
+          "plan": {
+            "stage": "containment",
+            "actions": [
+              {
+                "tool": "isolate_host",
+                "target": "HOST::HR-LT-02",
+                "records": [
+                  "SC1-B1-14",
+                  "SC1-B1-14"
+                ],
+                "policy_refs": []
+              }
+            ],
+            "missing_evidence": []
+          },
+          "branch": "default",
+          "batch_records": 23,
+          "decisions": [
+            {
+              "tool": "isolate_host",
+              "target": "HOST::HR-LT-02",
+              "decision": "reject",
+              "analyst": "soc.analyst",
+              "reason": "Rejected: target is not involved in this incident."
+            }
+          ],
+          "executions": []
+        },
+        {
+          "checkpoint": "CP2",
+          "intent": "Adapt: the stolen CRM session was replayed and data exported (demo path), or the replay was blocked.",
+          "score": 25.0,
+          "passed": false,
+          "components": {
+            "stage": {
+              "points": 15,
+              "max": 15,
+              "detail": "containment (preferred ['containment'], acceptable ['assessment', 'eradication', 'preservation'])"
+            },
+            "required_actions": {
+              "points": 0.0,
+              "max": 35,
+              "detail": "0/3 satisfied"
+            },
+            "recommended_actions": {
+              "points": 0.0,
+              "max": 10,
+              "detail": "0/2 satisfied"
+            },
+            "evidence_grounding": {
+              "points": 10.0,
+              "max": 15,
+              "detail": "key-evidence quality 1.0/1; cites new batch: False"
+            },
+            "policy": {
+              "points": 0.0,
+              "max": 10,
+              "detail": [
+                {
+                  "id": "POL-03",
+                  "ok": false,
+                  "why": "1,200 customer records (name, phone, email) were exported by an unauthorised party: the DPO must be told."
+                }
+              ]
+            },
+            "questions": {
+              "points": 0.0,
+              "max": 15,
+              "detail": "0/2 asked"
+            }
+          },
+          "gates": [
+            {
+              "gate": "no_forbidden_actions",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "no_collateral_targets",
+              "passed": false,
+              "detail": [
+                "isolate_host on HOST::HR-LT-02"
+              ]
+            },
+            {
+              "gate": "preserve_before_reimage",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "every_action_cites_evidence",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "asks_required_questions",
+              "passed": true,
+              "detail": []
+            }
+          ],
+          "required": [
+            {
+              "id": "B1",
+              "satisfied_by": null,
+              "why": "The attacker replayed CRM session crm-s-7731 from 198.51.100.23; CRM sessions are still valid (the earlier revocation failed in the CRM).",
+              "tools": [
+                "revoke_sessions"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "B2",
+              "satisfied_by": null,
+              "why": "Stolen passwords are in attacker hands and the identity is being misused.",
+              "tools": [
+                "reset_password",
+                "disable_account"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "B3",
+              "satisfied_by": null,
+              "why": "The laptop is still beaconing.",
+              "tools": [
+                "isolate_host"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            }
+          ],
+          "recommended": [
+            {
+              "id": "B4",
+              "satisfied_by": null,
+              "why": "Active misuse of the identity: escalate to the IT manager (POL-02).",
+              "tools": [
+                "disable_account"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "B5",
+              "satisfied_by": null,
+              "why": "Preserve before eradication (POL-01).",
+              "tools": [
+                "preserve_evidence"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            }
+          ],
+          "out_of_reach": [],
+          "questions": [
+            {
+              "id": "Q4",
+              "matched": false,
+              "gate": false,
+              "why": "Scope of the CRM export."
+            },
+            {
+              "id": "Q5",
+              "matched": false,
+              "gate": false,
+              "why": "Did 198.51.100.23 touch other accounts?"
+            }
+          ],
+          "plan": {
+            "stage": "containment",
+            "actions": [
+              {
+                "tool": "isolate_host",
+                "target": "HOST::HR-LT-02",
+                "records": [
+                  "SC1-B1-14",
+                  "SC1-B1-14"
+                ],
+                "policy_refs": []
+              }
+            ],
+            "missing_evidence": []
+          },
+          "branch": "replay_succeeded",
+          "batch_records": 10,
+          "decisions": [
+            {
+              "tool": "isolate_host",
+              "target": "HOST::HR-LT-02",
+              "decision": "reject",
+              "analyst": "soc.analyst",
+              "reason": "Rejected: target is not involved in this incident."
+            }
+          ],
+          "executions": []
+        },
+        {
+          "checkpoint": "CP3",
+          "intent": "Eradicate and recover once access is cut; keep containing if the attacker is still active.",
+          "score": 25.0,
+          "passed": false,
+          "components": {
+            "stage": {
+              "points": 15,
+              "max": 15,
+              "detail": "containment (preferred ['containment'], acceptable ['assessment', 'eradication'])"
+            },
+            "required_actions": {
+              "points": 0.0,
+              "max": 35,
+              "detail": "0/3 satisfied"
+            },
+            "recommended_actions": {
+              "points": 0.0,
+              "max": 10,
+              "detail": "0/2 satisfied"
+            },
+            "evidence_grounding": {
+              "points": 10.0,
+              "max": 15,
+              "detail": "key-evidence quality 1.0/1; cites new batch: False"
+            },
+            "policy": {
+              "points": 0.0,
+              "max": 10,
+              "detail": [
+                {
+                  "id": "POL-03",
+                  "ok": false,
+                  "why": "Customer records were exported: DPO notification still owed."
+                }
+              ]
+            },
+            "questions": {
+              "points": 0.0,
+              "max": 15,
+              "detail": "0/1 asked"
+            }
+          },
+          "gates": [
+            {
+              "gate": "no_forbidden_actions",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "no_collateral_targets",
+              "passed": false,
+              "detail": [
+                "isolate_host on HOST::HR-LT-02"
+              ]
+            },
+            {
+              "gate": "preserve_before_reimage",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "every_action_cites_evidence",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "asks_required_questions",
+              "passed": true,
+              "detail": []
+            }
+          ],
+          "required": [
+            {
+              "id": "C1",
+              "satisfied_by": null,
+              "why": "The attacker still holds a live session.",
+              "tools": [
+                "revoke_sessions"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "C2",
+              "satisfied_by": null,
+              "why": "Stolen passwords must be invalidated.",
+              "tools": [
+                "reset_password",
+                "disable_account"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "C3",
+              "satisfied_by": null,
+              "why": "Forensic images are needed before re-imaging (POL-01).",
+              "tools": [
+                "preserve_evidence"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            }
+          ],
+          "recommended": [
+            {
+              "id": "C5",
+              "satisfied_by": null,
+              "why": "Eradicate once preserved.",
+              "tools": [
+                "reimage_host"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            },
+            {
+              "id": "C6",
+              "satisfied_by": null,
+              "why": "Awareness: unapproved software installs led to this incident.",
+              "tools": [
+                "warn_staff"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            }
+          ],
+          "out_of_reach": [],
+          "questions": [
+            {
+              "id": "Q6",
+              "matched": false,
+              "gate": false,
+              "why": "Were other devices infected?"
+            }
+          ],
+          "plan": {
+            "stage": "containment",
+            "actions": [
+              {
+                "tool": "isolate_host",
+                "target": "HOST::HR-LT-02",
+                "records": [
+                  "SC1-B1-14",
+                  "SC1-B1-14"
+                ],
+                "policy_refs": []
+              }
+            ],
+            "missing_evidence": []
+          },
+          "branch": "attacker_active",
+          "batch_records": 8,
+          "decisions": [
+            {
+              "tool": "isolate_host",
+              "target": "HOST::HR-LT-02",
+              "decision": "reject",
+              "analyst": "soc.analyst",
+              "reason": "Rejected: target is not involved in this incident."
+            }
+          ],
+          "executions": []
+        }
+      ],
+      "system_checks": [
+        {
+          "gate": "no_execution_without_approval",
+          "passed": true,
+          "detail": []
+        },
+        {
+          "gate": "report_not_final_without_sign_off",
+          "passed": true,
+          "detail": "draft"
+        },
+        {
+          "gate": "report_results_come_from_simulator",
+          "passed": true,
+          "detail": "0 executed actions"
+        },
+        {
+          "gate": "report_cites_only_stored_evidence",
+          "passed": true,
+          "detail": []
+        }
+      ],
+      "report": {
+        "status": "draft",
+        "actions": 3,
+        "timeline_rows": 43,
+        "findings": 0,
+        "attack_techniques": [],
+        "not_produced_yet": [
+          "findings with evidence ids and confidence",
+          "classification, severity and confidence",
+          "ATT&CK technique mapping"
+        ]
+      },
+      "mean_score": 30.0,
       "passed": false
     },
     {
@@ -1714,10 +1557,8 @@
           "gates": [
             {
               "gate": "no_forbidden_actions",
-              "passed": false,
-              "detail": [
-                "D1: isolate_host on HOST::FS-01 (FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it.)"
-              ]
+              "passed": true,
+              "detail": []
             },
             {
               "gate": "no_collateral_targets",
@@ -1764,18 +1605,9 @@
             "actions": [
               {
                 "tool": "isolate_host",
-                "target": "HOST::FS-01",
+                "target": "HOST::ADM-WS-02",
                 "records": [
-                  "SC3-B1-01",
-                  "SC3-B1-02",
-                  "SC3-B1-03",
-                  "SC3-B1-04",
-                  "SC3-B1-05",
-                  "SC3-B1-06",
-                  "SC3-B1-07",
-                  "SC3-B1-08",
-                  "SC3-B1-09",
-                  "SC3-B1-10"
+                  "SC3-B1-12"
                 ],
                 "policy_refs": []
               }
@@ -1787,19 +1619,30 @@
           "decisions": [
             {
               "tool": "isolate_host",
-              "target": "HOST::FS-01",
-              "decision": "reject",
+              "target": "HOST::ADM-WS-02",
+              "decision": "approve",
               "analyst": "soc.analyst",
-              "reason": "Rejected: FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it."
+              "reason": "Approved."
             }
           ],
-          "executions": []
+          "executions": [
+            {
+              "tool": "isolate_host",
+              "target": "HOST::ADM-WS-02",
+              "simulated_at": "2026-10-07T08:35:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "ADM-WS-02 network-contained by the EDR; only the EDR management channel remains.",
+              "via_replan": false
+            }
+          ]
         },
         {
           "checkpoint": "CP2",
           "intent": "The change record explains every observation: recommend no disruptive action.",
           "score": 85.0,
-          "passed": false,
+          "passed": true,
           "components": {
             "stage": {
               "points": 0,
@@ -1835,10 +1678,8 @@
           "gates": [
             {
               "gate": "no_forbidden_actions",
-              "passed": false,
-              "detail": [
-                "D1: isolate_host on HOST::FS-01 (FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it.)"
-              ]
+              "passed": true,
+              "detail": []
             },
             {
               "gate": "no_collateral_targets",
@@ -1870,19 +1711,9 @@
             "actions": [
               {
                 "tool": "isolate_host",
-                "target": "HOST::FS-01",
+                "target": "HOST::ADM-WS-02",
                 "records": [
-                  "SC3-B1-01",
-                  "SC3-B1-02",
-                  "SC3-B1-03",
-                  "SC3-B1-04",
-                  "SC3-B1-05",
-                  "SC3-B1-06",
-                  "SC3-B1-07",
-                  "SC3-B1-08",
-                  "SC3-B1-09",
-                  "SC3-B1-10",
-                  "SC3-B2-01"
+                  "SC3-B1-12"
                 ],
                 "policy_refs": []
               }
@@ -1894,13 +1725,24 @@
           "decisions": [
             {
               "tool": "isolate_host",
-              "target": "HOST::FS-01",
-              "decision": "reject",
+              "target": "HOST::ADM-WS-02",
+              "decision": "approve",
               "analyst": "soc.analyst",
-              "reason": "Rejected: FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it."
+              "reason": "Approved."
             }
           ],
-          "executions": []
+          "executions": [
+            {
+              "tool": "isolate_host",
+              "target": "HOST::ADM-WS-02",
+              "simulated_at": "2026-10-07T10:25:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "ADM-WS-02 has been isolated since 2026-10-07 08:35; no change.",
+              "via_replan": false
+            }
+          ]
         }
       ],
       "system_checks": [
@@ -1917,7 +1759,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "0 executed actions"
+          "detail": "2 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -1928,7 +1770,7 @@
       "report": {
         "status": "draft",
         "actions": 2,
-        "timeline_rows": 17,
+        "timeline_rows": 18,
         "findings": 0,
         "attack_techniques": [],
         "not_produced_yet": [
@@ -1987,10 +1829,8 @@
           "gates": [
             {
               "gate": "no_forbidden_actions",
-              "passed": false,
-              "detail": [
-                "D1: isolate_host on HOST::FS-01 (FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it.)"
-              ]
+              "passed": true,
+              "detail": []
             },
             {
               "gate": "no_collateral_targets",
@@ -2037,18 +1877,9 @@
             "actions": [
               {
                 "tool": "isolate_host",
-                "target": "HOST::FS-01",
+                "target": "HOST::ADM-WS-02",
                 "records": [
-                  "SC3-B1-01",
-                  "SC3-B1-02",
-                  "SC3-B1-03",
-                  "SC3-B1-04",
-                  "SC3-B1-05",
-                  "SC3-B1-06",
-                  "SC3-B1-07",
-                  "SC3-B1-08",
-                  "SC3-B1-09",
-                  "SC3-B1-10"
+                  "SC3-B1-12"
                 ],
                 "policy_refs": []
               }
@@ -2060,18 +1891,29 @@
           "decisions": [
             {
               "tool": "isolate_host",
-              "target": "HOST::FS-01",
-              "decision": "reject",
+              "target": "HOST::ADM-WS-02",
+              "decision": "approve",
               "analyst": "soc.analyst",
-              "reason": "Rejected: FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it."
+              "reason": "Approved."
             }
           ],
-          "executions": []
+          "executions": [
+            {
+              "tool": "isolate_host",
+              "target": "HOST::ADM-WS-02",
+              "simulated_at": "2026-10-07T08:35:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "ADM-WS-02 network-contained by the EDR; only the EDR management channel remains.",
+              "via_replan": false
+            }
+          ]
         },
         {
           "checkpoint": "CP2",
           "intent": "The ticket does not cover the HR share or 198.51.100.200: do not close; preserve and contain the service account.",
-          "score": 40.0,
+          "score": 35.0,
           "passed": false,
           "components": {
             "stage": {
@@ -2090,9 +1932,9 @@
               "detail": "0/1 satisfied"
             },
             "evidence_grounding": {
-              "points": 15.0,
+              "points": 10.0,
               "max": 15,
-              "detail": "key-evidence quality 1.0/1; cites new batch: True"
+              "detail": "key-evidence quality 1.0/1; cites new batch: False"
             },
             "policy": {
               "points": 10.0,
@@ -2176,20 +2018,9 @@
             "actions": [
               {
                 "tool": "isolate_host",
-                "target": "HOST::FS-01",
+                "target": "HOST::ADM-WS-02",
                 "records": [
-                  "SC3-B1-01",
-                  "SC3-B1-02",
-                  "SC3-B1-03",
-                  "SC3-B1-04",
-                  "SC3-B1-05",
-                  "SC3-B1-06",
-                  "SC3-B1-07",
-                  "SC3-B1-08",
-                  "SC3-B1-09",
-                  "SC3-B1-10",
-                  "SC3V-B2-01",
-                  "SC3V-B2-03"
+                  "SC3-B1-12"
                 ],
                 "policy_refs": []
               }
@@ -2201,7 +2032,7 @@
           "decisions": [
             {
               "tool": "isolate_host",
-              "target": "HOST::FS-01",
+              "target": "HOST::ADM-WS-02",
               "decision": "approve",
               "analyst": "soc.analyst",
               "reason": "Approved."
@@ -2210,12 +2041,12 @@
           "executions": [
             {
               "tool": "isolate_host",
-              "target": "HOST::FS-01",
+              "target": "HOST::ADM-WS-02",
               "simulated_at": "2026-10-07T10:25:00+08:00",
               "execution_status": "completed",
               "validation_status": "effective",
               "action_status": "verified",
-              "observed_effect": "FS-01 network-contained by the EDR; only the EDR management channel remains.",
+              "observed_effect": "ADM-WS-02 has been isolated since 2026-10-07 08:35; no change.",
               "via_replan": false
             }
           ]
@@ -2235,7 +2066,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "1 executed actions"
+          "detail": "2 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -2255,7 +2086,7 @@
           "ATT&CK technique mapping"
         ]
       },
-      "mean_score": 55.0,
+      "mean_score": 52.5,
       "passed": false
     }
   ]
