@@ -65,11 +65,9 @@
   prompt-injection test). — open / Airil
 - BL-031 — Review live-planner proposals that fail `no_forbidden_actions` or
   `no_collateral_targets`, and add target-scope / forbidden-action grounding
-  plus regression coverage. — open / Airil + Aidan
-- BL-038 — Rerun `planner_smoke.py` (plus a scoped live eval if time) after
-  the policy pack v1.0 merge: the live calibration numbers (8/12 checkpoints,
-  2/5 scenarios, mean 86.4) predate the pack; the prompt grew ~2k tokens
-  (DEC-012). Feeds BL-031. — open / Airil
+  plus regression coverage. Narrowed by BL-038: sc03_false_alarm CP1 (3
+  forbidden offenders + 1 collateral hit; CP2 recovered to 100). — open /
+  Airil + Aidan
 - BL-032 — Policy check: enforce required_approver in approval_service
   and order rules (POL-01) in execution_service; add approver_role to
   the decision payload. — open / Raaj

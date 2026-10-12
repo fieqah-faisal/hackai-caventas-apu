@@ -1,0 +1,421 @@
+{
+  "planner": "live",
+  "profile": "demo",
+  "note": "the real LangGraph + DeepSeek planner",
+  "runs": [
+    {
+      "scenario_id": "sc03_false_alarm",
+      "title": "False alarm: planned backup migration from FS-01",
+      "kind": "main",
+      "planner": "live",
+      "profile": "demo",
+      "checkpoints": [
+        {
+          "checkpoint": "CP1",
+          "intent": "Ambiguous alert: ask for change verification instead of disrupting a critical server.",
+          "score": 85.0,
+          "passed": false,
+          "components": {
+            "stage": {
+              "points": 0,
+              "max": 15,
+              "detail": "containment (preferred ['assessment'], acceptable ['preservation'])"
+            },
+            "required_actions": {
+              "points": 35.0,
+              "max": 35,
+              "detail": "0/0 satisfied"
+            },
+            "recommended_actions": {
+              "points": 10.0,
+              "max": 10,
+              "detail": "0/0 satisfied"
+            },
+            "evidence_grounding": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "key-evidence quality 6.0/6"
+            },
+            "policy": {
+              "points": 10.0,
+              "max": 10,
+              "detail": []
+            },
+            "questions": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "2/2 asked"
+            }
+          },
+          "gates": [
+            {
+              "gate": "no_forbidden_actions",
+              "passed": false,
+              "detail": [
+                "D1: isolate_host on HOST::FS-01 (FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it.)",
+                "D2: revoke_sessions on ACCOUNT::svc_backup (Breaks the backup job or locks out the IT admin on unverified suspicion.)",
+                "D2: reset_password on ACCOUNT::svc_backup (Breaks the backup job or locks out the IT admin on unverified suspicion.)"
+              ]
+            },
+            {
+              "gate": "no_collateral_targets",
+              "passed": false,
+              "detail": [
+                "preserve_evidence on HOST::MKT-LT-11"
+              ]
+            },
+            {
+              "gate": "preserve_before_reimage",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "every_action_cites_evidence",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "asks_required_questions",
+              "passed": true,
+              "detail": []
+            }
+          ],
+          "required": [],
+          "recommended": [],
+          "out_of_reach": [],
+          "questions": [
+            {
+              "id": "G1",
+              "matched": true,
+              "gate": true,
+              "why": "Was there an approved change for FS-01 last night?"
+            },
+            {
+              "id": "Q2",
+              "matched": true,
+              "gate": false,
+              "why": "Who owns the destination 203.0.113.80?"
+            }
+          ],
+          "plan": {
+            "stage": "containment",
+            "actions": [
+              {
+                "tool": "preserve_evidence",
+                "target": "HOST::FS-01",
+                "records": [
+                  "SC3-B1-01",
+                  "SC3-B1-02",
+                  "SC3-B1-03",
+                  "SC3-B1-04",
+                  "SC3-B1-05",
+                  "SC3-B1-06",
+                  "SC3-B1-07",
+                  "SC3-B1-08",
+                  "SC3-B1-09",
+                  "SC3-B1-10",
+                  "SC3-B1-13"
+                ],
+                "policy_refs": []
+              },
+              {
+                "tool": "isolate_host",
+                "target": "HOST::FS-01",
+                "records": [
+                  "SC3-B1-08",
+                  "SC3-B1-10",
+                  "SC3-B1-06",
+                  "SC3-B1-07",
+                  "SC3-B1-05",
+                  "SC3-B1-04",
+                  "SC3-B1-03",
+                  "SC3-B1-02"
+                ],
+                "policy_refs": [
+                  "POL-17"
+                ]
+              },
+              {
+                "tool": "revoke_sessions",
+                "target": "ACCOUNT::svc_backup",
+                "records": [
+                  "SC3-B1-02",
+                  "SC3-B1-03",
+                  "SC3-B1-08",
+                  "SC3-B1-10"
+                ],
+                "policy_refs": [
+                  "POL-07"
+                ]
+              },
+              {
+                "tool": "reset_password",
+                "target": "ACCOUNT::svc_backup",
+                "records": [
+                  "SC3-B1-02",
+                  "SC3-B1-03",
+                  "SC3-B1-08",
+                  "SC3-B1-10"
+                ],
+                "policy_refs": [
+                  "POL-07"
+                ]
+              },
+              {
+                "tool": "preserve_evidence",
+                "target": "HOST::ADM-WS-02",
+                "records": [
+                  "SC3-B1-12",
+                  "SC3-B1-01",
+                  "SC3-B1-13"
+                ],
+                "policy_refs": []
+              },
+              {
+                "tool": "preserve_evidence",
+                "target": "HOST::MKT-LT-11",
+                "records": [
+                  "SC3-B1-11",
+                  "SC3-B1-13"
+                ],
+                "policy_refs": []
+              }
+            ],
+            "missing_evidence": [
+              "Confirmation from IT/backup owners whether the BackupMigration-Offsite scheduled task and vaultsync.exe --job fs01-nightly transfer to ingest.offsite-vault.example were authorized or planned",
+              "Ownership, reputation, and approval status of 203.0.113.80 and ingest.offsite-vault.example as a legitimate offsite backup destination",
+              "Full endpoint telemetry for FS-01, including scheduled task creator/author, process command line, binary hash/path, parent process context, and any subsequent activity",
+              "Authentication and session details for svc_backup before, during, and after the transfer, including source IPs, logon types, and account change history",
+              "DLP or data-classification evidence showing whether the Finance and HR files read (18,240 + 9,620 files) included sensitive or regulated data",
+              "Firewall, proxy, and DNS logs for 203.0.113.80, including full flow records, any additional destinations, and whether the transfer or related connections remain active",
+              "Context for the post-transfer IdP sign-ins by aina and ravi.adm from 192.0.2.61 and 192.0.2.70 to determine whether they are related to the exfiltration or benign",
+              "Evidence linking or ruling out MKT-LT-11, ADM-WS-02, and related accounts from the FS-01 activity",
+              "Retention and integrity status of the affected Finance and HR shares, including whether data was copied, modified, or deleted"
+            ]
+          },
+          "branch": "default",
+          "batch_records": 13,
+          "decisions": [
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::FS-01",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            },
+            {
+              "tool": "isolate_host",
+              "target": "HOST::FS-01",
+              "decision": "reject",
+              "analyst": "soc.analyst",
+              "reason": "Rejected: FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it."
+            },
+            {
+              "tool": "revoke_sessions",
+              "target": "ACCOUNT::svc_backup",
+              "decision": "reject",
+              "analyst": "soc.analyst",
+              "reason": "Rejected: Breaks the backup job or locks out the IT admin on unverified suspicion."
+            },
+            {
+              "tool": "reset_password",
+              "target": "ACCOUNT::svc_backup",
+              "decision": "reject",
+              "analyst": "soc.analyst",
+              "reason": "Rejected: Breaks the backup job or locks out the IT admin on unverified suspicion."
+            },
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::ADM-WS-02",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            },
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::MKT-LT-11",
+              "decision": "reject",
+              "analyst": "soc.analyst",
+              "reason": "Rejected: target is not involved in this incident."
+            }
+          ],
+          "executions": [
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::FS-01",
+              "simulated_at": "2026-10-07T08:35:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "Memory image (sha256 463e87279a898b15...) and disk image (sha256 cd8cab5563a24a38...) of FS-01 captured; chain of custody recorded.",
+              "via_replan": false
+            },
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::ADM-WS-02",
+              "simulated_at": "2026-10-07T08:40:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "Memory image (sha256 3c123461e41fc05a...) and disk image (sha256 8ad731c5d76fa102...) of ADM-WS-02 captured; chain of custody recorded.",
+              "via_replan": true
+            }
+          ]
+        },
+        {
+          "checkpoint": "CP2",
+          "intent": "The change record explains every observation: recommend no disruptive action.",
+          "score": 100.0,
+          "passed": true,
+          "components": {
+            "stage": {
+              "points": 15,
+              "max": 15,
+              "detail": "assessment (preferred ['assessment', 'restoration'], acceptable ['hardening'])"
+            },
+            "required_actions": {
+              "points": 35.0,
+              "max": 35,
+              "detail": "0/0 satisfied"
+            },
+            "recommended_actions": {
+              "points": 10.0,
+              "max": 10,
+              "detail": "0/0 satisfied"
+            },
+            "evidence_grounding": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "key-evidence quality 1.0/1"
+            },
+            "policy": {
+              "points": 10.0,
+              "max": 10,
+              "detail": []
+            },
+            "questions": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "0/0 asked"
+            }
+          },
+          "gates": [
+            {
+              "gate": "no_forbidden_actions",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "no_collateral_targets",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "preserve_before_reimage",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "every_action_cites_evidence",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "asks_required_questions",
+              "passed": true,
+              "detail": []
+            }
+          ],
+          "required": [],
+          "recommended": [],
+          "out_of_reach": [],
+          "questions": [],
+          "plan": {
+            "stage": "assessment",
+            "actions": [
+              {
+                "tool": "preserve_evidence",
+                "target": "HOST::FS-01",
+                "records": [
+                  "SC3-B1-01",
+                  "SC3-B1-03",
+                  "SC3-B2-01",
+                  "SC3-B2-03"
+                ],
+                "policy_refs": [
+                  "POL-16"
+                ]
+              }
+            ],
+            "missing_evidence": [
+              "Verification of the two SSO sign-in events for aina and ravi.adm from source IPs 192.0.2.61 and 192.0.2.70 (unusual, documentation-range IPs).",
+              "Confirmation that no data beyond the approved Finance and HR shares was read or transferred by vaultsync.exe.",
+              "Validation that the scheduled task and vaultsync.exe binary were not altered after creation (e.g., file hash, signature verification).",
+              "Independent verification that 203.0.113.80 is VaultSync's legitimate ingest endpoint (beyond vendor statement).",
+              "Authenticity confirmation of change record CHG-2026-118 through ITSM audit logs."
+            ]
+          },
+          "branch": "default",
+          "batch_records": 3,
+          "decisions": [
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::FS-01",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            }
+          ],
+          "executions": [
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::FS-01",
+              "simulated_at": "2026-10-07T10:25:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "Memory image (sha256 eeddbf1a1097f9db...) and disk image (sha256 63b910a5190551af...) of FS-01 captured; chain of custody recorded.",
+              "via_replan": false
+            }
+          ]
+        }
+      ],
+      "system_checks": [
+        {
+          "gate": "no_execution_without_approval",
+          "passed": true,
+          "detail": []
+        },
+        {
+          "gate": "report_not_final_without_sign_off",
+          "passed": true,
+          "detail": "draft"
+        },
+        {
+          "gate": "report_results_come_from_simulator",
+          "passed": true,
+          "detail": "3 executed actions"
+        },
+        {
+          "gate": "report_cites_only_stored_evidence",
+          "passed": true,
+          "detail": []
+        }
+      ],
+      "report": {
+        "status": "draft",
+        "actions": 8,
+        "timeline_rows": 23,
+        "findings": 0,
+        "attack_techniques": [],
+        "not_produced_yet": [
+          "findings with evidence ids and confidence",
+          "classification, severity and confidence",
+          "ATT&CK technique mapping"
+        ]
+      },
+      "mean_score": 92.5,
+      "passed": false
+    }
+  ]
+}
