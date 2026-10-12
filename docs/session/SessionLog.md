@@ -9,7 +9,7 @@
   (the orchestrator also installed Node v26.11.0 / npm 11.20.0 via Homebrew,
   `/opt/homebrew/bin`), then fast-forwarded to `origin/main`@`3cecd3e`
   (PR #7); local `main` untouched, nothing pushed. Backend deps installed
-  into `.venv` (Python 3.12.7). S1 commit: pending (recorded by follow-up).
+  into `.venv` (Python 3.12.7). S1 commit: `8e6d882`.
 - Tests: `cd backend && ../.venv/bin/python -m pytest -q` → 43 passed
   @`3a6a323`, **44 passed** @`3cecd3e`. `cd frontend && npm ci && npm run
   build && npm run test` → build green, **23 passed** (6 files) at both;
