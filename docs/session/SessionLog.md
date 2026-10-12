@@ -3,6 +3,23 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 BL-038 post-pack planner rerun: smoke clean, sc03 CP2 recovered (DONE)
+
+- Ran on merged main `73d6691` (pack + BL-037) with the live key. Smoke
+  (`scripts/planner_smoke.py`): stage=containment, 4 actions (isolate
+  SALES-LT-07; revoke_sessions + reset_password farah; preserve_evidence
+  SALES-LT-07), rationales cite POL-04/POL-07 — the retrieved containment
+  rules; 9 missing-evidence gaps; 65.2s (BL-007 was 42.5s).
+- Scoped live eval `--scenario sc03_false_alarm` (258.4s): CP2 85.0 FAIL →
+  **100.0 PASS** (stage assessment); CP1 80.0 → 85.0 still FAIL — forbidden
+  offenders down 5 → 3 (isolate FS-01; revoke/reset svc_backup; ravi.adm
+  actions gone) plus one collateral hit (preserve_evidence on MKT-LT-11,
+  previously CP2's failure). Scenario still FAIL. Single run; variance not
+  measured.
+- BL-031 stays open, narrowed to sc03 CP1 verify-before-contain grounding.
+  Artifacts: `backend/evaluation/results/partial/live.json`,
+  `.agents/tasks/bl-038-planner-smoke-rerun/`.
+
 ### 2026-10-13 BL-037 + BL-034: stage-scoped guidance retrieval (DONE)
 
 - Added `select_guidance()` and a deterministic `retrieve` node between
