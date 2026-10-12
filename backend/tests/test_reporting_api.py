@@ -9,6 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from app.ai.planner_adapter import FakePlannerAdapter
+from app.database import repositories
 from app.simulator.simulator_adapter import FakeSimulatorAdapter
 
 FIXTURE = (
@@ -79,6 +80,40 @@ def test_get_report_roundtrip(client, monkeypatch, tmp_path):
     )
     assert fetched.status_code == 200
     assert fetched.json()["report_id"] == generated["report_id"]
+
+
+def test_report_uses_newest_plan_not_stream_order(client, monkeypatch, tmp_path):
+    """Real Firestore streams plans in document-ID order, not creation order.
+
+    The fake keeps insertion order, so the newest plan is written FIRST here:
+    picking ``list_plans()[-1]`` would report the older plan's phase and gaps.
+    """
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "plan order"}).json()["case_id"]
+    plans = [
+        ("PLAN-newest", "eradication", ["newest gap"], "2026-10-12T02:45:53.467460+00:00"),
+        ("PLAN-oldest", "containment", ["oldest gap"], "2026-10-12T02:43:38.195695+00:00"),
+        ("PLAN-middle", "preservation", ["middle gap"], "2026-10-12T02:45:53.460138Z"),
+    ]
+    for plan_id, stage, gaps, created_at in plans:
+        repositories.add_plan(
+            case_id,
+            plan_id,
+            {
+                "plan_id": plan_id,
+                "case_id": case_id,
+                "based_on_state_version": 1,
+                "stage": stage,
+                "missing_evidence": gaps,
+                "action_ids": [],
+                "created_at": created_at,
+            },
+        )
+
+    report = client.post(f"/cases/{case_id}/reports").json()
+
+    assert report["classification"]["current_phase"] == "eradication"
+    assert [q["question"] for q in report["open_questions"]] == ["newest gap"]
 
 
 def test_generate_report_unknown_case_404(client):

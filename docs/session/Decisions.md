@@ -140,7 +140,13 @@ document-ID order (random hex) where the test fake keeps insertion order,
 so the frontend sorts `GET /plans` by `created_at` (compared as instants,
 because the backend mixes `Z`, `+00:00` and local offsets) before deriving
 the latest plan or 1-based plan versions. The backend is changed only where
-its own logic is wrong.
+its own logic is wrong. The one such case is `reporting._latest_plan`,
+which took `list_plans()[-1]`; it now sorts by `created_at` in Python, so
+the test fake stays compatible. `GET /plans` keeps its unordered response.
+`execution_service`'s first-matching-approval lookup is unchanged: an
+action can be decided only once (pinned by `test_decide_twice_conflicts`),
+so at most one approval matches, and the unmerged security-lead branch
+rewrites that lookup.
 
 **Tradeoff:** The view-model names can differ from the backend's (for
 example `evidence_ingested`), so the mapping tests are the only record of

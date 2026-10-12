@@ -35,8 +35,24 @@ class ReportingError(RuntimeError):
         self.kind = kind
 
 
+def _created_at_key(doc: dict[str, Any]) -> datetime:
+    """Sort key: a stored document's ``created_at`` as an aware datetime.
+
+    Stored values are ISO strings in mixed forms (``Z`` from Pydantic,
+    ``+00:00`` from ``isoformat()``); ``Z`` is rewritten so Python 3.10's
+    ``fromisoformat`` accepts it. Missing or unparsable values sort first.
+    """
+    try:
+        parsed = datetime.fromisoformat(str(doc.get("created_at")).replace("Z", "+00:00"))
+    except ValueError:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
 def _latest_plan(case_id: str) -> dict[str, Any] | None:
-    plans = repositories.list_plans(case_id)
+    # Real Firestore streams documents in document-ID order (random hex ids),
+    # not insertion order like the test fake, so sort by creation time.
+    plans = sorted(repositories.list_plans(case_id), key=_created_at_key)
     return plans[-1] if plans else None
 
 
