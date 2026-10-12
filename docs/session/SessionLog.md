@@ -27,7 +27,7 @@
 
   No date-coercion crash; timestamps are strings in mixed `Z` / `+00:00` / `+08:00` form (cosmetic).
 - Security preconditions held on the real stack: execute before approval → 409, execute after reject → 409, re-execute → same `EXEC` id, run on an empty case → 409. In API mode the UI does not show execution and validation separately; the backend returns `completed` + `ineffective`.
-- Branch `link`. Notebook-only commit; the S2 code SHA is recorded in the follow-up commit. Tests are unchanged from S1 (no code edits). Full findings, screenshots and raw bodies are under `.agents/tasks/link-e2e-2026-10-09/` (`s2-e2e-findings.md`, local, untracked).
+- Branch `link`, S2 commit `fd35071` (notebook only). Tests are unchanged from S1 (no code edits). Full findings, screenshots and raw bodies are under `.agents/tasks/link-e2e-2026-10-09/` (`s2-e2e-findings.md`, local, untracked).
 - Next: S3 contract fixes, frontend-first: audit mapper, plan sort by `created_at`, Response Plan honesty, report decision/validation wording, enum test. The Approvals read endpoint (`GET /cases/{id}/actions`) needs a BL-025 or stays "unsupported". The emulator, uvicorn and vite are left running for S3.
 
 ### 2026-10-12 `link` preflight baseline + notebook reconcile (IN PROGRESS)
