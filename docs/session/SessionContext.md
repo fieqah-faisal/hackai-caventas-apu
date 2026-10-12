@@ -59,9 +59,11 @@ Firestore; no credentials needed).
 - Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
   structured rules (ten fields) + 8-asset list in
   `backend/fixtures/guidance.json` (`policy_pack_version` 1.0). The planner
-  still receives the complete fixture; incident/stage retrieval and filtered
-  `policy_refs` are BL-037. Enforcement follow-ups are BL-032..BL-034;
-  asset/fixture alignment BL-035 and BL-036.
+  now retrieves stage-relevant rules and passages (deterministic retrieve
+  node between analyze and propose, DEC-013); stored `policy_refs` are
+  validated against the selected set, and refs outside the pack are dropped.
+  Enforcement follow-ups are BL-032/BL-033; asset/fixture alignment BL-035
+  and BL-036; the post-pack planner rerun is BL-038.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).

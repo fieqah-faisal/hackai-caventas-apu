@@ -13,6 +13,7 @@ from pathlib import Path
 
 from app.ai.langgraph_planner import PlannerError
 from app.ai.planner_adapter import FakePlannerAdapter
+from app.schemas.plan import PlanProposal, ProposedAction, Stage
 
 FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "login_logs.csv"
 
@@ -86,3 +87,27 @@ def test_list_plans_unknown_case_404(client):
 def test_list_plans_empty_for_new_case(client):
     case_id = _create_case(client, title="fresh")
     assert client.get(f"/cases/{case_id}/plans").json() == []
+
+
+def test_policy_refs_outside_the_pack_are_dropped(client, monkeypatch):
+    class RefAdapter:
+        def generate_plan(self, incident_state, approved_guidance=None):
+            return PlanProposal(
+                based_on_state_version=incident_state.version,
+                stage=Stage.CONTAINMENT,
+                actions=[
+                    ProposedAction(
+                        tool_name="isolate_host",
+                        target_id=incident_state.entities[0].id,
+                        policy_refs=["POL-99", "POL-04"],
+                    )
+                ],
+            )
+
+    monkeypatch.setattr(ADAPTER_PATH, lambda: RefAdapter())
+    case_id = _create_case_with_evidence(client)
+
+    resp = client.post(f"/cases/{case_id}/runs")
+    assert resp.status_code == 200, resp.text
+    refs = resp.json()["actions"][0]["proposal"]["policy_refs"]
+    assert refs == ["POL-04"]

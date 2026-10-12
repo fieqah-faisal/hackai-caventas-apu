@@ -9,15 +9,17 @@
 > `feat/gas-lite-state-fieqah` claims BL-020 (collides with merged BL-020)
 > and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
 > npm-audit item was renumbered BL-024 → BL-030 on that merge because
-> main's BL-024 is the approval-invalidation item. Next free IDs:
-> **BL-038** and **DEC-013**.
+> main's BL-024 is the approval-invalidation item.
+> `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039.
+> Next free IDs: **BL-040** and **DEC-014**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
 > (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done
 > (PR #5); BL-008 resolved by PR #9's simulator catalogue (tool names = the
 > guidance allowlist, drift pinned by a test); BL-010 payload contract is
-> consumed by the frontend; BL-011 superseded by merged PRs #8 and #11.
+> consumed by the frontend; BL-011 superseded by merged PRs #8 and #11;
+> BL-034 folded into BL-037; both done (retrieval branch).
 
 ## Open Items
 
@@ -64,22 +66,21 @@
 - BL-031 — Review live-planner proposals that fail `no_forbidden_actions` or
   `no_collateral_targets`, and add target-scope / forbidden-action grounding
   plus regression coverage. — open / Airil + Aidan
+- BL-038 — Rerun `planner_smoke.py` (plus a scoped live eval if time) after
+  the policy pack v1.0 merge: the live calibration numbers (8/12 checkpoints,
+  2/5 scenarios, mean 86.4) predate the pack; the prompt grew ~2k tokens
+  (DEC-012). Feeds BL-031. — open / Airil
 - BL-032 — Policy check: enforce required_approver in approval_service
   and order rules (POL-01) in execution_service; add approver_role to
   the decision payload. — open / Raaj
 - BL-033 — Fill report notifications, policy_conformance and asset
   criticality from guidance.json. — open / Raaj
-- BL-034 — Drop planner policy_refs not in policy_rules (e.g.
-  "POL-99"). — open / Airil
 - BL-035 — Confirm asset host names match the synthetic logs
   (SALES-LT-07, FS-01, …). — open / Aida + Aidan
 - BL-036 — Align frontend demo fixture (infostealer.ts) with policy pack
   v1.0: rule IDs, roles, tool names, asset IDs. — open / Syafieqah
-- BL-037 — Incident-relevant policy/playbook retrieval: select approved
-  guidance using the incident state and current response stage, pass only
-  the selected passages with source references to the planner, and reject
-  returned `policy_refs` outside the selected rule IDs. Current code passes
-  all of `load_guidance()` to the proposal prompt. — open / Airil + Aida
+- BL-039 — Align the simulator catalogue with policy pack v1.0: trigger
+  event types and tool gaps (`purge_email`, `restore_host`). — open / Aidan
 
 ### P3
 
