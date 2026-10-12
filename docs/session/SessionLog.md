@@ -3,6 +3,45 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-09 GAS-lite incident-state specification complete (SPEC DONE, IMPL PENDING)
+
+- Authored the GAS-lite (Graph-as-State, STAIR-inspired) spec at
+  `.kiro/specs/caventas-gas-lite/` (requirements.md, design.md, tasks.md,
+  .config.kiro). Requirements-first; all three documents pass spec-format
+  validation. This is a SPEC checkpoint only — no backend code written yet.
+- Scope: a backward-compatible extension of the existing versioned
+  incident state (Raaj's base layer: `app/schemas/incident_state.py`,
+  `app/services/state_manager.py`, `app/database/repositories.py`) plus a
+  new PURE `app/services/gas_lite.py` graph builder and two additive read
+  endpoints (`GET /cases/{id}/states`, `/states/{version}`). STAIR-inspired,
+  not a reproduction; no Firestore replacement, no graph DB, no six agents.
+- Key design decisions captured (see DEC-010): enriched Entity/Relationship
+  (evidence_ids, first/last_seen, condition; deterministic type-aware ids;
+  `RelationshipType` closed-allowlist enum; context/attack/response
+  categories); IncidentState provenance (`parent_version`, `change_reason`,
+  `created_from`) + optional response-situation and report-status blocks
+  CARRIED but not computed in Core; condition mutates only on
+  validated-effective results; three-case prior-state handling
+  (unknown→abort; v0→v1 parent=None; pointer≥1 missing snapshot→abort).
+- Correction pass applied before implementation: all 15 mandatory-obligation
+  tests are mandatory (no optional markers); `process_start.path`→FILE and
+  session only from an explicit `session_id`/`session_cookie_id` (never
+  fabricated; planner_smoke has no session field so a synthetic test record
+  is used); tool name corrected to `revoke_sessions`; response edges
+  reference the action-result record (no separate "validation record";
+  approval authoritative via `action_id`); assessment/routing population,
+  report-section invalidation, full action-lifecycle projection and
+  non-material version suppression all moved to Follow-on; `re_enter` used
+  consistently.
+- INTEGRATION WARNING: PR #9 modifies `state_manager.py` and must be
+  merged/rebased before the state-manager and execution-flow integration
+  (tasks 4.x, 6.x) are finalized; preserve PR #9's timezone-aware timeline
+  sorting and simulator-result behaviour. See BL-020.
+- Numbering note: DEC-010 and BL-020 were chosen with a deliberate gap to
+  avoid colliding with DEC/BL numbers introduced by PR #9 / PR #10 (not yet
+  in this local tree). Reconcile numbering on next `main` sync.
+- Branch intended for implementation: `feat/gas-lite-state-fieqah`. Not yet
+  started; stopped at the corrected spec checkpoint for Syafieqah/Raaj review.
 ### 2026-10-08 PR #8 (frontend) merged; PR #7 synced (DONE)
 
 - PR #8 merged (`3a6a323`): React/Vite frontend — dashboard, create-case

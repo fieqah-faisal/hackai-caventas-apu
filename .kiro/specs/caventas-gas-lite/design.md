@@ -223,6 +223,10 @@ last_seen:    Optional[datetime] = None           # from latest event_time
 condition:    Optional[str] = None                # operational/security state
 ```
 
+The existing `name` field keeps the **original readable value** from the source record
+(source casing/form), while the `id` is built from type-aware normalized key parts (see
+`entity_id` below). `EntityType` includes `FILE` (existing) and newly `SESSION`.
+
 `condition` vocabulary (documented string set; default `None`, meaning "unknown"):
 `unknown | compromised | contained | isolated | recovered`. Only a validated-**effective**
 action result changes `condition`; execution completion alone never does (R12.2, R12.4).
@@ -235,6 +239,7 @@ enforced in `gas_lite.apply_validated_effects` (see below).
 
 ```python
 id:           Optional[str] = None                # deterministic, see id scheme
+relation:     RelationshipType                    # closed allowlist enum (see below)
 category:     RelationshipCategory = CONTEXT      # context | attack | response
 first_seen:   Optional[datetime] = None
 last_seen:    Optional[datetime] = None
@@ -242,16 +247,41 @@ attributes:   dict[str, Any] = {}
 action_id:    Optional[str] = None                # response edges only
 execution_id: Optional[str] = None                # response edges only
 # existing, retained:
-# source, relation, target, evidence_ids, status (observed | inferred)
+# source, target, evidence_ids, status (observed | inferred)
 ```
 
 New enum `RelationshipCategory`: `context | attack | response`.
 
-The free-text `relation` field is constrained at build time to the closed allowlist in
-R6.4 (`logged_into, authenticated_from, connected_to, resolved_domain, executed_on,
-found_on, session_used_by, action_attempted_on, evidence_preserved, session_revoked,
-host_isolated`). Relations outside the allowlist are rejected during assembly (R6.5); a
-relation that has no supporting synthetic evidence simply has no instances (R6.9).
+**New enum `RelationshipType(str, Enum)`** — the closed relation allowlist (R6.4):
+
+```python
+class RelationshipType(str, Enum):   # R6.4
+    LOGGED_INTO         = "logged_into"
+    AUTHENTICATED_FROM  = "authenticated_from"
+    CONNECTED_TO        = "connected_to"
+    RESOLVED_DOMAIN     = "resolved_domain"
+    EXECUTED_ON         = "executed_on"
+    FOUND_ON            = "found_on"
+    SESSION_USED_BY     = "session_used_by"
+    ACTION_ATTEMPTED_ON = "action_attempted_on"
+    EVIDENCE_PRESERVED  = "evidence_preserved"
+    SESSION_REVOKED     = "session_revoked"
+    HOST_ISOLATED       = "host_isolated"
+```
+
+The `relation` field is typed as `RelationshipType`, so any value outside the allowlist is
+rejected at the schema layer by Pydantic validation (R6.5); `gas_lite` additionally only
+emits allowlisted members. A relation that has no supporting synthetic evidence simply has
+no instances (R6.9).
+
+> **Backward-compat for `RelationshipType`.** The pre-slice `Relationship.relation` is a
+> free-text string, and the only value the current `state_manager` ever writes is
+> `"logged_into"`, which is a `RelationshipType` member. An enum whose values are exactly
+> the 11 allowlisted strings therefore deserializes all existing stored data unchanged.
+> (Any stored value outside the set would fail — but none exists.) If, on inspection,
+> typing `relation` as the enum were found to break stored data, the fallback is to keep
+> `relation: str` and enforce the allowlist in `gas_lite` assembly instead; the enum is
+> preferred.
 
 **New enums:**
 
@@ -275,15 +305,14 @@ class ReportStatus(str, Enum):       # R9.1
     DRAFT, IN_REVIEW, FINALIZED
 ```
 
-> **`re-enter` dash-vs-underscore decision.** The requirement spells the value
-> `re-enter`. The Python-safe enum **member** is `RE_ENTER`; the stored **value** is
-> chosen as `"re_enter"` (underscore). Rationale: it keeps the JSON value a valid
-> identifier-style token consistent with the other snake_case enum values
-> (`initial_reconstruction`, `in_review`), avoids hyphen-escaping in query params and
-> client code, and matches the existing project convention where enum values are
-> lowercase snake/word tokens. The design records this as a deliberate, documented choice
-> satisfying R2.4's intent (a closed, distinguishable "re-enter" transition); if a
-> consumer requires the literal hyphen it can map `re_enter ↔ re-enter` at the edge.
+> **`re_enter` value decision.** The requirement (R2.4) specifies the transition value
+> `re_enter` (underscore). The Python-safe enum **member** is `RE_ENTER` and the stored
+> **value** is `"re_enter"`. Rationale: it keeps the JSON value a valid identifier-style
+> token consistent with the other snake_case enum values (`initial_reconstruction`,
+> `in_review`), avoids hyphen-escaping in query params and client code, and matches the
+> existing project convention where enum values are lowercase snake/word tokens. The
+> design records this as a deliberate, documented choice; if a consumer ever requires a
+> literal hyphen it can map `re_enter ↔ re-enter` at the edge.
 
 > **`CreatedFrom` extensibility (R5.3, R5.7).** Core enumerates only
 > `initial_reconstruction`, `evidence_upload`, `action_result`. The *full documented
@@ -314,7 +343,7 @@ routing_evidence_ids:      list[str]                  = []
 routing_confidence:        Optional[float]            = None
 routing_transition:        Optional[RoutingTransition] = None
 
-# report status (R9.1) — all optional/defaulted
+# report status (R9.1) — all optional/defaulted; Core CARRIES but does not COMPUTE these
 report_sections_complete:    list[str]            = []
 report_sections_pending:     list[str]            = []
 report_sections_invalidated: list[str]            = []
@@ -322,6 +351,13 @@ latest_report_id:            Optional[str]        = None
 latest_report_version:       Optional[str]        = None
 report_status:               Optional[ReportStatus] = None
 ```
+
+> **Report-status / routing / assessment are carried, not computed in Core (R1.1, R2.7,
+> R9.1/R9.2).** These optional blocks exist and default empty/None so the schema can hold
+> them, but Core does **not** populate the analytical assessment, routing decisions, or
+> report-section status, and Core does **not** compute report-section invalidation.
+> Populating assessment and routing, and computing invalidation, are **follow-on** (see
+> the STAIR traceability table and the follow-on list in `requirements.md`/`tasks.md`).
 
 > **`recovery_status` vs `observed_response_status` (R2.1).** The existing
 > `recovery_status` enum (`investigating/containing/eradicating/recovering/resolved`) is
@@ -348,14 +384,26 @@ schema objects. `state_manager` owns all I/O.
 ```python
 def entity_id(entity_type: EntityType, *key_parts: str) -> str
 ```
-Build a deterministic identifier: uppercase type prefix + `"::"` + normalized key
-part(s) joined by `"::"` (R7.1, R7.2). Normalization: trim surrounding whitespace,
-collapse internal whitespace runs to a single space; **lowercase** domain values;
-**preserve case** for host and account names (so `HOST::SALES-LT-07`, `ACCOUNT::farah`,
-`IP::203.0.113.45`, `DOMAIN::example.test`, `PROCESS::SALES-LT-07::stealer.exe`,
-`SESSION::farah::<stable-id>`). If any required key part is absent or empty after
-normalization, the function returns no id and the caller creates no entity — never a
-partial or placeholder id (R7.5).
+Build a deterministic identifier: uppercase type prefix + `"::"` + **type-aware**
+normalized key part(s) joined by `"::"` (R7.1, R7.2). All parts first have surrounding
+whitespace trimmed and internal whitespace runs collapsed to a single space; then the
+per-type normalization below is applied. The original readable value is preserved by the
+caller in `Entity.name`; only the id is normalized.
+
+**Type-aware normalization table (R7.3):**
+
+| Entity type | Key normalization | Example id |
+|---|---|---|
+| host | UPPERCASE the host value | `HOST::SALES-LT-07` |
+| account | lowercase | `ACCOUNT::farah` |
+| domain | lowercase | `DOMAIN::example.test` |
+| ip | canonical: trimmed; IPv4 as-is; IPv6 lowercased/compressed (Core fixtures are plain IPv4) | `IP::203.0.113.45` |
+| process | `PROCESS::<HOST-normalized>::<process-name>` — process name trimmed and **lowercased** | `PROCESS::SALES-LT-07::installer.exe` |
+| file | `FILE::<HOST-normalized>::<normalized-path>` — path trimmed, separators unified (`\` → `/`), lowercased | `FILE::SALES-LT-07::c:/users/farah/downloads/installer.exe` |
+| session | `SESSION::<account-normalized>::<session_id>` from an explicitly present session field (never derived) | `SESSION::farah::<session_id>` |
+
+If any required key part is absent or empty after normalization, the function returns no
+id and the caller creates no entity — never a partial or placeholder id (R7.5).
 
 ```python
 def extract_entities(evidence_items: list[dict]) -> dict[str, Entity]
@@ -367,16 +415,23 @@ Documented field→entity mapping (R6.8), keyed by deterministic id:
 | `host` (any event) | `HOST::<host>` |
 | `account` (any event) | `ACCOUNT::<account>` |
 | `process_start` → `process` | `PROCESS::<host>::<process>` |
+| `process_start` → `path` | `FILE::<host>::<normalized-path>` |
 | `dns_query` → `query` | `DOMAIN::<query>` |
 | `dns_query` → `source_ip` | `IP::<source_ip>` |
 | `network_upload` → `destination_ip` | `IP::<destination_ip>` |
-| stable session id when present | `SESSION::<account>::<session-id>` |
+| explicit `session_id` / `session_cookie_id` field | `SESSION::<account>::<session_id>` |
 
 Each entity accumulates `evidence_ids` (the producing records) and `first_seen` /
-`last_seen` from the records' `event_time`. Fields outside this documented mapping never
-create entities (R7.4). `file`, `authenticated_from`, `session_used_by`,
-`evidence_preserved`, `session_revoked`, `host_isolated` and other closed-set members
-with no fixture support exist in the schema with no instances (R6.9).
+`last_seen` from the records' `event_time`, and keeps the source value in `Entity.name`.
+Fields outside this documented mapping never create entities (R7.4). The SESSION entity is
+produced **only** from an explicitly present allowlisted session field (`session_id` or
+`session_cookie_id`) — a session identifier is **never derived or fabricated** from other
+fields. The `planner_smoke_evidence.json` fixture carries no session field, so it produces
+no SESSION entity; the session-extraction test therefore uses a small dedicated
+**synthetic** test record that carries a `session_id` (see Testing Strategy). Remaining
+closed-set members (`authenticated_from`, `session_used_by`, `evidence_preserved`,
+`session_revoked`, `host_isolated`) with no fixture support exist in the schema with no
+instances (R6.9).
 
 ```python
 def extract_relationships(evidence_items: list[dict],
@@ -393,9 +448,10 @@ Build only allowlisted `context`/`attack` relations supported by the fixture, ea
 | `process_start` has `host` and `process` | `PROCESS → executed_on → HOST` (context) |
 
 `alert` records' `technique` ids feed `attack_mapping` (existing field) rather than a
-fabricated relation. A relation whose endpoints are not both present in `entities` is not
-emitted (no dangling edges). Any relation value outside the R6.4 allowlist raises during
-assembly (R6.5).
+fabricated relation. Each emitted `relation` is a `RelationshipType` member. A relation
+whose endpoints are not both present in `entities` is not emitted (no dangling edges). Any
+relation value outside the R6.4 allowlist is rejected at the schema layer by
+`RelationshipType` validation, and `gas_lite` only emits allowlisted members (R6.5).
 
 ```python
 def dedupe_and_merge(entities, relationships) -> (entities, relationships)
@@ -410,8 +466,10 @@ def build_response_edges(actions, action_results, entities) -> list[Relationship
 One response edge **per executed action** (i.e. per `action_result`): relation
 `action_attempted_on`, `category=RESPONSE`, carrying `action_id` and `execution_id`,
 targeting the action's target entity (R12.1). More specific response relations
-(`host_isolated`, `session_revoked`, `evidence_preserved`) are emitted **only** when the
-corresponding result is validated-**effective** (ties to `apply_validated_effects`).
+(`host_isolated`, `session_revoked`, `evidence_preserved` — these are
+`RelationshipType` **relation labels**, distinct from tool names such as `isolate_host`
+and `revoke_sessions`) are emitted **only** when the corresponding result is
+validated-**effective** (ties to `apply_validated_effects`).
 
 ```python
 def apply_validated_effects(entities, action_results) -> entities
@@ -423,7 +481,7 @@ allowed transition per tool (documented, enforced here):
 | Tool (example) | Effective → target condition |
 |---|---|
 | `isolate_host` | `isolated` |
-| `revoke_session` | `contained` |
+| `revoke_sessions` | `contained` |
 | `preserve_evidence` | (no condition change; records preservation edge) |
 
 An effective result mutates **only** the target entity's `condition` and nothing else
@@ -469,22 +527,31 @@ use the `entity_id` scheme above.
   - `execution_service.execute` → `created_from=ACTION_RESULT` (R5.2).
   - First build for a case → `INITIAL_RECONSTRUCTION` (default; R5.2).
 
-  The method sets `parent_version` from the prior current pointer (`N`), computes
-  `next = N + 1` (monotonic +1, R1.5/R11.3), calls `gas_lite.build_snapshot(...)`, then
-  keeps the current flow: **append-only** `add_state_version`, **pointer-only**
-  `update_case(current_state_version=next, ...)`, and an audit event. The audit event
-  name stays **`state_version_created`** and its detail now includes `created_from`
-  (R11.3). If the case or its current-version document is missing, the method aborts,
-  leaves the pointer unchanged, and raises `ValueError` — matching existing behaviour
-  (R11.8).
+  The method then calls `gas_lite.build_snapshot(...)` and keeps the current flow:
+  **append-only** `add_state_version`, **pointer-only**
+  `update_case(current_state_version=next, ...)`, and an audit event. The audit event name
+  stays **`state_version_created`** and its detail now includes `created_from` (R11.3).
 
-- **Material-vs-non-material (R5.4–R5.6).** Core creates a version on `evidence_upload`
-  and `action_result`, which matches current behaviour (both are material: they change
-  evidence/entities or action outcomes). A single, documented classification hook —
-  `_is_material(created_from, prior_state, next_state)` — is the designated place where
-  non-material suppression will live in a **follow-on**. Core does **not** implement
-  speculative suppression, so no current test that expects a new version on upload/result
-  regresses. The hook returns `True` for the Core triggers.
+  **Prior-state resolution — three precise cases (R11.8):**
+
+  1. **Unknown case** → abort, leave the current-version pointer unchanged, raise
+     `ValueError`.
+  2. **`current_state_version == 0` (no prior state)** → this is the first build
+     (initial reconstruction / first evidence upload). Create version 1 with
+     `parent_version = None` and `next = 1`; **do not abort**.
+  3. **Pointer `N >= 1` but the referenced prior snapshot document is missing** → a
+     data-integrity error: abort **without changing the pointer** and raise `ValueError`.
+
+  Otherwise (`N >= 1` with the prior snapshot present) `parent_version = N` and
+  `next = N + 1` (monotonic +1, R1.5/R11.3).
+
+- **Material-vs-non-material (R5.4–R5.6).** Core creates a version on every Core trigger
+  (`initial_reconstruction`, `evidence_upload`, `action_result`), which matches current
+  behaviour. A single, documented classification hook —
+  `_is_material(created_from, prior_state, next_state)` — returns `True` for every Core
+  trigger (no suppression). Actual non-material-trigger version **suppression** is a
+  **follow-on** (R5.6) and lives here when implemented; Core does **not** implement it, so
+  no current test that expects a new version on upload/result regresses.
 
 ### Changes to `app/database/repositories.py`
 
@@ -540,9 +607,11 @@ use the `entity_id` scheme above.
 |---|---|
 | Unknown case on `GET /states` or `GET /states/{version}` | `404`, detail names the unknown case (R13.5). |
 | Unknown version on `GET /states/{version}` (known case) | `404`, **distinct** detail naming the unknown version (R13.6). |
-| Case / current-version doc missing during build | Abort; current-version pointer unchanged; raise `ValueError` (matches existing `rebuild_and_version`) (R11.8). |
+| Unknown case during build | Abort; current-version pointer unchanged; raise `ValueError` (R11.8 case a). |
+| `current_state_version == 0` (no prior state) during build | Allowed: create version 1 with `parent_version = None`; do NOT abort (R11.8 case b). |
+| Pointer `>= 1` but referenced prior snapshot doc missing | Data-integrity error: abort; pointer unchanged; raise `ValueError` (R11.8 case c). |
 | `created_from` outside `CreatedFrom` enum | Pydantic schema validation rejection (R5.7). |
-| `relation` outside R6.4 allowlist | Rejected during `gas_lite` assembly (R6.5). |
+| `relation` outside R6.4 allowlist | Rejected at the schema layer by `RelationshipType` validation; `gas_lite` also only emits allowlisted members (R6.5). |
 | `entity type` outside `EntityType` enum | Pydantic schema validation rejection. |
 | Action-result `result_source` absent/outside closed set | Rejected on the action-result record (R3.5); value lives on the result record, not the state schema (R3.4). |
 | Lifecycle value outside the closed set | Rejected rather than silently stored (R4.5). |
@@ -590,9 +659,11 @@ entity `condition` is improved; if it is `effective` then exactly the target ent
 **Validates: Requirements 12.2, 12.3, 12.4**
 
 ### Property 7: Reference integrity of response records
-For any response edge or recorded validation outcome, the referenced proposed-action,
-approval, execution and validation identifiers point to existing records, and those
-authoritative records are never deleted, overwritten or replaced.
+For any response edge or recorded validation outcome, the referenced proposed-action
+record, approval record and action-result record (which carries both `execution_status`
+and `validation_status`) point to existing records, and those authoritative records are
+never deleted, overwritten or replaced. There is no separate validation record; the
+approval remains authoritative in the approvals collection, traceable via `action_id`.
 **Validates: Requirements 12.5**
 
 ### Property 8: Backward-compatible superset
@@ -615,7 +686,8 @@ next integration verification (R15.16).
 | Obligation (R15) | Test case |
 |---|---|
 | 15.1 host/account reconstruction | `extract_entities` yields `HOST::SALES-LT-07` and `ACCOUNT::farah` from the fixture. |
-| 15.2 IP/domain/process/file/session extraction | `DOMAIN::pdf-editor-free.example`, `IP::192.0.2.44`, `IP::203.0.113.45`, `PROCESS::SALES-LT-07::installer.exe` extracted for the supported fields. |
+| 15.2 IP/domain/process/file extraction (fixture) | `DOMAIN::pdf-editor-free.example`, `IP::192.0.2.44`, `IP::203.0.113.45`, `PROCESS::SALES-LT-07::installer.exe`, `FILE::SALES-LT-07::c:/users/farah/downloads/installer.exe` extracted for the supported fields. |
+| 15.2 session extraction (synthetic) | The planner_smoke fixture has **no** session field, so a small dedicated **synthetic** test record carrying an explicit `session_id` is used to assert `SESSION::<account>::<session_id>` is produced; no session id is derived or fabricated. |
 | 15.3 identifier stability | Same input fields → identical ids across two `build_snapshot` calls. |
 | 15.4 duplicate dedup | Re-passing identical evidence → `dedupe_and_merge` adds no elements, unions `evidence_ids`. |
 | 15.5 observed-relation provenance | Every observed relationship has ≥1 `evidence_id`. |
@@ -668,6 +740,16 @@ At implementation time, update (R10):
 - Record explicitly that the proposal's **Technology Stack** section is **stale** and must
   be aligned in a follow-on slice (R10.3), and log every proposal change in
   `Decisions.md` and the session log (R10.2).
+
+## Integration Dependencies
+
+> **⚠ Integration warning / dependency — PR #9.** PR #9 modifies
+> `app/services/state_manager.py` and **must be merged/rebased before** the state-manager
+> and execution-flow integration (tasks **4.x** and **6.x**) is finalized. When
+> integrating GAS-lite, **preserve PR #9's timezone-aware timeline sorting** and its
+> **simulator-result behaviour** — the GAS-lite delegation changes *how entities and
+> relationships* are built, not the timeline sort order or the simulator contract. Tasks
+> **4.1, 4.2, 4.3 and 6.1** carry this dependency.
 
 ## Teammate-owned surfaces touched
 

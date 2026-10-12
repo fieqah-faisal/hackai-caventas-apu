@@ -122,7 +122,10 @@ draw from one consistent, versioned source of truth.
    supported/alternative/rejected hypotheses, uncertainty and evidence gaps, observed
    response status, recommended response focus, the response objective and
    prerequisites, proposed actions, human decisions and feedback, action outcomes, and
-   reporting status.
+   reporting status. In Core these are carried as optional/defaulted schema fields; Core
+   reconstructs and populates entities, relationships and the timeline, while populating
+   the analytical assessment (findings, hypotheses, uncertainty, evidence gaps and
+   observed response status) is Follow-on.
 2. THE GAS-lite_State SHALL represent each referenced record (evidence, action,
    approval, result, report) as its stable identifier string plus an optional short
    summary, and SHALL NOT store a full copy of the referenced Firestore record body.
@@ -156,15 +159,17 @@ mistaken for a completed phase.
 3. THE GAS-lite_State SHALL constrain `recommended_response_focus` to one of
    {assessment, preservation, containment, eradication, hardening, restoration}.
 4. THE GAS-lite_State SHALL constrain `routing_transition` to one of {initial, stay,
-   advance, rollback, re-enter}.
+   advance, rollback, re_enter}.
 5. IF `recommended_response_focus` or `routing_transition` is set to a value outside its
    enumerated set, THEN THE GAS-lite_State SHALL reject the value with a schema
    validation error.
 6. WHERE a response focus is recommended, THE GAS-lite_State SHALL represent it as a
    recommendation of the next objective and SHALL NOT assert that the organisation
    completed a response phase.
-7. THE GAS-lite_State SHALL support these routing output fields in the Core schema now,
-   WHILE the full IR-phase router logic is deferred to a follow-on slice.
+7. THE GAS-lite_State SHALL support these routing output fields in the Core schema now
+   as optional/defaulted fields, WHILE both the full IR-phase router logic AND the
+   population of these routing fields with real planner-populated routing decisions are
+   deferred to a follow-on slice; Core SHALL leave them empty/None.
 8. THE GAS-lite_State SHALL make all routing fields optional or defaulted so a stored
    snapshot without them loads unchanged and existing `GET /state` consumers remain
    valid.
@@ -205,9 +210,10 @@ a verified effect without breaking the existing action contract.
 
 #### Acceptance Criteria
 
-1. THE GAS-lite_State SHALL support or reference the closed lifecycle value set
-   {recommended, awaiting_approval, approved, edited, rejected, manually_executed,
-   simulated, successfully_verified (verified), failed, not_applicable, superseded}.
+1. THE GAS-lite_State schema SHALL be able to represent or reference the closed lifecycle
+   value set {recommended, awaiting_approval, approved, edited, rejected,
+   manually_executed, simulated, successfully_verified (verified), failed,
+   not_applicable, superseded}.
 2. THE GAS-lite_State SHALL represent lifecycle information using separate
    decision/execution/validation fields and SHALL NOT force all lifecycle values into
    the existing backend action-status enum where doing so would break current contracts.
@@ -218,6 +224,9 @@ a verified effect without breaking the existing action contract.
    attribute and SHALL NOT derive effectiveness automatically from execution completion.
 5. IF a lifecycle value outside the closed set in criterion 1 is supplied, THEN THE
    GAS-lite_State SHALL reject it rather than silently store it.
+6. In Core the schema SHALL provide the capacity to represent/reference these lifecycle
+   values and SHALL document the mapping (criteria 1–5); populating or computing the full
+   action-lifecycle projection is Follow-on.
 
 ### Requirement 5: Incident-state update triggers and versioning policy (Alignment E)
 
@@ -236,14 +245,17 @@ unnecessary snapshots.
    action approval, edited recommendation, action rejection, request for another
    investigation path, manual action outcome, simulator outcome, unexpected validation
    result, incident-scope change, hypothesis status change, and report-status change.
-4. THE GAS-lite_State SHALL classify a trigger as materially affecting understanding or
-   planning when it changes entities, relationships, timeline, findings, hypotheses,
-   recommended response focus, action outcomes, or report status, and SHALL classify all
-   other triggers as non-material.
-5. WHEN a trigger classified as material occurs, THE GAS-lite_State SHALL create a new
-   immutable state version.
-6. IF a trigger is classified as non-material, THEN THE GAS-lite_State SHALL NOT create a
-   new state version.
+4. THE GAS-lite_State SHALL document the material-vs-non-material classification concept:
+   a trigger is material when it changes entities, relationships, timeline, findings,
+   hypotheses, recommended response focus, action outcomes, or report status, and all
+   other triggers are non-material.
+5. WHEN any Core trigger (`initial_reconstruction`, `evidence_upload`, `action_result`)
+   occurs, THE GAS-lite_State SHALL create a new immutable state version, and Core SHALL
+   provide an `_is_material` classification hook that returns `True` for every Core
+   trigger (no suppression in Core).
+6. THE GAS-lite_State SHALL defer actual non-material-trigger version suppression (where
+   a non-material trigger does NOT create a new version) to a Follow-on slice; Core SHALL
+   NOT implement suppression.
 7. IF a `created_from` value outside the documented vocabulary is supplied, THEN THE
    GAS-lite_State SHALL reject it.
 
@@ -266,9 +278,11 @@ so that the graph is consistent, provenance-backed, and free of fabricated struc
 4. THE GAS-lite_State SHALL restrict relations to the closed allowlist {logged_into,
    authenticated_from, connected_to, resolved_domain, executed_on, found_on,
    session_used_by, action_attempted_on, evidence_preserved, session_revoked,
-   host_isolated}.
-5. IF a relation outside the allowlist in criterion 4 is supplied, THEN THE GAS-lite_State
-   SHALL reject it.
+   host_isolated}, and SHALL encode this allowlist as a `RelationshipType` string enum
+   whose members are exactly those values, typing `Relationship.relation` as that enum.
+5. IF a relation outside the `RelationshipType` allowlist in criterion 4 is supplied,
+   THEN THE GAS-lite_State SHALL reject it at the schema layer via `RelationshipType`
+   validation, AND the pure graph builder SHALL only ever emit allowlisted members.
 6. THE GAS-lite_State SHALL NOT allow the LLM to invent arbitrary persistent graph
    relationships.
 7. THE GAS-lite_State SHALL require every observed entity and every observed relationship
@@ -278,10 +292,13 @@ so that the graph is consistent, provenance-backed, and free of fabricated struc
    `backend/fixtures/planner_smoke_evidence.json`, mapping each event as follows: a
    `dns_query` event maps to a domain entity from its `query` field and an ip entity from
    its `source_ip` field; a `process_start` event maps to a process entity from its
-   `process` field; a `network_upload` event maps to an ip entity from its
-   `destination_ip` field; an `alert` event maps its technique id into the attack mapping;
-   and every event carrying a `host` or `account` maps to a host or account entity
-   respectively.
+   `process` field and a file entity from its `path` field; a `network_upload` event maps
+   to an ip entity from its `destination_ip` field; an `alert` event maps its technique id
+   into the attack mapping; a session entity SHALL be mapped ONLY from an explicitly
+   present allowlisted session field (`session_id` or `session_cookie_id`) and SHALL NOT
+   be derived or fabricated; and every event carrying a `host` or `account` maps to a host
+   or account entity respectively. The `planner_smoke_evidence.json` fixture carries no
+   session field, so no session entity is produced from it.
 9. WHERE an entity type or relation in the closed sets has no supporting synthetic
    evidence, THE GAS-lite_State SHALL allow the type or relation to exist in the schema
    with no fabricated instances.
@@ -295,12 +312,17 @@ history and never duplicated.
 #### Acceptance Criteria
 
 1. THE GAS-lite_State SHALL construct each entity identifier as an uppercase type prefix,
-   the `::` delimiter, and the normalized key field or fields, for example
+   the `::` delimiter, and the type-aware normalized key field or fields, for example
    `HOST::SALES-LT-07`, `ACCOUNT::farah`, `IP::203.0.113.45`, `DOMAIN::example.test`,
-   `PROCESS::SALES-LT-07::stealer.exe` and `SESSION::farah::<stable-id>`.
+   `PROCESS::SALES-LT-07::installer.exe`, `FILE::SALES-LT-07::c:/users/farah/downloads/installer.exe`
+   and `SESSION::<account>::<session_id>` built from an explicitly present session field.
 2. THE GAS-lite_State SHALL produce the same identifier for the same input fields so
    identifier construction is deterministic.
-3. THE GAS-lite_State SHALL keep an entity's identifier stable across state versions.
+3. THE GAS-lite_State SHALL apply type-aware normalization to identifier key parts —
+   host UPPERCASE, account lowercase, domain lowercase, ip canonical (trimmed; IPv4 as-is,
+   IPv6 lowercased/compressed), process name trimmed and lowercased, file path trimmed
+   with path separators unified (`\` → `/`) — while preserving the original readable value
+   in `Entity.name`, and SHALL keep an entity's identifier stable across state versions.
 4. THE GAS-lite_State SHALL document the field-to-entity mapping explicitly and SHALL NOT
    create entities from arbitrary fields outside that mapping.
 5. IF a key field required to build an entity identifier is absent or empty, THEN THE
@@ -342,13 +364,15 @@ existing report generator keeps working.
 
 #### Acceptance Criteria
 
-1. THE GAS-lite_State SHALL support or reference the report-tracking fields completed
+1. THE GAS-lite_State SHALL carry the optional, defaulted report-tracking fields completed
    report sections, pending report sections, sections invalidated by newer evidence, the
    latest report identifier, the latest report version, and the report finalization
    status, where finalization status is constrained to the enum {draft, in_review,
-   finalized}.
-2. WHEN newer evidence changes the basis of a report section, THE GAS-lite_State SHALL
-   mark that section invalidated and SHALL record the state version that triggered the
+   finalized}. In Core these fields exist and default empty/None; Core does NOT compute
+   their values.
+2. THE GAS-lite_State SHALL defer the active report-section invalidation behaviour (where
+   newer evidence changing the basis of a report section marks that section invalidated
+   and records the triggering state version) to a Follow-on slice; Core SHALL NOT compute
    invalidation.
 3. THE GAS-lite_State SHALL keep the set of report sections and their evidence references
    unchanged for identical inputs before and after the GAS-lite changes.
@@ -401,9 +425,14 @@ change.
 6. THE State_Manager SHALL ensure every observed relationship and observed entity carries
    at least one evidence_id that resolves to an evidence record stored for the same case.
 7. THE State_Manager SHALL keep observed and inferred elements distinguishable.
-8. IF the case or its current-version document is missing, THEN THE State_Manager SHALL
-   abort construction, SHALL leave the current-version pointer unchanged, and SHALL
-   surface an error.
+8. THE State_Manager SHALL handle prior-state resolution in exactly three cases:
+   (a) IF the case is unknown, THEN it SHALL abort construction, leave the current-version
+   pointer unchanged, and raise an error; (b) IF `current_state_version == 0` (no prior
+   state), THEN it SHALL create version 1 with `parent_version = None` (the
+   initial_reconstruction / first evidence-upload path) and SHALL NOT abort; (c) IF the
+   current-version pointer is `>= 1` but the referenced prior snapshot document is missing,
+   THEN it SHALL abort construction as a data-integrity error, leave the current-version
+   pointer unchanged, and raise an error.
 
 ### Requirement 12: Response actions and effect validation (Response Actions)
 
@@ -426,9 +455,11 @@ success and the authoritative records stay intact.
    update only the relevant target entity `condition` in the next state version AND SHALL
    NOT modify any other entity attribute as a result of that validation.
 5. WHEN the GAS-lite_State records a response action or its validation outcome, THE
-   GAS-lite_State SHALL reference the identifiers of the original proposed-action,
-   approval, execution, and validation records AND SHALL NOT delete, overwrite, or replace
-   those referenced records.
+   GAS-lite_State SHALL reference the identifiers of the original proposed-action record,
+   the approval record, and the action-result record (which carries both
+   `execution_status` and `validation_status`) AND SHALL NOT delete, overwrite, or replace
+   those referenced records. There is no separate "validation record"; the approval
+   remains authoritative in the approvals collection and is traceable through `action_id`.
 6. WHEN the FakeSimulatorAdapter executes an action, THE Implementation SHALL return
    `execution_status` equal to `completed` and `validation_status` equal to `ineffective`
    so the replanning demonstration path remains reproducible.
@@ -539,12 +570,19 @@ the slice is accepted.
 
 ### Follow-on
 
-- Full Stage Router / IR-phase routing logic.
+- Full Stage Router / IR-phase routing logic, including population of the routing fields
+  with real planner-populated routing decisions (R2.7).
+- Analytical assessment population — findings, hypotheses, uncertainty, evidence gaps and
+  observed response status (R1.1).
+- Report-section invalidation computation (R9.2).
+- Full action-lifecycle projection — populating/computing the lifecycle fields (R4.6).
+- Non-material state-version suppression in `_is_material` (R5.6).
 - Planner integration with working-context projection.
 - Simulator catalogue and effects (owned by Aidan).
 - Frontend graph visualisation.
 - Report integration beyond preserving compatibility.
 - Aligning the stale Technology Stack section of the proposal.
+- Extended `created_from` trigger vocabulary beyond the Core three (R5.3).
 
 ## Team Ownership / Collision Note
 

@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-06.
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-09.
 
 ## Project
 
@@ -51,6 +51,17 @@ Firestore; no credentials needed).
   (React + Vite + Tailwind, DEC-005) — dashboard shell + 5 regions on
   synthetic data; `npm run build` green. Approvals/activity not yet wired to
   live endpoints (BL-003). Product record + palette in root `PRODUCT.md`.
+- GAS-lite incident-state (BL-020): STAIR-inspired enrichment of the
+  versioned incident state is **specified, implementation pending**. Spec at
+  `.kiro/specs/caventas-gas-lite/` (requirements/design/tasks, format-valid);
+  decisions in DEC-010. Core = enriched Entity/Relationship schemas, a pure
+  `app/services/gas_lite.py` graph builder, three-case prior-state handling,
+  and additive `GET /cases/{id}/states[/{version}]` endpoints; assessment,
+  routing population, report-section invalidation and non-material version
+  suppression are Follow-on. Blocked on PR #9 (state_manager.py) for the
+  state-manager / execution-flow integration; preserve its timezone-aware
+  sorting and simulator-result behaviour. Target branch
+  `feat/gas-lite-state-fieqah`.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture
