@@ -3,6 +3,33 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 `link` API-mode end-to-end run on the Firestore emulator (IN PROGRESS)
+
+- Ran the emulator (firebase-tools 15.33.0 via npx, `--project ir-planner-dev`, JDK `openjdk@21`), uvicorn :8000 (`FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`, fake planner and fake simulator, no key) and `VITE_DATA_MODE=api npm run dev` :5173. Drove the UI with Playwright 1.64.0 from `/tmp`, outside the repo: created a case, uploaded `login_logs.csv` + `planner_smoke_evidence.json` (10 records), ran planning, and walked all 7 tabs twice. Approve, reject and execute were driven through the `/api` proxy, because the UI can't reach them in API mode.
+- Per tab:
+  - Dashboard: unsupported (honest).
+  - Create case: ok.
+  - Overview: ok but misleading ("start a planning run" shown after a run).
+  - Evidence: ok but degraded (generic titles, ID order).
+  - Timeline: ok.
+  - Analysis: ok/empty (fake planner).
+  - Response Plan: error/dishonest. It says "No actions" though actions exist, and with 2+ plans it shows fixture Infostealer re-plan copy.
+  - Approvals: unsupported (no stored-action read).
+  - Report: ok with issues. It POSTs a new report on every load, and an approved+executed action reads "FAILED by …".
+  - Audit: no UI surface.
+- Hypotheses:
+  - H0 emulator credentials: denied (works).
+  - H1 audit shape: confirmed. It is the only DTO diff; the real body is `audit_id/event_type/timestamp/details`.
+  - H2 decision enum: denied. The UI sends `approve`/`reject`, and `"approved"` gets a 422.
+  - H3 list order: confirmed. Plans and evidence come back in random doc-ID order, so the "latest plan" and vN labels are wrong.
+  - H4 report on every load: confirmed (9 `report_generated` events on one case).
+  - H5 CaseFacts approximation: confirmed.
+
+  No date-coercion crash; timestamps are strings in mixed `Z` / `+00:00` / `+08:00` form (cosmetic).
+- Security preconditions held on the real stack: execute before approval → 409, execute after reject → 409, re-execute → same `EXEC` id, run on an empty case → 409. In API mode the UI does not show execution and validation separately; the backend returns `completed` + `ineffective`.
+- Branch `link`. Notebook-only commit; the S2 code SHA is recorded in the follow-up commit. Tests are unchanged from S1 (no code edits). Full findings, screenshots and raw bodies are under `.agents/tasks/link-e2e-2026-10-09/` (`s2-e2e-findings.md`, local, untracked).
+- Next: S3 contract fixes, frontend-first: audit mapper, plan sort by `created_at`, Response Plan honesty, report decision/validation wording, enum test. The Approvals read endpoint (`GET /cases/{id}/actions`) needs a BL-025 or stays "unsupported". The emulator, uvicorn and vite are left running for S3.
+
 ### 2026-10-12 `link` preflight baseline + notebook reconcile (IN PROGRESS)
 
 - Branch `link`: created 2026-10-09 by the orchestrator off `main`@`3a6a323`
