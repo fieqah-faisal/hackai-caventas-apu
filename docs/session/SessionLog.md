@@ -3,6 +3,23 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 BL-038 full live rerun: 10/12, 3/5, mean 90.4 (DONE)
+
+- Full 5-scenario live run on the BL-038 branch (= main `73d6691` + evidence):
+  PASS sc01 (100/95/75), PASS messy (90/95/85), PASS sc02 (90/85),
+  FAIL sc03 (85!/100), FAIL mismatch (85!/100). **10/12 checkpoints, 3/5
+  scenarios, mean 90.4** (was 8/12, 2/5, 86.4; PR #13). All system checks
+  pass.
+- Recoveries vs PR #13: sc01 FAIL → PASS (`no_collateral_targets` cleared;
+  CP1 90→100, CP3 70.8→75); sc03 CP2 85!→100; ticket-mismatch CP1 75!→85!
+  (improved, still fails). Remaining failures are only `no_forbidden_actions`
+  on the two false-alarm CP1s (isolate FS-01 before verifying the signed
+  backup; revoke/reset `svc_backup`).
+- README + SessionContext live numbers refreshed; BL-031 narrowed to the
+  false-alarm CP1 verify-before-contain grounding. Artifacts:
+  `backend/evaluation/results/{live.json,SUMMARY.md}`,
+  `.agents/tasks/bl-038-planner-smoke-rerun/full-eval.txt`.
+
 ### 2026-10-13 BL-038 post-pack planner rerun: smoke clean, sc03 CP2 recovered (DONE)
 
 - Ran on merged main `73d6691` (pack + BL-037) with the live key. Smoke

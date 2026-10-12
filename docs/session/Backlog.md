@@ -65,9 +65,10 @@
   prompt-injection test). — open / Airil
 - BL-031 — Review live-planner proposals that fail `no_forbidden_actions` or
   `no_collateral_targets`, and add target-scope / forbidden-action grounding
-  plus regression coverage. Narrowed by BL-038: sc03_false_alarm CP1 (3
-  forbidden offenders + 1 collateral hit; CP2 recovered to 100). — open /
-  Airil + Aidan
+  plus regression coverage. Narrowed by the BL-038 full rerun: only the two
+  false-alarm CP1s fail (`no_forbidden_actions` — isolate FS-01 before
+  verifying the signed backup; revoke/reset `svc_backup`); 10/12 checkpoints
+  pass otherwise. — open / Airil + Aidan
 - BL-032 — Policy check: enforce required_approver in approval_service
   and order rules (POL-01) in execution_service; add approver_role to
   the decision payload. — open / Raaj
