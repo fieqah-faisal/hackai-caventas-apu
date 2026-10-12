@@ -17,6 +17,7 @@ from app.ai.langgraph_planner import (
     LangGraphPlannerAdapter,
     PlannerError,
     load_guidance,
+    select_guidance,
 )
 from app.schemas.incident_state import (
     Entity,
@@ -297,3 +298,45 @@ def test_empty_llm_content_raises_with_finish_reason(monkeypatch):
     adapter = LangGraphPlannerAdapter()
     with pytest.raises(PlannerError, match="empty content"):
         adapter.generate_plan(_state(), GUIDANCE)
+
+
+def test_select_guidance_keeps_stage_rules_and_always_on_rules():
+    guidance = {
+        "policy_rules": [
+            {"rule_id": "POL-01", "phase": ["preservation", "eradication"]},
+            {"rule_id": "POL-02", "phase": ["containment"]},
+            {"rule_id": "POL-15", "phase": []},
+        ],
+        "stage_guidance": {"assessment": ["assess"], "containment": ["contain"]},
+        "approved_tools": ["isolate_host"],
+        "assets": [{"asset_id": "CRM"}],
+    }
+    selected = select_guidance(guidance, "containment")
+
+    assert [r["rule_id"] for r in selected["policy_rules"]] == ["POL-02", "POL-15"]
+    assert selected["stage_guidance"] == {"containment": ["contain"]}
+    assert selected["approved_tools"] == ["isolate_host"]
+    assert selected["assets"] == [{"asset_id": "CRM"}]
+
+
+def test_off_stage_policy_refs_are_dropped_and_not_shown():
+    guidance = {
+        "policy_pack_version": "test",
+        "policy_rules": [
+            {"rule_id": "POL-01", "phase": ["containment"]},
+            {"rule_id": "POL-03", "phase": ["assessment"]},
+        ],
+        "approved_tools": ["isolate_host"],
+    }
+    llm = ScriptedLLM(
+        [
+            _analysis(),
+            _proposal(actions=[_action(policy_refs=["POL-01", "POL-03", "POL-99"])]),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), guidance)
+
+    assert plan.actions[0].policy_refs == ["POL-01"]
+    proposal_payload = json.dumps(llm.calls[1][0])
+    assert "POL-03" not in proposal_payload
+    assert "POL-99" not in proposal_payload

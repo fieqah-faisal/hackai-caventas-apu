@@ -58,6 +58,7 @@ class PlannerError(RuntimeError):
 class PlannerState(TypedDict, total=False):
     incident: dict[str, Any]
     guidance: dict[str, Any]
+    selected_rule_ids: list[str]
     analysis: dict[str, Any]
     sufficient: bool
     stage: str
@@ -230,6 +231,7 @@ def _validated_action(
     entity_ids: set[str],
     evidence_ids: set[str],
     allowlist: set[str],
+    allowed_refs: set[str],
 ) -> Optional[ProposedAction]:
     tool = _first_str(raw, "tool_name", "tool", "action", "action_type")
     target = _first_str(raw, "target_id", "target")
@@ -240,7 +242,9 @@ def _validated_action(
         tool_name=tool,
         target_id=target,
         evidence_ids=cited,
-        policy_refs=_str_list(raw.get("policy_refs")),
+        policy_refs=[
+            ref for ref in _str_list(raw.get("policy_refs")) if ref in allowed_refs
+        ],
         rationale=str(raw.get("rationale", "")),
         prerequisites=_str_list(raw.get("prerequisites")),
         risk=str(raw.get("risk", "")),
@@ -256,13 +260,15 @@ class LangGraphPlannerAdapter:
         self._llm_call = llm_call or _default_llm_call
         graph = StateGraph(PlannerState)
         graph.add_node("analyze", self._analyze)
+        graph.add_node("retrieve", self._retrieve)
         graph.add_node("propose", self._propose)
         graph.add_edge(START, "analyze")
         graph.add_conditional_edges(
             "analyze",
             self._route_after_analyze,
-            {"propose": "propose", "end": END},
+            {"retrieve": "retrieve", "end": END},
         )
+        graph.add_edge("retrieve", "propose")
         graph.add_edge("propose", END)
         self._graph = graph.compile()
 
@@ -278,7 +284,16 @@ class LangGraphPlannerAdapter:
         }
 
     def _route_after_analyze(self, state: PlannerState) -> str:
-        return "propose" if state.get("sufficient") else "end"
+        return "retrieve" if state.get("sufficient") else "end"
+
+    def _retrieve(self, state: PlannerState) -> PlannerState:
+        guidance = select_guidance(state.get("guidance", {}), state.get("stage", ""))
+        return {
+            "guidance": guidance,
+            "selected_rule_ids": sorted(
+                str(rule.get("rule_id")) for rule in guidance.get("policy_rules", [])
+            ),
+        }
 
     def _propose(self, state: PlannerState) -> PlannerState:
         incident = state["incident"]
@@ -312,9 +327,12 @@ class LangGraphPlannerAdapter:
         entity_ids = {entity.id for entity in incident_state.entities}
         evidence_ids = _collect_evidence_ids(incident)
         allowlist = _allowed_tools(guidance)
+        allowed_refs = set(final.get("selected_rule_ids", []))
         actions: list[ProposedAction] = []
         for raw_action in final.get("actions", []):
-            action = _validated_action(raw_action, entity_ids, evidence_ids, allowlist)
+            action = _validated_action(
+                raw_action, entity_ids, evidence_ids, allowlist, allowed_refs
+            )
             if action is not None:
                 actions.append(action)
 
@@ -324,6 +342,26 @@ class LangGraphPlannerAdapter:
             actions=actions,
             missing_evidence=_str_list(final.get("missing_evidence")),
         )
+
+
+def select_guidance(guidance: dict[str, Any], stage: str) -> dict[str, Any]:
+    """Retrieve the guidance relevant to the selected response stage.
+
+    Keeps policy rules whose ``phase`` matches the stage (an empty ``phase``
+    applies to every stage) and narrows ``stage_guidance`` to that stage.
+    ``approved_tools`` and ``assets`` stay complete: the tool allowlist is a
+    safety boundary and the asset list is reference data.
+    """
+    rules = [
+        rule
+        for rule in guidance.get("policy_rules", [])
+        if not rule.get("phase") or stage in rule["phase"]
+    ]
+    return {
+        **guidance,
+        "policy_rules": rules,
+        "stage_guidance": {stage: guidance.get("stage_guidance", {}).get(stage, [])},
+    }
 
 
 def load_guidance(path: Optional[Path] = None) -> dict[str, Any]:
