@@ -221,7 +221,7 @@ export interface PlanVM {
   actions: ResponsePlanActionVM[];
   /**
    * Set when the plan HAS actions the provider cannot load (API mode: GET
-   * /plans returns action IDs only, with no stored-action read endpoint).
+   * /plans returns action IDs only; getPlans does not join GET /actions).
    * `actions` is then [] and must never be shown as "no actions".
    */
   actionsUnavailable?: { count: number; reason: string };

@@ -3,7 +3,15 @@
  * ordering the real backend returned in the link API-mode run (Firestore
  * emulator). Shared by the mapping and RealProvider contract tests.
  */
-import type { EvidenceItemDTO, PlanDocDTO, ReportActionRowDTO, StructuredReportDTO } from "@/lib/api/dto";
+import type {
+  ActionResultDTO,
+  CaseDTO,
+  EvidenceItemDTO,
+  PlanDocDTO,
+  ReportActionRowDTO,
+  StoredActionDTO,
+  StructuredReportDTO,
+} from "@/lib/api/dto";
 
 /**
  * GET /cases/{id}/plans as real Firestore returned it: document-ID order,
@@ -131,6 +139,79 @@ export const REPORT_ACTION_ROWS: ReportActionRowDTO[] = [
     executed_by: null,
     result: "Suspicious outbound communication continued.",
     result_source: "simulator",
+  },
+];
+
+function storedAction(
+  actionId: string,
+  planId: string,
+  status: StoredActionDTO["status"],
+  basedOnStateVersion: number,
+  createdAt: string,
+): StoredActionDTO {
+  const decided = status !== "awaiting_approval" && status !== "recommended";
+  return {
+    action_id: actionId,
+    case_id: "CASE-TEST0001",
+    plan_id: planId,
+    version: 1,
+    based_on_state_version: basedOnStateVersion,
+    proposal: {
+      tool_name: "isolate_host",
+      target_id: "HOST::SYNTH-LT-01",
+      evidence_ids: ["EV-04000000000a", "EV-7b000000000c"],
+      policy_refs: [],
+      rationale: "Host shows suspicious activity in current state.",
+      prerequisites: [],
+      risk: "Temporary workstation connectivity loss.",
+      expected_effect: "Prevent further outbound communication.",
+      validation_checks: ["Verify suspicious outbound traffic stops."],
+    },
+    status,
+    decided_by: decided ? "Analyst A" : null,
+    decided_at: decided ? "2026-10-12T02:45:53.479117+00:00" : null,
+    reason: decided ? "" : null,
+    created_at: createdAt,
+  };
+}
+
+/**
+ * GET /cases/{id}/actions (BL-027): StoredAction docs, oldest first, one per
+ * lifecycle status the S2 run produced plus an approved, not-yet-simulated
+ * action. Plan IDs match PLANS_IN_DOC_ID_ORDER. The case is at state v3
+ * (CASE_AT_STATE_3), so ACT-...1 (bound to v2) is stale.
+ */
+export const STORED_ACTIONS: StoredActionDTO[] = [
+  storedAction("ACT-000000000001", "PLAN-f10000000001", "awaiting_approval", 2, "2026-10-12T02:43:38.193000Z"),
+  storedAction("ACT-000000000002", "PLAN-730000000002", "rejected", 2, "2026-10-12T02:45:53.458164Z"),
+  storedAction("ACT-000000000003", "PLAN-4e0000000003", "failed", 2, "2026-10-12T02:45:53.465000Z"),
+  storedAction("ACT-000000000004", "PLAN-4e0000000003", "approved", 3, "2026-10-12T02:46:10.000000Z"),
+];
+
+/** GET /cases/{id} after one execution rebuilt the state to v3. */
+export const CASE_AT_STATE_3: CaseDTO = {
+  case_id: "CASE-TEST0001",
+  title: "Synthetic login anomaly",
+  description: "",
+  status: "investigating",
+  current_state_version: 3,
+  created_at: "2026-10-12T02:43:36.585974Z",
+  updated_at: "2026-10-12T10:45:53.508441+08:00",
+};
+
+/** GET /cases/{id}/action-results (BL-027): the S2 execute result, as stored. */
+export const ACTION_RESULTS: ActionResultDTO[] = [
+  {
+    execution_id: "EXEC-000000000001",
+    case_id: "CASE-TEST0001",
+    action_id: "ACT-000000000003",
+    tool_name: "isolate_host",
+    target_id: "HOST::SYNTH-LT-01",
+    execution_status: "completed",
+    validation_status: "ineffective",
+    observed_effect: "Suspicious outbound communication continued.",
+    result_source: "simulator",
+    created_at: "2026-10-12T02:45:53.499034+00:00",
   },
 ];
 

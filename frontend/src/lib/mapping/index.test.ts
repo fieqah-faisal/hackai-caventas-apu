@@ -6,14 +6,20 @@
 import { describe, it, expect } from "vitest";
 import type { AuditEventDTO, ReportActionRowDTO } from "../api/dto";
 import {
+  ACTION_RESULTS,
   EVIDENCE_IN_DOC_ID_ORDER,
   PLANS_IN_DOC_ID_ORDER,
   REPORT_ACTION_ROWS,
+  STORED_ACTIONS,
   reportBody,
 } from "@/test/realBackendBodies";
 import {
+  API_REQUIRED_APPROVER,
   auditSummary,
   compareIsoInstants,
+  inApprovalQueue,
+  toApprovalItemVM,
+  toExecutionResultVM,
   mapAuditKind,
   reportActionStage,
   reportDecision,
@@ -243,5 +249,57 @@ describe("report action wording keeps proposed / approved / executed / effective
 
   it("keeps the PDF unavailable (pdf_path is a server path)", () => {
     expect(toReportVM(reportBody("RPT-000000000001")).pdfAvailable).toBe(false);
+  });
+});
+
+describe("approvals queue mapping (GET /cases/{id}/actions, BL-027)", () => {
+  it("queues only actions awaiting a decision or approved and not yet simulated", () => {
+    expect(STORED_ACTIONS.map((a) => [a.status, inApprovalQueue(a.status)])).toEqual([
+      ["awaiting_approval", true],
+      ["rejected", false],
+      ["failed", false],
+      ["approved", true],
+    ]);
+    expect(inApprovalQueue("recommended")).toBe(true);
+    expect(inApprovalQueue("verified")).toBe(false);
+    // Unknown statuses (e.g. a future not_applicable) are not offered for a decision.
+    expect(inApprovalQueue("not_applicable")).toBe(false);
+  });
+
+  it("maps a stored action into a queue item without inventing an approver role", () => {
+    const vm = toApprovalItemVM(STORED_ACTIONS[0], { stage: "assessment", caseTitle: "Synthetic login anomaly", currentStateVersion: 2 });
+    expect(vm).toEqual({
+      actionId: "ACT-000000000001",
+      actionVersion: 1,
+      basedOnStateVersion: 2,
+      caseId: "CASE-TEST0001",
+      caseTitle: "Synthetic login anomaly",
+      tool: "isolate_host",
+      target: "HOST::SYNTH-LT-01",
+      stage: "assessment",
+      risk: "low",
+      escalationRequired: true,
+      requiredApprover: API_REQUIRED_APPROVER,
+      rationale: "Host shows suspicious activity in current state.",
+      policyRef: null,
+      expectedEffect: "Prevent further outbound communication.",
+      supportingEvidence: ["EV-04000000000a", "EV-7b000000000c"],
+      state: "proposed",
+      stalePrewarn: false,
+    });
+  });
+
+  it("pre-warns when the action is bound to an older state version than the case's current one", () => {
+    const ctx = { stage: "containment" as const, caseTitle: "t", currentStateVersion: 3 };
+    expect(toApprovalItemVM(STORED_ACTIONS[0], ctx).stalePrewarn).toBe(true); // bound to v2
+    expect(toApprovalItemVM(STORED_ACTIONS[3], ctx).stalePrewarn).toBe(false); // bound to v3
+    expect(toApprovalItemVM(STORED_ACTIONS[3], ctx).state).toBe("approved");
+  });
+
+  it("maps a recorded result keeping execution and validation status apart", () => {
+    const vm = toExecutionResultVM(ACTION_RESULTS[0]);
+    expect(vm.executionStatus).toBe("completed");
+    expect(vm.validationStatus).toBe("ineffective");
+    expect(vm).toMatchObject({ executionId: "EXEC-000000000001", actionId: "ACT-000000000003", resultSource: "simulator" });
   });
 });

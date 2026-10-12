@@ -2,7 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { apiGet } from "./apiClient";
 import { PLAN_ACTIONS_UNAVAILABLE, RealProvider } from "./realProvider";
 import type { AuditEventDTO, DecisionResponseDTO, StoredActionDTO } from "./dto";
-import { EVIDENCE_IN_DOC_ID_ORDER, PLANS_IN_DOC_ID_ORDER, reportBody } from "@/test/realBackendBodies";
+import {
+  ACTION_RESULTS,
+  CASE_AT_STATE_3,
+  EVIDENCE_IN_DOC_ID_ORDER,
+  PLANS_IN_DOC_ID_ORDER,
+  STORED_ACTIONS,
+  reportBody,
+} from "@/test/realBackendBodies";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -323,6 +330,105 @@ describe("RealProvider contract (real backend bodies)", () => {
     if (out.kind !== "ok") return;
     expect(out.value.data.stage).toBe("eradication");
     expect(out.value.data.agentState).toBe("Plan v3 ready");
+  });
+
+  // ---- Approvals queue + results: read-only GET /actions, /action-results (BL-027) ----
+
+  const QUEUE_ROUTES = {
+    "GET /api/cases/CASE-TEST0001": { status: 200, body: CASE_AT_STATE_3 },
+    "GET /api/cases/CASE-TEST0001/actions": { status: 200, body: STORED_ACTIONS },
+    "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: PLANS_IN_DOC_ID_ORDER },
+  };
+
+  it("getApprovals lists awaiting and approved actions from GET /actions, with plan stage and stale pre-warning", async () => {
+    const fetchMock = routeFetch(QUEUE_ROUTES);
+    globalThis.fetch = fetchMock;
+
+    const out = await new RealProvider().getApprovals("CASE-TEST0001");
+
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.source).toBe("real");
+    // Rejected (…2) and executed (…3, "failed") actions have left the queue.
+    expect(out.value.data.map((a) => [a.actionId, a.state, a.stage, a.stalePrewarn])).toEqual([
+      ["ACT-000000000001", "proposed", "assessment", true], // bound to v2; case is at v3
+      ["ACT-000000000004", "approved", "eradication", false],
+    ]);
+    expect(out.value.data[0]).toMatchObject({
+      caseId: "CASE-TEST0001",
+      caseTitle: "Synthetic login anomaly",
+      tool: "isolate_host",
+      target: "HOST::SYNTH-LT-01",
+      actionVersion: 1,
+      basedOnStateVersion: 2,
+      supportingEvidence: ["EV-04000000000a", "EV-7b000000000c"],
+      policyRef: null,
+    });
+    // Reads only: nothing is decided or executed by loading the queue.
+    for (const [, init] of fetchMock.mock.calls) expect((init as RequestInit | undefined)?.method ?? "GET").toBe("GET");
+  });
+
+  it("getApprovals returns an empty queue without reading plans when nothing awaits a decision", async () => {
+    const fetchMock = routeFetch({
+      ...QUEUE_ROUTES,
+      "GET /api/cases/CASE-TEST0001/actions": { status: 200, body: STORED_ACTIONS.filter((a) => a.status === "rejected") },
+    });
+    globalThis.fetch = fetchMock;
+    const out = await new RealProvider().getApprovals("CASE-TEST0001");
+    expect(out).toEqual({ kind: "ok", value: { data: [], source: "real" } });
+    expect(fetchMock.mock.calls.map((c) => c[0])).not.toContain("/api/cases/CASE-TEST0001/plans");
+  });
+
+  it("getApprovals surfaces a failed actions read as http_error, never fixture data", async () => {
+    globalThis.fetch = routeFetch({
+      ...QUEUE_ROUTES,
+      "GET /api/cases/CASE-TEST0001/actions": { status: 404, body: { detail: "Not Found" } },
+    });
+    const out = await new RealProvider().getApprovals("CASE-TEST0001");
+    expect(out).toEqual({ kind: "http_error", status: 404, detail: "Not Found" });
+  });
+
+  it("getApprovals refuses to guess a stage when an action's plan is missing", async () => {
+    globalThis.fetch = routeFetch({
+      ...QUEUE_ROUTES,
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: PLANS_IN_DOC_ID_ORDER.slice(0, 1) },
+    });
+    const out = await new RealProvider().getApprovals("CASE-TEST0001");
+    expect(out.kind).toBe("unsupported");
+    if (out.kind === "unsupported") expect(out.reason).toContain("PLAN-f10000000001");
+  });
+
+  it("getExecutionResults reads GET /action-results and keeps execution and validation separate", async () => {
+    const fetchMock = mockFetch(200, ACTION_RESULTS);
+    globalThis.fetch = fetchMock;
+    const out = await new RealProvider().getExecutionResults("CASE-TEST0001");
+    expect(fetchMock).toHaveBeenCalledWith("/api/cases/CASE-TEST0001/action-results", expect.anything());
+    expect((fetchMock.mock.calls[0][1] as RequestInit).method ?? "GET").toBe("GET");
+    expect(out).toEqual({
+      kind: "ok",
+      value: {
+        source: "real",
+        data: [
+          {
+            executionId: "EXEC-000000000001",
+            actionId: "ACT-000000000003",
+            tool: "isolate_host",
+            target: "HOST::SYNTH-LT-01",
+            executionStatus: "completed",
+            validationStatus: "ineffective",
+            observedEffect: "Suspicious outbound communication continued.",
+            resultSource: "simulator",
+            createdAt: "2026-10-12T02:45:53.499034+00:00",
+          },
+        ],
+      },
+    });
+  });
+
+  it("getExecutionResults surfaces a backend 404 as http_error", async () => {
+    globalThis.fetch = mockFetch(404, { detail: "case not found: CASE-NOPE" });
+    const out = await new RealProvider().getExecutionResults("CASE-NOPE");
+    expect(out).toEqual({ kind: "http_error", status: 404, detail: "case not found: CASE-NOPE" });
   });
 
   // ---- Report: POST /reports only on an explicit generate ----

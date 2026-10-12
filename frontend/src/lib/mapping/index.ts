@@ -9,6 +9,7 @@
  * fabricated.
  */
 import type {
+  ActionResultDTO,
   ActionStatusDTO,
   AuditEventDTO,
   CaseDTO,
@@ -21,6 +22,7 @@ import type {
   StructuredReportDTO,
 } from "../api/dto";
 import type {
+  ApprovalItemVM,
   AuditEventVM,
   AuditKind,
   CaseHeaderVM,
@@ -28,6 +30,7 @@ import type {
   EntityType,
   EvidenceCategory,
   EvidenceItemVM,
+  ExecutionResultVM,
   PlanActionState,
   PlanVM,
   RecentCaseRow,
@@ -284,6 +287,76 @@ export function toPlanVM(
     createdAt: run.created_at,
     missingEvidence: run.missing_evidence,
     actions: run.actions.map((a) => toResponsePlanActionVM(a, run.stage, state)),
+  };
+}
+
+// ---- Approvals queue (GET /cases/{id}/actions) ----------------------------
+
+/**
+ * Backend statuses the API-mode approvals queue lists: awaiting a decision,
+ * or approved and not yet sent to the simulator (so the analyst can still
+ * run the approved action after a reload). Rejected and executed actions
+ * (verified/failed) have left the queue.
+ */
+const APPROVAL_QUEUE_STATUSES: ReadonlySet<string> = new Set([
+  "awaiting_approval",
+  "recommended",
+  "approved",
+]);
+
+export function inApprovalQueue(status: string): boolean {
+  return APPROVAL_QUEUE_STATUSES.has(status);
+}
+
+/** The backend has no approver role: any named analyst may decide. */
+export const API_REQUIRED_APPROVER = "Any analyst (no approver role in backend)";
+
+/**
+ * One stored action as an approvals-queue item. `stage` comes from the
+ * action's plan (actions carry no stage). `stalePrewarn` mirrors the
+ * backend's own execute check (the approval's state version must equal the
+ * case's current state version); it only warns, the backend still decides.
+ */
+export function toApprovalItemVM(
+  dto: StoredActionDTO,
+  ctx: { stage: Stage; caseTitle: string; currentStateVersion: number },
+): ApprovalItemVM {
+  const a = toResponsePlanActionVM(dto, ctx.stage, null);
+  return {
+    actionId: a.actionId,
+    actionVersion: a.version,
+    basedOnStateVersion: a.basedOnStateVersion,
+    caseId: dto.case_id,
+    caseTitle: ctx.caseTitle,
+    tool: a.tool,
+    target: a.target,
+    stage: a.stage,
+    risk: a.risk,
+    escalationRequired: a.escalationRequired,
+    requiredApprover: API_REQUIRED_APPROVER,
+    rationale: a.rationale,
+    policyRef: a.policyRefs[0] ?? null,
+    expectedEffect: a.expectedEffect,
+    supportingEvidence: a.evidenceIds,
+    state: a.state,
+    stalePrewarn: dto.based_on_state_version !== ctx.currentStateVersion,
+  };
+}
+
+// ---- Execution results ----------------------------------------------------
+
+/** A recorded simulator result; execution and validation stay separate. */
+export function toExecutionResultVM(dto: ActionResultDTO): ExecutionResultVM {
+  return {
+    executionId: dto.execution_id,
+    actionId: dto.action_id,
+    tool: dto.tool_name,
+    target: dto.target_id,
+    executionStatus: dto.execution_status,
+    validationStatus: dto.validation_status,
+    observedEffect: dto.observed_effect,
+    resultSource: dto.result_source,
+    createdAt: dto.created_at,
   };
 }
 

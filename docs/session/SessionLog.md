@@ -2,6 +2,17 @@
 
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
+### 2026-10-09 `link` S5 API-mode Approvals queue via read-only action lists (DONE)
+- Decision DEC-011, backlog item BL-027 (owner Raaj). The brief's suggested IDs, DEC-006 and BL-010, were already taken; the registry gave DEC-011 / BL-027, and the next free IDs are now BL-028 / DEC-012. Backend: added read-only `GET /cases/{id}/actions` and `GET /cases/{id}/action-results` (in `planning.py` and `execution.py`). Both use the existing repository list functions, sort by `created_at` in Python, return 404 for an unknown case, and write nothing. The decision and execute paths are untouched. BL-013 is narrowed to the global case list and plan detail.
+- Frontend: `RealProvider.getApprovals` now reads the case, actions and plans. The queue lists awaiting actions plus approved actions not yet simulated; it shows a stale pre-warning when an action's state version is older than the case's, and the approver reads "Any analyst (no approver role in backend)". `getExecutionResults` reads `/action-results`. The new mappers are `toApprovalItemVM` and `toExecutionResultVM`, which `executeAction` now reuses. Contract tests use the bodies from `src/test/realBackendBodies.ts`.
+- Live check (emulator + uvicorn restarted + Vite in API mode; Playwright, synthetic case `CASE-42E6217B`):
+  - Approvals listed the awaiting action. Approve sent one `POST …/decision`, and the action stayed queued after a reload with "Run bounded simulation" available.
+  - Running the simulation sent one `POST …/execute`. The toast read "completed / ineffective", then the queue showed as empty.
+  - `CASE-DAD8F8C3` showed "Approval may be stale".
+  - There were no console errors, and every other call was a GET. Artifacts are in `.agents/tasks/link-e2e-2026-10-09/s5-ui/` (local).
+- Tests: `cd backend && ../.venv/bin/python -m pytest -q` gave **52 passed** (45 before plus 7). `cd frontend && npm run build && npm run test` built green with **75 passed** in 9 files (65 before plus 10).
+- Commits on `link`: `ed0712a` (backend, Backlog, Decisions), then a frontend + this-entry commit whose SHA is recorded in `.agents/tasks/link-e2e-2026-10-09/s5-report.md` (local).
+- Next, in BL-027: (a) the result card is replaced at once after a simulation, and no UI calls `getExecutionResults`; (b) Response Plan could join `GET /actions`; (c) fixture mode may hide approved cards after a refresh (seen by code reading only).
 ### 2026-10-09 `link` S4 tidy: router comments and API-mode READMEs (DONE)
 - `backend/app/main.py`: router comments now say every router (cases, evidence, planning, approvals, execution, reports) is implemented, with no "Milestone 1"/"stubbed" wording. Comment only, no behavior change.
 - `backend/README.md`: the "Stubbed for later milestones (return HTTP 501)" list is replaced by a BL-003 endpoint table (decision `approve`/`reject`, execute, reports). The layout line, test-coverage line and next steps are updated; missing list endpoints point to BL-013 / BL-025.

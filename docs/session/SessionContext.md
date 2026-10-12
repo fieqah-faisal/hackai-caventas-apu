@@ -55,8 +55,10 @@ Firestore; no credentials needed).
   `npm run build` + `npm run test` (23 passed) green. API-mode wiring gaps
   vs the live backend: BL-013. On `link` (unmerged), the audit shape, list
   order, report generation and plan/report honesty are reconciled with the
-  live backend (DEC-008, DEC-009); follow-ups are BL-025 and BL-026; the
-  frontend has 65 tests. Product record + palette in root `PRODUCT.md`.
+  live backend (DEC-008, DEC-009), and the Approvals queue reads the new
+  read-only `GET /actions` / `GET /action-results` (BL-027, DEC-011);
+  follow-ups are BL-025, BL-026 and BL-027 (a)–(c). On `link`: backend
+  52 tests, frontend 75. Product record + palette in root `PRODUCT.md`.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

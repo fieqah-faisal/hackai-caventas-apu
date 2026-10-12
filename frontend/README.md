@@ -66,9 +66,10 @@ Known backend gaps are surfaced explicitly rather than faked:
   the UI never calls a non-existent `/validate` endpoint.
 - `GET /plans` returns only action IDs, so plans are ordered by `created_at`
   and their actions render as an honest "N actions unavailable" count.
-  Full action detail comes only from the `POST /runs` response; the
-  Approvals queue is "unsupported" in API mode until a stored-action read
-  endpoint exists (BL-013).
+  The Approvals queue reads `GET /actions` (BL-027, DEC-011): actions
+  awaiting a decision, plus approved actions not yet simulated, with a
+  stale pre-warning when the action's state version is older than the
+  case's. `getExecutionResults` reads `GET /action-results`.
 - Audit events map the backend shape (`audit_id`, `event_type`,
   `timestamp`, `details`); evidence lists in upload order.
 - The Report uses the actual backend report DTO; PDF download is disabled
