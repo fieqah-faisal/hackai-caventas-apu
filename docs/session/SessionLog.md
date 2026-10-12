@@ -3,10 +3,11 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
-### 2026-10-12 `link` S3 contract fixes from the API-mode run (IN PROGRESS)
+### 2026-10-12 `link` S3 contract fixes from the API-mode run (DONE)
 
-- Scope: fix the mismatches the S2 emulator run exposed (findings in `.agents/tasks/link-e2e-2026-10-09/s2-e2e-findings.md`, local), working in the frontend mapping layer first. Contract decisions are in DEC-008. H0 (emulator credentials) needs no change, because PR #7's anonymous-credential path is already on `link`.
-  - Notebook fix: the security-lead branch also uses BL-024, which S1's ID registry missed. The registry line in `Backlog.md` now records the collision. Next free IDs: BL-026 / DEC-011.
+- Scope: fix the mismatches the S2 emulator run exposed (findings in `.agents/tasks/link-e2e-2026-10-09/s2-e2e-findings.md`, local), working in the frontend mapping layer first. Contract decisions are in DEC-008. H0 (emulator credentials) needs no change, because PR #7's anonymous-credential path is already on `link`. `approval_service.py`, `execution_service.py` and `state_manager.py` are untouched.
+  - Tidy: `backend/app/main.py` no longer calls the BL-002/BL-003 routers "stubbed; return 501" (comment only).
+  - Notebook fix: the security-lead branch also uses BL-024, which S1's ID registry missed. The registry line in `Backlog.md` now records the collision. Next free IDs: BL-027 / DEC-011.
 - Audit (H1) and decision (H2):
   - Audit: `AuditEventDTO` now matches the real `{audit_id, case_id, event_type, details, timestamp}`. `toAuditEventVM` maps `evidence_uploaded` to `evidence_ingested`, unknown types to `other`, and keeps server paths out of summaries. The live probe mapped all 21 events on `CASE-DAD8F8C3` without a throw.
   - Decision: there was no mismatch; the UI sends `approve`/`reject`. Contract tests now pin the request body, the 409 path, and that request-more-investigation never reaches the backend.
@@ -19,11 +20,10 @@
   - Report generation (H4, DEC-009): opening the Report tab no longer POSTs. It shows "No report generated yet" with a Generate button, and Regenerate once a report exists. The newest confirmed report is kept in memory per case, never in `localStorage`. Live probe: the tab read made no `/api` call, and one Generate made one `POST /reports` (`report_generated` events went from 9 to 10). The report read endpoint is logged as BL-025.
   - Report wording: an approved-then-ineffective action read "FAILED by Fieqah A." because the mapping printed the lifecycle `status` as a decision. Decisions now read Approved/Rejected by the analyst, with the reason; actions and validation show each lifecycle stage separately. A `failed` row reads "Approved, sent to simulator, not validated effective", never "simulated", because `failed` also covers an execution that did not complete. Checked offline against S2's captured real report body.
   - Response Plan: API mode showed "No actions in the Containment stage" although each plan had 1 action, and with 2+ plans it showed the fixture Infostealer re-plan copy, diff and "New evidence received" badge. Plans now carry `actionsUnavailable` (the real count), so the tab says "Plan v3 proposed 1 action … detail is unavailable". Re-plan copy appears only when the provider supplies it (fixture v2). Live probe: all 3 real plans were marked unavailable with count 1.
-- Commits on `link`: `91b3717` (audit), `5aa1b09` (decision pin), `a078663` (frontend plan order), `b29e9bc` (report plan order), `a727289` (report on explicit action), `7fecd92` (report wording), `5d6ffc2` (Response Plan), `fc2be8d` (report "sent to simulator" wording). Tests:
-  - `cd frontend && npm run build && npm run test`: build green, **65 passed** (9 files).
-  - `cd backend && ../.venv/bin/python -m pytest -q`: **45 passed**.
-- Tidy: `backend/app/main.py` no longer calls the BL-002/BL-003 routers "stubbed; return 501" (comment only).
-- Next: log the deferred UI follow-ups and record the S3 verification run.
+- Commits on `link`: `91b3717` (audit), `5aa1b09` (decision pin), `a078663` (frontend plan order), `b29e9bc` (report plan order), `a727289` (report on explicit action), `7fecd92` and `fc2be8d` (report wording), `5d6ffc2` (Response Plan), `584e186` (evidence), `02e1c6d` (`main.py` comment), plus this notebook commit. Final run at `02e1c6d`, raw output and live-probe evidence in `.agents/tasks/link-e2e-2026-10-09/s3-verification.md` (local):
+  - `cd frontend && npm run build && npm run test`: build green, **65 passed** (9 files; S1 baseline 23 in 6).
+  - `cd backend && ../.venv/bin/python -m pytest -q`: **45 passed** (baseline 44).
+- Deferred: BL-025 (report read endpoint, owner Raaj) and BL-026 (API-mode UI follow-ups: an analyst note that is never sent, labels, the synthetic flag in API mode, unknown action statuses). The Approvals read endpoint and CaseFacts (H5) stay in BL-013. Next: a browser re-walk of API mode, which S3 did not do, and the BL-013 update.
 
 ### 2026-10-12 `link` API-mode end-to-end run on the Firestore emulator (IN PROGRESS)
 

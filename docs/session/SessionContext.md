@@ -53,8 +53,10 @@ Firestore; no credentials needed).
   Tailwind, DEC-005), merged in PR #8 (`3a6a323`): dashboard, create-case
   flow, 7-tab case workspace, fixture|api data providers (`VITE_DATA_MODE`);
   `npm run build` + `npm run test` (23 passed) green. API-mode wiring gaps
-  vs the live backend: BL-013 (being verified on `link`). Product record +
-  palette in root `PRODUCT.md`.
+  vs the live backend: BL-013. On `link` (unmerged), the audit shape, list
+  order, report generation and plan/report honesty are reconciled with the
+  live backend (DEC-008, DEC-009); follow-ups are BL-025 and BL-026; the
+  frontend has 65 tests. Product record + palette in root `PRODUCT.md`.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

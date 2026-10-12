@@ -9,10 +9,10 @@
 > and `security-scenario-simulation-evaluation-lead` (BL-014..024, DEC-006,
 > DEC-007); the two branches collide with each other.
 > `feat/gas-lite-state-fieqah` claims BL-020 and DEC-010. `link` uses
-> BL-024 (npm audit), BL-025, DEC-008 and DEC-009. `link`'s BL-024 also
-> collides with security-lead's BL-024 (approval invalidation); it is not
-> renumbered here and must be resolved when the branches merge. Next free
-> IDs: **BL-026** and **DEC-011**.
+> BL-024 (npm audit), BL-025, BL-026, DEC-008 and DEC-009. `link`'s BL-024
+> also collides with security-lead's BL-024 (approval invalidation); it is
+> not renumbered here and must be resolved when the branches merge. Next
+> free IDs: **BL-027** and **DEC-011**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 
 ## Open Items
@@ -62,6 +62,25 @@
   latest). Without it, the Report tab shows only reports generated in the
   current page session, and after a reload the analyst must regenerate,
   which stores a new version (DEC-009). — open / Raaj
+- BL-026 — API-mode UI follow-ups from the `link` emulator run, deferred
+  because each changes what the analyst sees. Do (a) first, because its
+  label is untrue:
+  - (a) Create case: "Analyst note (captured as evidence)" is held in form
+    state only and never sent. Send it as evidence, or change the label.
+  - (b) The Start step shows the file count as "Accepted records".
+  - (c) The dashboard summary cards show a generic "Could not load …"
+    instead of the unsupported reason.
+  - (d) Overview says "start a planning run" when a run exists but wrote
+    no findings.
+  - (e) Evidence categorisation puts nearly every row under Endpoint,
+    because every row has a `host` field.
+  - (f) API mode shows no synthetic flag (`RealProvider.synthetic = false`)
+    although all data is synthetic by rule. This is a product call.
+  - (g) `mapActionState` shows unknown statuses as "proposed"; the
+    security-lead branch's `not_applicable` would be mislabelled after
+    merge. Evidence detail shows a placeholder "State version v0".
+
+  — open / frontend
 
 ## Deferred
 
