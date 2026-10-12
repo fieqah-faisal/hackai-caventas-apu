@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from app.api import approvals, cases, evidence, execution, planning, reports
+from app.api import approvals, cases, evidence, execution, planning, reports, state
 
 app = FastAPI(
     title="IR Planner Backend",
@@ -25,6 +25,8 @@ app = FastAPI(
 # Milestone 1 routers (functional)
 app.include_router(cases.router)
 app.include_router(evidence.router)
+# GAS-lite state-history (additive, read-only)
+app.include_router(state.router)
 
 # Later-milestone routers (stubbed; return 501, except audit read)
 app.include_router(planning.router)

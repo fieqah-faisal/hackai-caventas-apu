@@ -21,6 +21,7 @@ from typing import Any
 from app.ai.langgraph_planner import load_guidance
 from app.config import get_settings
 from app.database import repositories
+from app.schemas.incident_state import CreatedFrom
 from app.services import audit_service, state_manager
 from app.simulator.simulator_adapter import BoundedSimulatorAdapter, SimulatorAdapter
 
@@ -90,7 +91,7 @@ def execute(case_id: str, action_id: str) -> dict[str, Any]:
         case.get("current_state_version", 0)
     ):
         raise ExecutionError(
-            "approval was invalidated by a newer incident state; re-approval required",
+            "approval was invalidated by a newer incident state; create a new planning run and review the replacement action",
             "conflict",
         )
 
@@ -146,7 +147,11 @@ def execute(case_id: str, action_id: str) -> dict[str, Any]:
             "validation_status": validation_status,
         },
     )
-    state_manager.rebuild_and_version(case_id)
+    state_manager.rebuild_and_version(
+        case_id,
+        created_from=CreatedFrom.ACTION_RESULT,
+        change_reason=f"action result {execution_id} ({tool} on {target})",
+    )
 
     updated = repositories.get_action(case_id, action_id) or action
     return {"action": updated, "result": result_doc}

@@ -13,7 +13,7 @@ timeline by timestamp) excluding the version/provenance/timestamp fields.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
 
 from app.schemas.incident_state import (
@@ -147,12 +147,23 @@ def _upsert_entity(
     existing.last_seen = _max_time(existing.last_seen, when)
 
 
+def _cmp_key(dt: datetime) -> datetime:
+    """Comparison key tolerant of naive timestamps (treated as UTC).
+
+    Uploaded logs are untrusted and may mix naive and aware times; comparing
+    them directly raises TypeError (PR #9 handles the same hazard in the
+    timeline sort). We normalize only for comparison and return the original
+    value, so stored first_seen/last_seen keep their source form.
+    """
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
 def _min_time(a: Optional[datetime], b: Optional[datetime]) -> Optional[datetime]:
     if a is None:
         return b
     if b is None:
         return a
-    return a if a <= b else b
+    return a if _cmp_key(a) <= _cmp_key(b) else b
 
 
 def _max_time(a: Optional[datetime], b: Optional[datetime]) -> Optional[datetime]:
@@ -160,7 +171,7 @@ def _max_time(a: Optional[datetime], b: Optional[datetime]) -> Optional[datetime
         return b
     if b is None:
         return a
-    return a if a >= b else b
+    return a if _cmp_key(a) >= _cmp_key(b) else b
 
 
 # --------------------------------------------------------------------------
