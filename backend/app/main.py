@@ -22,11 +22,12 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Milestone 1 routers (functional)
+# Milestone 1 routers: cases, evidence and the current incident state
 app.include_router(cases.router)
 app.include_router(evidence.router)
 
-# Later-milestone routers (stubbed; return 501, except audit read)
+# Planning runs (BL-002); approvals, simulated execution + the audit read,
+# and reports (BL-003). All implemented.
 app.include_router(planning.router)
 app.include_router(approvals.router)
 app.include_router(execution.router)

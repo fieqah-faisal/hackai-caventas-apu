@@ -22,7 +22,8 @@
 - Commits on `link`: `91b3717` (audit), `5aa1b09` (decision pin), `a078663` (frontend plan order), `b29e9bc` (report plan order), `a727289` (report on explicit action), `7fecd92` (report wording), `5d6ffc2` (Response Plan), `fc2be8d` (report "sent to simulator" wording). Tests:
   - `cd frontend && npm run build && npm run test`: build green, **65 passed** (9 files).
   - `cd backend && ../.venv/bin/python -m pytest -q`: **45 passed**.
-- Next: the stale `main.py` router comment, deferred UI follow-ups, and the S3 verification record.
+- Tidy: `backend/app/main.py` no longer calls the BL-002/BL-003 routers "stubbed; return 501" (comment only).
+- Next: log the deferred UI follow-ups and record the S3 verification run.
 
 ### 2026-10-12 `link` API-mode end-to-end run on the Firestore emulator (IN PROGRESS)
 
