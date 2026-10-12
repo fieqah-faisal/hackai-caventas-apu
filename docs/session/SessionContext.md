@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-11.
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-12.
 
 ## Project
 
@@ -33,33 +33,69 @@ Firestore; no credentials needed).
 - Planning implemented and merged (BL-002, PR #3): real LangGraph adapter
   + `/runs` + `/plans` endpoints, guidance fixture, 24 tests passing on
   `main`.
-- Approval → simulated execution → reporting implemented (BL-003, PR open):
-  decision binding + security preconditions + outcome→state rebuild +
-  v1.2 report JSON/PDF; suite now **43 passed**. Tool catalogue still
-  provisional (BL-008); fake adapters remain the fallback without a key.
+- Approval → simulated execution → reporting merged (BL-003, PR #6
+  `b93fa6c`): decision binding + security preconditions + outcome→state
+  rebuild + v1.2 report JSON/PDF; suite **44 passed** on `main`@`3cecd3e`.
+  Tool catalogue still provisional (BL-008). Without a key the planner
+  falls back to the fake adapter; the simulator on `main` is still the fake
+  (bounded simulator pending on `security-scenario-simulation-evaluation-lead`).
+  Merged via PR #11 (`5e53c66`): read-only `GET /cases/{id}/actions` +
+  `/action-results` (BL-027, DEC-011) and newest-plan-by-`created_at` in
+  reports. Missing reads: BL-013, BL-025.
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).
+- Security scenario, simulation and evaluation (Aidan, branch
+  `security-scenario-simulation-evaluation-lead`): bounded simulator wired
+  into execution (DEC-006), synthetic incident package
+  (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
+  scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
+  unsafe 0/12, fake planner 0/12; BL-014 full live run passed 2/5 scenarios
+  and 8/12 checkpoints: sc01 FAIL (CP3 `no_collateral_targets`), messy PASS,
+  sc02 PASS, sc03 FAIL (CP1 `no_forbidden_actions`, CP2
+  `no_collateral_targets`), mismatch FAIL (CP1 `no_forbidden_actions`).
+  Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
+  explicitly by the demo / harness. Naive-timestamp crash fixed; stale
+  approvals deferred to GAS-lite (DEC-007, BL-024).
+  Suite **137 passed** after syncing with main. Live results merged via
+  PR #13 (`4145f41`).
+- Policy pack v1.0 (Aida, `feat/policy-pack-v1`, DEC-012): 19 structured
+  rules (ten fields) + 8-asset list in `backend/fixtures/guidance.json`
+  (`policy_pack_version` 1.0); branch merged `main` with PR #10 conflicts
+  resolved, items renumbered BL-032..BL-036. Enforcement follow-ups are
+  BL-032..BL-034; asset/fixture alignment BL-035 and BL-036.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
+  Re-confirmed by the `link` UI runs (S2/S5/S6).
 - Storage: Google Cloud Firestore via Firebase Admin SDK; uploaded
   originals on the local filesystem (`backend/uploads/`, gitignored) with
   SHA-256 recorded in Firestore.
 - Code-review graph built (148 nodes / 658 edges); local data in
   `.code-review-graph/` (gitignored).
-- Frontend (BL-009): analyst workspace scaffolded under `frontend/`
-  (React + Vite + Tailwind, DEC-005) — dashboard shell + 5 regions on
-  synthetic data; `npm run build` green. Approvals/activity not yet wired to
-  live endpoints (BL-003). Product record + palette in root `PRODUCT.md`.
+- Frontend (BL-009): analyst workspace under `frontend/` (React + Vite +
+  Tailwind, DEC-005), merged in PR #8 (`3a6a323`): dashboard, create-case
+  flow, 7-tab case workspace, fixture|api data providers (`VITE_DATA_MODE`);
+  `npm run build` + `npm run test` (23 passed) green. API-mode wiring gaps
+  vs the live backend: BL-013. On `link` (merged via PR #11 `5e53c66`),
+  the audit shape, list order, report generation and plan/report honesty
+  are reconciled with the live backend (DEC-008, DEC-009), and the
+  Approvals queue reads the read-only `GET /actions` / `GET /action-results`
+  (BL-027, DEC-011); follow-ups are BL-025, BL-026 and BL-027 (a)–(c).
+  Backend suite **137**, frontend **75** on `main`. Product record +
+  palette in root `PRODUCT.md`.
+- Frontend↔backend link (`link`, merged via PR #11 `5e53c66`): API mode verified
+  end to end on the Firestore emulator (2026-10-09 S6). All 7 case tabs
+  load real data; approve/reject/execute/report run from the UI with
+  execution and validation shown apart; audit maps the real shape (no UI
+  surface yet). Dashboard is honestly "unsupported" (BL-013). Open:
+  BL-013, BL-025..BL-029.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
-- Policy pack v1.0 (POL-01…19, structured) + 8-asset list in
-  `backend/fixtures/guidance.json` (DEC-006); PR open.
 
 ## Architecture
 
 - `backend/app/api/` — FastAPI routers
-- `backend/app/services/` — ingestion, state_manager, audit; approval /
-  execution / reporting stubs
+- `backend/app/services/` — ingestion, state_manager, planning_service,
+  approval_service, execution_service, audit_service, reporting
 - `backend/app/database/` — Firestore client + repositories
 - `backend/app/ai/planner_adapter.py` — AI boundary (LangGraph + DeepSeek
   V4.1 Flash)

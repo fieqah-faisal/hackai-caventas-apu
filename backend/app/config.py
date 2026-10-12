@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     opencode_go_temperature: float = 0.2
     opencode_go_timeout_seconds: float = 300.0
 
+    # --- Action simulator: "clean" (no faults) by default. "demo" injects the
+    # infostealer scenario's CRM failure; only the demo / evaluation harness
+    # should enable it, explicitly. ---
+    simulator_profile: str = "clean"
+
     # --- Local storage ---
     upload_dir: str = str(BACKEND_DIR / "uploads")
     report_dir: str = str(BACKEND_DIR / "reports")

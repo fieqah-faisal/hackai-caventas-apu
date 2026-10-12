@@ -204,7 +204,11 @@ export interface ApprovalRecordDTO {
   action_id: string;
   action_version: number;
   state_version: number;
-  decision: string;
+  /**
+   * Stored in the past tense. The request enum is imperative
+   * (DecisionDTO: approve/reject); "approved"/"rejected" in a REQUEST is a 422.
+   */
+  decision: "approved" | "rejected";
   analyst: string;
   reason: string;
   created_at: string;
@@ -239,13 +243,21 @@ export interface ExecuteResponseDTO {
 
 // ---- Audit ----------------------------------------------------------------
 
+/**
+ * One GET /cases/{id}/audit row, exactly as audit_service.record() stores it.
+ * The backend returns rows sorted by `timestamp`, oldest first.
+ * Observed `event_type`s: case_created, evidence_uploaded,
+ * state_version_created, plan_created, action_approved, action_rejected,
+ * action_executed, report_generated. `details` is free-form per event type
+ * and can hold server-local paths (`stored_path`, `pdf_path`) — never render
+ * those as links.
+ */
 export interface AuditEventDTO {
-  event_id?: string;
-  case_id?: string;
-  kind: string;
-  at?: string;
-  created_at?: string;
-  payload?: Record<string, unknown>;
+  audit_id: string;
+  case_id: string;
+  event_type: string;
+  details: Record<string, unknown>;
+  timestamp: string;
 }
 
 // ---- Report (v1.2 structured report) --------------------------------------

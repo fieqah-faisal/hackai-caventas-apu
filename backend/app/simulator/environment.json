@@ -1,0 +1,61 @@
+{
+  "organisation": "Caventas Demo Organisation (fictional)",
+  "note": "Simulated environment for the bounded action simulator. Synthetic only: every host, account and domain is fictional; domains use the reserved .example TLD. Simulator-internal: never sent to the planner.",
+  "timezone": "+08:00",
+  "hosts": {
+    "SALES-LT-07": {"kind": "laptop", "owner": "farah", "department": "Sales", "criticality": "medium"},
+    "FIN-LT-03": {"kind": "laptop", "owner": "hakim", "department": "Finance", "criticality": "medium"},
+    "MKT-LT-11": {"kind": "laptop", "owner": "aina", "department": "Marketing", "criticality": "low"},
+    "HR-LT-02": {"kind": "laptop", "owner": "daniel", "department": "HR", "criticality": "medium"},
+    "SOC-WS-01": {"kind": "workstation", "owner": "soc.lead", "department": "SOC", "criticality": "high"},
+    "ADM-WS-02": {"kind": "workstation", "owner": "ravi.adm", "department": "IT", "criticality": "high"},
+    "FS-01": {
+      "kind": "file_server",
+      "owner": "IT",
+      "department": "IT",
+      "criticality": "high",
+      "isolation_impact": "File shares unavailable to about 120 staff; the nightly backup job is interrupted."
+    }
+  },
+  "accounts": {
+    "farah": {"kind": "user", "department": "Sales", "services": ["idp", "mail", "crm"]},
+    "hakim": {"kind": "user", "department": "Finance", "services": ["idp", "mail", "erp"]},
+    "aina": {"kind": "user", "department": "Marketing", "services": ["idp", "mail", "crm"]},
+    "daniel": {"kind": "user", "department": "HR", "services": ["idp", "mail"]},
+    "soc.lead": {"kind": "user", "department": "SOC", "services": ["idp", "mail", "siem"], "privileged": true},
+    "ravi.adm": {"kind": "admin", "department": "IT", "services": ["idp", "mail"], "privileged": true},
+    "svc_backup": {
+      "kind": "service",
+      "department": "IT",
+      "services": ["backup"],
+      "reset_impact": "Scheduled backup jobs fail until the new credential is stored in the backup scheduler."
+    }
+  },
+  "domains": {
+    "pdf-editor-free.example": {},
+    "cdn-sync-update.example": {},
+    "vendor-payments.example": {},
+    "m365-secure-login.example": {},
+    "mailbox-relay.example": {},
+    "update.vendor-os.example": {"business_use": true},
+    "offsite-vault.example": {"business_use": true}
+  },
+  "mailbox_rules": {
+    "hakim": [
+      {
+        "rule_name": "..",
+        "action": "forward messages containing 'invoice' or 'payment' to hakim.backup@mailbox-relay.example and move them to RSS Feeds",
+        "created_at": "2026-10-06T09:36:00+08:00"
+      }
+    ]
+  },
+  "faults": [
+    {
+      "profile": "demo",
+      "tool": "revoke_sessions",
+      "service": "crm",
+      "until": "2026-10-05T10:30:00+08:00",
+      "error": "CRM admin API unavailable: scheduled vendor maintenance until 10:30"
+    }
+  ]
+}

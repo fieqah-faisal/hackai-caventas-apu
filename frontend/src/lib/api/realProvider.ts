@@ -10,13 +10,15 @@
  *   GET  /cases/{id}/state                   -> IncidentStateDTO
  *   POST /cases/{id}/runs                    -> RunResponseDTO (full actions)
  *   GET  /cases/{id}/plans                   -> PlanDocDTO[] (action_ids only)
+ *   GET  /cases/{id}/actions                 -> StoredActionDTO[] (approvals queue, BL-027)
+ *   GET  /cases/{id}/action-results          -> ActionResultDTO[] (BL-027)
  *   GET  /cases/{id}/audit                   -> AuditEventDTO[]
  *   POST /cases/{id}/actions/{aid}/decision  -> DecisionResponseDTO (approve/reject)
  *   POST /cases/{id}/actions/{aid}/execute   -> ExecuteResponseDTO
- *   POST /cases/{id}/reports                 -> StructuredReportDTO
+ *   POST /cases/{id}/reports                 -> StructuredReportDTO (explicit action only)
  *   GET  /cases/{id}/reports/{rid}           -> StructuredReportDTO
  * NOT available: global cases list, dashboard aggregates, plan-detail,
- *   run-status, request_more_investigation decision, /validate.
+ *   run-status, request_more_investigation decision, /validate, report list.
  */
 import { apiGet, apiPost, apiPostForm, type ApiResult } from "./apiClient";
 import {
@@ -26,17 +28,25 @@ import {
   type PlanRef,
 } from "./provider";
 import {
+  inApprovalQueue,
   mapActionState,
   mapRisk,
   recoveryFromState,
+  sortEvidenceInUploadOrder,
+  sortPlansOldestFirst,
   stageFromPlans,
+  toApprovalItemVM,
+  toAuditEventVM,
   toEvidenceItemVM,
+  toExecutionResultVM,
   toReportVM,
   toResponsePlanActionVM,
 } from "../mapping";
 import type {
+  ActionResultDTO,
   AuditEventDTO,
   CaseDTO,
+  DecisionRequestDTO,
   DecisionResponseDTO,
   EvidenceUploadResultDTO,
   EvidenceItemDTO,
@@ -44,6 +54,7 @@ import type {
   IncidentStateDTO,
   PlanDocDTO,
   RunResponseDTO,
+  StoredActionDTO,
   StructuredReportDTO,
 } from "./dto";
 import type {
@@ -52,7 +63,6 @@ import type {
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
-  AuditKind,
   CaseActivityVM,
   CaseFacts,
   CaseHeaderVM,
@@ -85,6 +95,9 @@ function fromApi<T>(r: ApiResult<T>, source: "real"): Outcome<T> {
 const UNSUPPORTED_DASHBOARD =
   "No global dashboard endpoint exists in the backend. Switch to fixture mode for the demo dashboard.";
 
+export const PLAN_ACTIONS_UNAVAILABLE =
+  "Action detail is not loaded for stored plans in API mode: GET /plans lists only action IDs. Actions awaiting a decision or simulation are listed under Approvals.";
+
 export class RealProvider implements DataProvider {
   readonly mode = "api" as const;
   readonly synthetic = false;
@@ -116,7 +129,7 @@ export class RealProvider implements DataProvider {
   }
   private async loadPlans(caseId: string): Promise<PlanDocDTO[]> {
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
-    return r.kind === "ok" ? r.data : [];
+    return r.kind === "ok" ? sortPlansOldestFirst(r.data) : [];
   }
 
   async getCaseHeader(caseId: string): Promise<Outcome<CaseHeaderVM>> {
@@ -160,7 +173,7 @@ export class RealProvider implements DataProvider {
   async getEvidence(caseId: string): Promise<Outcome<EvidenceItemVM[]>> {
     const r = await apiGet<EvidenceItemDTO[]>(`/cases/${caseId}/evidence`);
     if (r.kind !== "ok") return fromApi<EvidenceItemVM[]>(r as ApiResult<never>, "real");
-    return ok(r.data.map(toEvidenceItemVM), "real");
+    return ok(sortEvidenceInUploadOrder(r.data).map(toEvidenceItemVM), "real");
   }
 
   async getTimeline(caseId: string): Promise<Outcome<TimelineEventVM[]>> {
@@ -198,7 +211,9 @@ export class RealProvider implements DataProvider {
     // endpoint that does not exist, so plan ACTIONS are unavailable here.
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
     if (r.kind !== "ok") return fromApi<PlanVM[]>(r as ApiResult<never>, "real");
-    const vms: PlanVM[] = r.data.map((p, idx) => ({
+    // Version numbers are ordinals by created_at (the backend list is unordered).
+    // No replanExplanation: the backend records no reason for a re-plan.
+    const vms: PlanVM[] = sortPlansOldestFirst(r.data).map((p, idx) => ({
       planId: p.plan_id,
       version: idx + 1,
       basedOnStateVersion: p.based_on_state_version,
@@ -206,6 +221,9 @@ export class RealProvider implements DataProvider {
       createdAt: p.created_at,
       missingEvidence: p.missing_evidence,
       actions: [], // historical action detail is not retrievable (no endpoint)
+      ...(p.action_ids.length > 0
+        ? { actionsUnavailable: { count: p.action_ids.length, reason: PLAN_ACTIONS_UNAVAILABLE } }
+        : {}),
     }));
     return ok(vms, "real");
   }
@@ -214,7 +232,7 @@ export class RealProvider implements DataProvider {
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
     if (r.kind !== "ok") return fromApi<PlanRef[]>(r as ApiResult<never>, "real");
     return ok(
-      r.data.map((p, idx) => ({ planId: p.plan_id, version: idx + 1, stage: p.stage, createdAt: p.created_at, actionCount: p.action_ids.length })),
+      sortPlansOldestFirst(r.data).map((p, idx) => ({ planId: p.plan_id, version: idx + 1, stage: p.stage, createdAt: p.created_at, actionCount: p.action_ids.length })),
       "real",
     );
   }
@@ -227,48 +245,68 @@ export class RealProvider implements DataProvider {
   }
 
   async getApprovals(caseId: string): Promise<Outcome<ApprovalItemVM[]>> {
-    // Approvals require full action detail. The only source of full actions is
-    // the just-run POST /runs response; GET /plans gives action_ids only and
-    // there is no stored-action read endpoint. So in API mode the approvals
-    // queue derived purely from reads is unavailable; actions are surfaced from
-    // a fresh run instead (handled by the workspace run flow).
-    void caseId;
-    return {
-      kind: "unsupported",
-      reason: "Full stored-action detail is only available from a planning run response; there is no stored-action read endpoint.",
-    };
+    // Read-only: GET /actions (stored actions, oldest first) + the case (title,
+    // current state version) + plans (actions carry no stage). Any failed read
+    // is surfaced as-is; the queue is never partly guessed.
+    const caseR = await apiGet<CaseDTO>(`/cases/${caseId}`);
+    if (caseR.kind !== "ok") return fromApi<ApprovalItemVM[]>(caseR as ApiResult<never>, "real");
+    const actionsR = await apiGet<StoredActionDTO[]>(`/cases/${caseId}/actions`);
+    if (actionsR.kind !== "ok") return fromApi<ApprovalItemVM[]>(actionsR as ApiResult<never>, "real");
+    const queued = actionsR.data.filter((a) => inApprovalQueue(a.status));
+    if (queued.length === 0) return ok([], "real");
+    const plansR = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
+    if (plansR.kind !== "ok") return fromApi<ApprovalItemVM[]>(plansR as ApiResult<never>, "real");
+    const stageByPlan = new Map(plansR.data.map((p) => [p.plan_id, p.stage]));
+    const orphan = queued.find((a) => !stageByPlan.has(a.plan_id));
+    if (orphan) {
+      return {
+        kind: "unsupported",
+        reason: `Stored action ${orphan.action_id} references plan ${orphan.plan_id}, which GET /plans did not return; its stage is not guessed.`,
+      };
+    }
+    const items = queued.map((a) =>
+      toApprovalItemVM(a, {
+        stage: stageByPlan.get(a.plan_id)!,
+        caseTitle: caseR.data.title,
+        currentStateVersion: caseR.data.current_state_version,
+      }),
+    );
+    return ok(items, "real");
   }
 
-  async getExecutionResults(_caseId: string): Promise<Outcome<ExecutionResultVM[]>> {
-    return {
-      kind: "unsupported",
-      reason: "No endpoint lists execution results; they are returned inline from the execute call.",
-    };
+  async getExecutionResults(caseId: string): Promise<Outcome<ExecutionResultVM[]>> {
+    // Read-only list of recorded results, oldest first; never runs the simulator.
+    const r = await apiGet<ActionResultDTO[]>(`/cases/${caseId}/action-results`);
+    if (r.kind !== "ok") return fromApi<ExecutionResultVM[]>(r as ApiResult<never>, "real");
+    return ok(r.data.map(toExecutionResultVM), "real");
   }
 
   async getAudit(caseId: string): Promise<Outcome<AuditEventVM[]>> {
     const r = await apiGet<AuditEventDTO[]>(`/cases/${caseId}/audit`);
     if (r.kind !== "ok") return fromApi<AuditEventVM[]>(r as ApiResult<never>, "real");
-    const vms: AuditEventVM[] = r.data.map((e, i) => ({
-      eventId: e.event_id ?? `AE-${i}`,
-      kind: (e.kind as AuditKind) ?? "other",
-      caseId: e.case_id ?? caseId,
-      summary: e.kind.replace(/_/g, " "),
-      at: e.at ?? e.created_at ?? "",
-    }));
-    return ok(vms, "real");
+    // Backend order is kept: audit_service sorts by timestamp, oldest first.
+    return ok(r.data.map((e) => toAuditEventVM(e, caseId)), "real");
   }
 
-  async getReport(caseId: string): Promise<Outcome<ReportVM>> {
-    // Reports are generated via POST; there is no "latest report" GET without an
-    // id, so getReport generates a fresh structured report.
-    return this.generateReport(caseId);
+  /**
+   * Reports generated in THIS page session, newest per case. Memory only
+   * (never localStorage). The backend has no "list/latest report" endpoint,
+   * so reports generated before a reload cannot be shown again.
+   */
+  private readonly sessionReports = new Map<string, ReportVM>();
+
+  async getReport(caseId: string): Promise<Outcome<ReportVM | null>> {
+    // Never POSTs: each POST /reports stores a new report version, renders a
+    // PDF and writes a report_generated audit event.
+    return ok(this.sessionReports.get(caseId) ?? null, "real");
   }
 
   async generateReport(caseId: string): Promise<Outcome<ReportVM>> {
     const r = await apiPost<StructuredReportDTO>(`/cases/${caseId}/reports`);
     if (r.kind !== "ok") return fromApi<ReportVM>(r as ApiResult<never>, "real");
-    return ok(toReportVM(r.data), "real");
+    const vm = toReportVM(r.data);
+    this.sessionReports.set(caseId, vm); // cached only after backend confirmation
+    return ok(vm, "real");
   }
 
   // ---- Mutations ----------------------------------------------------------
@@ -285,9 +323,11 @@ export class RealProvider implements DataProvider {
         reason: "The backend decision endpoint supports approve/reject only.",
       };
     }
+    // Typed as the backend DecisionRequest so the compiler pins the enum.
+    const body: DecisionRequestDTO = { decision, analyst, reason };
     const r = await apiPost<DecisionResponseDTO>(
       `/cases/${caseId}/actions/${actionId}/decision`,
-      { decision, analyst, reason },
+      body,
     );
     if (r.kind !== "ok") return fromApi<{ state: string }>(r as ApiResult<never>, "real");
     return ok({ state: mapActionState(r.data.action.status) }, "real");
@@ -296,19 +336,7 @@ export class RealProvider implements DataProvider {
   async executeAction(caseId: string, actionId: string): Promise<Outcome<ExecutionResultVM>> {
     const r = await apiPost<ExecuteResponseDTO>(`/cases/${caseId}/actions/${actionId}/execute`);
     if (r.kind !== "ok") return fromApi<ExecutionResultVM>(r as ApiResult<never>, "real");
-    const res = r.data.result;
-    const vm: ExecutionResultVM = {
-      executionId: res.execution_id,
-      actionId: res.action_id,
-      tool: res.tool_name,
-      target: res.target_id,
-      executionStatus: res.execution_status,
-      validationStatus: res.validation_status,
-      observedEffect: res.observed_effect,
-      resultSource: res.result_source,
-      createdAt: res.created_at,
-    };
-    return ok(vm, "real");
+    return ok(toExecutionResultVM(r.data.result), "real");
   }
 
   // ---- Create-case flow (real endpoints) ----

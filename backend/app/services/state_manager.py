@@ -11,7 +11,7 @@ layered in by later milestones.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from app.database import repositories
@@ -32,6 +32,18 @@ def _coerce_entity_type(raw: str) -> EntityType:
         return EntityType(raw)
     except ValueError:
         return EntityType.OTHER
+
+
+def _timeline_key(event: TimelineEvent) -> tuple[bool, datetime]:
+    """Sort key that tolerates timezone-naive evidence times (assumed UTC).
+
+    Uploaded logs are untrusted: mixing naive and aware timestamps must not
+    crash the state rebuild (it would also poison every later rebuild).
+    """
+    ts = event.timestamp
+    if ts is None:
+        return (True, datetime.min.replace(tzinfo=timezone.utc))
+    return (False, ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc))
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -147,9 +159,13 @@ def _reconstruct(case_id: str, version: int) -> IncidentState:
             )
 
     for result in action_results:
+        # Simulated results carry the simulated time the action ran, which
+        # keeps defender events in order with the synthetic evidence.
         timeline.append(
             TimelineEvent(
-                timestamp=_parse_time(result.get("created_at")),
+                timestamp=_parse_time(
+                    result.get("simulated_at") or result.get("created_at")
+                ),
                 description=(
                     f"defender: action result — {result.get('tool_name')} on "
                     f"{result.get('target_id')}: "
@@ -160,7 +176,7 @@ def _reconstruct(case_id: str, version: int) -> IncidentState:
             )
         )
 
-    timeline.sort(key=lambda t: (t.timestamp is None, t.timestamp or datetime.min))
+    timeline.sort(key=_timeline_key)
 
     return IncidentState(
         case_id=case_id,

@@ -8,6 +8,7 @@
  */
 import {
   DEMO_ORGANISATION,
+  INFOSTEALER_REPLAN_EXPLANATION,
 } from "../scenario/config";
 import {
   cases as fxCases,
@@ -252,7 +253,8 @@ export class FixtureProvider implements DataProvider {
       { planId: infostealerPlanV1.planId, version: 1, basedOnStateVersion: 1, stage: infostealerPlanV1.stage, createdAt: infostealerPlanV1.createdAt, missingEvidence: infostealerPlanV1.missingEvidence, actions: infostealerPlanV1Actions.map(fxActionToVM) },
     ];
     if (demo.revealedBatch === 2) {
-      plans.push({ planId: infostealerPlanV2.planId, version: 2, basedOnStateVersion: 2, stage: infostealerPlanV2.stage, createdAt: infostealerPlanV2.createdAt, missingEvidence: infostealerPlanV2.missingEvidence, actions: infostealerPlanV2Actions.map(fxActionToVM) });
+      // v2 is the scenario's scripted re-plan after evidence batch 2.
+      plans.push({ planId: infostealerPlanV2.planId, version: 2, basedOnStateVersion: 2, stage: infostealerPlanV2.stage, createdAt: infostealerPlanV2.createdAt, missingEvidence: infostealerPlanV2.missingEvidence, actions: infostealerPlanV2Actions.map(fxActionToVM), replanExplanation: INFOSTEALER_REPLAN_EXPLANATION });
     }
     return ok(plans, "synthetic");
   }

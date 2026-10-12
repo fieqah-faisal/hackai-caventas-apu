@@ -1,0 +1,10 @@
+technique_id,technique_name,tactic,status,record_ids,confidence,reasoning,missing_evidence,url
+T1566.002,Phishing: Spearphishing Link,initial-access,expected,SC2-B1-01 SC2-B1-04,0.9,Invoice lure with a link to a lookalike login page.,,https://attack.mitre.org/techniques/T1566/002/
+T1598.003,Phishing for Information: Spearphishing Link,reconnaissance,acceptable,SC2-B1-05,0.6,The page harvested credentials; overlaps with T1566.002.,,https://attack.mitre.org/techniques/T1598/003/
+T1621,Multi-Factor Authentication Request Generation,credential-access,expected,SC2-B1-07 SC2-B1-08 SC2-B1-09 SC2-B1-14,0.85,Three pushes in three minutes from 198.51.100.77; the third was approved.,,https://attack.mitre.org/techniques/T1621/
+T1078.004,Valid Accounts: Cloud Accounts,"initial-access, persistence, privilege-escalation, defense-evasion",expected,SC2-B1-10,0.85,Sign-in to Mail with Hakim's real credentials.,,https://attack.mitre.org/techniques/T1078/004/
+T1114.003,Email Collection: Email Forwarding Rule,collection,expected,SC2-B1-11 SC2-B2-04,0.9,Rule forwards invoice/payment mail externally.,,https://attack.mitre.org/techniques/T1114/003/
+T1564.008,Hide Artifacts: Email Hiding Rules,defense-evasion,expected,SC2-B1-11,0.85,Same rule moves mail to RSS Feeds and marks it read.,,https://attack.mitre.org/techniques/T1564/008/
+T1534,Internal Spearphishing,lateral-movement,acceptable,SC2-B1-12,0.6,Bank-change request sent from the compromised internal mailbox to payables.,,https://attack.mitre.org/techniques/T1534/
+T1657,Financial Theft,impact,acceptable,SC2-B1-12 SC2-B2-06,0.4,Attempted only: payables did not act on the request.,,https://attack.mitre.org/techniques/T1657/
+T1056.003,Input Capture: Web Portal Capture,"collection, credential-access",unsupported,,0.0,Needs a compromised legitimate portal; this was an attacker-hosted lookalike.,,https://attack.mitre.org/techniques/T1056/003/

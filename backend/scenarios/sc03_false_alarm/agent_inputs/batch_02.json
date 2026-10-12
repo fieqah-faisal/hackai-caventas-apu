@@ -1,0 +1,30 @@
+[
+  {
+    "event_time": "2026-10-07T10:05:00+08:00",
+    "event_type": "change_record",
+    "host": "FS-01",
+    "account": "ravi.adm",
+    "source": "itsm",
+    "note": "CHG-2026-118 approved 3 Oct by the IT manager: migrate FS-01 nightly backup to offsite-vault.example (203.0.113.80), window 7 Oct 01:00-04:00, job runs as svc_backup, ~180 GB (Finance + HR shares).",
+    "change_id": "CHG-2026-118",
+    "record_id": "SC3-B2-01"
+  },
+  {
+    "event_time": "2026-10-07T10:12:00+08:00",
+    "event_type": "analyst_note",
+    "host": "FS-01",
+    "source": "analyst_note",
+    "note": "VaultSync confirms job fs01-nightly finished 03:29: 180 GB received, checksums verified. 203.0.113.80 is their ingest endpoint.",
+    "author": "soc.analyst",
+    "record_id": "SC3-B2-02"
+  },
+  {
+    "event_time": "2026-10-07T10:20:00+08:00",
+    "event_type": "analyst_note",
+    "account": "ravi.adm",
+    "source": "analyst_note",
+    "note": "Ravi confirms he scheduled BackupMigration-Offsite on 6 Oct 17:40 under CHG-2026-118.",
+    "author": "soc.analyst",
+    "record_id": "SC3-B2-03"
+  }
+]
