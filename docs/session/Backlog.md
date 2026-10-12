@@ -5,13 +5,14 @@
 > Protocol: [README.md](README.md).
 >
 > **ID registry (2026-10-12):** PR #9 (security-lead) is merged: BL-014..024
-> and DEC-006/DEC-007 are on `main`. `feat/policy-pack-v1` still claims
-> BL-014..018 and DEC-006 (collides with merged #9).
+> and DEC-006/DEC-007 are on `main`. `feat/policy-pack-v1` merged `main`
+> and renumbered its items to BL-032..BL-036 / DEC-012 (was BL-014..018 /
+> DEC-006, colliding with merged #9).
 > `feat/gas-lite-state-fieqah` claims BL-020 (collides with merged BL-020)
 > and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
 > npm-audit item was renumbered BL-024 → BL-030 on this merge, because
 > main's BL-024 is the approval-invalidation item. Next free IDs:
-> **BL-032** and **DEC-012**.
+> **BL-037** and **DEC-013**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
@@ -73,6 +74,17 @@
 - BL-031 — Review live-planner proposals that fail `no_forbidden_actions` or
   `no_collateral_targets`, and add target-scope / forbidden-action grounding
   plus regression coverage. — open / Airil + Aidan
+- BL-032 — Policy check: enforce required_approver in approval_service
+  and order rules (POL-01) in execution_service; add approver_role to
+  the BL-010 decision payload. — open / Raaj
+- BL-033 — Fill report notifications, policy_conformance and asset
+  criticality from guidance.json. — open / Raaj
+- BL-034 — Drop planner policy_refs not in policy_rules (e.g.
+  "POL-99"). — open / Airil
+- BL-035 — Confirm asset host names match the synthetic logs
+  (SALES-LT-07, FS-01, …). — open / Aida + Aidan
+- BL-036 — Align frontend demo fixture (infostealer.ts) with policy pack
+  v1.0: rule IDs, roles, tool names, asset IDs. — open / Syafieqah
 
 ### P3
 

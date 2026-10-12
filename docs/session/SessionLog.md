@@ -3,6 +3,20 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 `feat/policy-pack-v1` merged `origin/main`; PR #10 conflicts resolved (DONE)
+
+- Merged `origin/main` (`4145f41` — includes PR #13 live results, PR #12
+  README refresh, PR #11 `link`, PR #9 evaluation) into
+  `feat/policy-pack-v1`; conflicts only in `docs/session/`;
+  `backend/fixtures/guidance.json` auto-merged (main had not touched it
+  since the fork).
+- ID collisions with merged #9 resolved by renumbering this branch's items:
+  BL-014..018 → **BL-032..BL-036** and DEC-006 → **DEC-012**; registry
+  next free is now **BL-037 / DEC-013**.
+- Tests on the merged tree: backend `../.venv/bin/python -m pytest -q`
+  → **137 passed**; policy pack intact (19 rules / 8 assets / v1.0).
+- PR #10 ready for maintainer merge.
+
 ### 2026-10-12 `feat/bl-014-live-evaluation` merged `origin/main`; PR #13 conflicts resolved (DONE)
 
 - Merged `origin/main` (`01c1c01` — root README rewrite, PR #12 / `8e366f1`)
@@ -188,6 +202,17 @@
   re-approving; calibration scores unchanged (oracle 12/12, unsafe 0/12,
   fake 0/12). Demo-path instructions updated for the re-plan step.
 - `not_applicable` status kept and documented for later frontend mapping.
+
+### 2026-10-11 Policy pack v1.0 in guidance.json (DONE)
+
+- policy_rules: 4 → 19 structured rules (type, applies_to_tools,
+  asset_types, phase, required_approver, notify, deadline_hours,
+  trigger); POL-01…04 wording unchanged. New `assets` list (8 systems
+  from the scenario). policy_pack_version 0.1-draft → 1.0.
+- Branch feat/policy-pack-v1, commit 4a2c99e.
+- Files: backend/fixtures/guidance.json, docs/session/*.
+- Checks: check_policy_pack.py all PASS; pytest -q → 44 passed.
+- Next: playbook step IDs in stage_guidance.
 
 ### 2026-10-11 PR #9 synced with main (DONE)
 
