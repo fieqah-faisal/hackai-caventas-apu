@@ -49,10 +49,18 @@ Approvals, simulated execution and reports (BL-003):
 | POST | `/cases/{case_id}/reports` | Generate and store a new report version (JSON + PDF) |
 | GET | `/cases/{case_id}/reports/{report_id}` | Retrieve a stored report |
 
+Read-only lists for the API-mode approvals queue (BL-027, DEC-011), sorted
+by `created_at`, 404 for an unknown case:
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/cases/{case_id}/actions` | Stored actions (status, version, bound state version) |
+| GET | `/cases/{case_id}/action-results` | Recorded simulator results (execution and validation status kept separate) |
+
 Execution goes through `simulator_adapter` (currently
 `FakeSimulatorAdapter`; the real simulator drops in behind the same
-interface). There is no list endpoint for stored actions, execution results
-or reports yet (see BL-013 / BL-025 in `docs/session/Backlog.md`).
+interface). There is no report list endpoint yet (see BL-025 in
+`docs/session/Backlog.md`).
 
 ## Architecture
 
@@ -108,10 +116,11 @@ Tests use an in-memory fake Firestore (`tests/fake_firestore.py`), so they
 run without the emulator or any credentials. The suite covers the Milestone 1
 endpoints, persistence, state versioning, malformed/unsupported uploads,
 404s, the audit trail, the planner adapter (scripted LLM), the planning
-endpoints, and the approval, execution and reporting endpoints.
+endpoints, the approval, execution and reporting endpoints, and the
+read-only action/result lists.
 
 ## Next steps (handoff)
 
 1. Smoke-test against the Firestore emulator (tests use a fake only).
-2. Add the read endpoints the UI still lacks (BL-013 stored actions /
-   execution results, BL-025 report list).
+2. Add the read endpoints the UI still lacks (BL-025 report list; BL-013
+   global case list).

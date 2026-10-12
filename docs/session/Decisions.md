@@ -203,3 +203,51 @@ that would remove this.
 
 **Links:** `frontend/src/features/caseWorkspace/tabs/ReportTab.tsx`,
 `frontend/src/lib/api/realProvider.ts`, BL-025, DEC-008.
+
+## DEC-011: Read-only action and result lists for the API-mode Approvals queue (2026-10-09)
+
+**Context:** In API mode the Approvals tab was "unsupported": only
+`POST /runs` returns full actions, and `GET /plans` lists action IDs. So
+approve, reject and execute could not be reached from the UI, and the S2
+run had to drive them through the proxy. This is after the 8/10 feature
+freeze; submission is 15/10. (DEC-010 is claimed on
+`feat/gas-lite-state-fieqah`, so this record is DEC-011.)
+
+**Options considered:** (1) keep "unsupported" and demo decisions through
+the API: honest, but the central human-in-the-loop step has no UI in API
+mode; (2) have the frontend keep `POST /runs` actions in memory: lost on
+reload, and statuses go stale after a decision; (3) add read-only
+`GET /cases/{id}/actions` and `GET /cases/{id}/action-results` over the
+existing `repositories.list_actions` / `list_action_results`. Option 3 was
+chosen: two small GETs, with no change to the decision or execute paths or
+their preconditions.
+
+**Decision:** Both endpoints return the stored docs as persisted, sorted by
+`created_at` in Python (real Firestore streams in document-ID order; the
+test fake keeps insertion order). They return 404 for an unknown case and
+write nothing, including no audit event. `RealProvider.getApprovals` reads
+the case, `GET /actions` and `GET /plans`.
+
+The queue lists `awaiting_approval`/`recommended` actions, plus `approved`
+actions not yet simulated, so an approved action can still be run after a
+reload or the workspace refresh. Rejected and executed actions are left
+out. Each item takes its stage from its plan; if the plan is missing, the
+read returns "unsupported" rather than guessing a stage.
+
+Two fields are derived. `stalePrewarn` is set when the action's
+`based_on_state_version` is older than the case's `current_state_version`,
+which mirrors the backend execute check; the backend still decides. The
+approver reads "Any analyst (no approver role in backend)".
+`getExecutionResults` maps `GET /action-results`, with execution and
+validation status kept separate.
+
+**Tradeoff:** This adds two endpoints after the freeze, both read-only and
+covered by 7 backend tests. Fixture mode still lists only `proposed`
+actions, so the two modes now differ. Results are not yet shown by any
+component, and Response Plan still shows an action count instead of
+detail (BL-027 follow-ups).
+
+**Links:** `backend/app/api/planning.py`, `backend/app/api/execution.py`,
+`backend/tests/test_read_endpoints.py`,
+`frontend/src/lib/api/realProvider.ts`, `frontend/src/lib/mapping/`,
+BL-027, BL-013, DEC-008.

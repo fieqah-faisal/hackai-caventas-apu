@@ -9,10 +9,10 @@
 > and `security-scenario-simulation-evaluation-lead` (BL-014..024, DEC-006,
 > DEC-007); the two branches collide with each other.
 > `feat/gas-lite-state-fieqah` claims BL-020 and DEC-010. `link` uses
-> BL-024 (npm audit), BL-025, BL-026, DEC-008 and DEC-009. `link`'s BL-024
-> also collides with security-lead's BL-024 (approval invalidation); it is
-> not renumbered here and must be resolved when the branches merge. Next
-> free IDs: **BL-027** and **DEC-011**.
+> BL-024 (npm audit), BL-025, BL-026, BL-027, DEC-008, DEC-009 and DEC-011.
+> `link`'s BL-024 also collides with security-lead's BL-024 (approval
+> invalidation); it is not renumbered here and must be resolved when the
+> branches merge. Next free IDs: **BL-028** and **DEC-012**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 
 ## Open Items
@@ -45,10 +45,9 @@
   steering's Streamlit note); if ratified, update `.kiro/steering/tech.md`
   + `structure.md` and the proposal §9 row. — open / team
 - BL-013 — API-mode read endpoints the frontend needs: global `GET /cases`
-  (dashboard), `GET /cases/{id}/actions` (stored actions for the approvals
-  queue), plan-detail, execution-results list; align the frontend audit DTO
-  to the real fields (`event_type`/`timestamp`/`audit_id`). — open /
-  Airil + Syafieqah
+  (dashboard) and plan-detail. Stored actions and execution results are
+  split out to BL-027 (on `link`); the audit DTO is aligned on `link`
+  (DEC-008). — open / Airil + Syafieqah
 
 ### P3
 
@@ -81,6 +80,21 @@
     merge. Evidence detail shows a placeholder "State version v0".
 
   — open / frontend
+- BL-027 — Read-only `GET /cases/{id}/actions` and
+  `GET /cases/{id}/action-results` (DEC-011) for the API-mode Approvals
+  queue. Implemented on `link`, closes on merge to `main`. Follow-ups left
+  open, all UI changes:
+  - (a) after "Run bounded simulation" the workspace refresh remounts the
+    tab and the executed action leaves the queue, so the result card is
+    replaced at once; only the toast shows execution / validation. No
+    component calls `getExecutionResults` yet.
+  - (b) Response Plan still shows "N actions unavailable"; `getPlans` could
+    join `GET /actions`.
+  - (c) by code reading only, not run: fixture mode lists only `proposed`
+    actions, so the same refresh may hide an approved card before it is
+    simulated.
+
+  — implemented on `link` / Raaj; (a)–(c) open / frontend
 
 ## Deferred
 
