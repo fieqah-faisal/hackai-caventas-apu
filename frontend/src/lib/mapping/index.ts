@@ -270,6 +270,63 @@ export function toPlanVM(
 
 // ---- Report ---------------------------------------------------------------
 
+/*
+ * Report action rows carry the backend action LIFECYCLE status, not a
+ * decision: awaiting_approval/recommended -> approved | rejected ->
+ * verified | failed. execution_service only executes approved actions, and
+ * stores "verified" only when execution completed AND validation was
+ * effective; every other simulator outcome is stored as "failed". So
+ * "failed" means "approved, sent to the simulator, not validated effective".
+ * The row cannot tell an ineffective result from a failed execution, and
+ * "failed" never names a decision. Unknown statuses are shown verbatim
+ * rather than guessed.
+ */
+
+/** The analyst decision implied by a report action row's lifecycle status. */
+export function reportDecision(status: string): "approved" | "rejected" | null {
+  switch (status) {
+    case "approved":
+    case "verified":
+    case "failed":
+      return "approved"; // only approved actions reach the simulator
+    case "rejected":
+      return "rejected";
+    default:
+      return null;
+  }
+}
+
+/** Lifecycle label keeping proposed / approved / executed / effective apart. */
+export function reportActionStage(status: string): string {
+  switch (status) {
+    case "awaiting_approval":
+    case "recommended":
+      return "Proposed, awaiting approval";
+    case "approved":
+      return "Approved, not yet simulated";
+    case "rejected":
+      return "Rejected";
+    case "verified":
+      return "Approved, simulated, validated effective";
+    case "failed":
+      return "Approved, simulated, not validated effective";
+    default:
+      return `Status ${status}`;
+  }
+}
+
+/** Validation verdict for an executed action row. */
+export function reportValidationVerdict(status: string): string {
+  switch (status) {
+    case "verified":
+      return "Validated effective";
+    case "failed":
+      return "Not validated effective";
+    default:
+      return `Status ${status}`;
+  }
+}
+
 const REPORT_SECTION_ORDER: { key: string; title: string }[] = [
   { key: "executive_summary", title: "Executive summary" },
   { key: "classification", title: "Incident classification" },
@@ -315,17 +372,25 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
         lines = dto.classification.attack_techniques.slice();
         break;
       case "decisions":
+        // The decision word comes from the lifecycle status; "failed" is an
+        // outcome, never something the analyst decided.
         lines = dto.actions
           .filter((a) => a.decided_by)
-          .map((a) => `${a.status.toUpperCase()} by ${a.decided_by}: ${a.recommendation}`);
+          .map((a) => {
+            const decision = reportDecision(a.status);
+            const head = decision
+              ? `${decision === "approved" ? "Approved" : "Rejected"} by ${a.decided_by}`
+              : `Decided by ${a.decided_by} (status ${a.status})`;
+            return `${head}: ${a.recommendation}${a.reason ? ` — reason: ${a.reason}` : ""}`;
+          });
         break;
       case "actions":
-        lines = dto.actions.map((a) => `${a.status}: ${a.recommendation}`);
+        lines = dto.actions.map((a) => `${reportActionStage(a.status)}: ${a.recommendation}`);
         break;
       case "validation":
         lines = dto.actions
-          .filter((a) => a.result)
-          .map((a) => `${a.recommendation} → ${a.result}`);
+          .filter((a) => a.result_source != null || !!a.result)
+          .map((a) => `${reportValidationVerdict(a.status)}: ${a.recommendation} → ${a.result || "no observed effect recorded"}`);
         break;
       case "open_questions":
         lines = dto.open_questions.map((q) => q.question);

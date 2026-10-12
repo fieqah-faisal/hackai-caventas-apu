@@ -135,7 +135,11 @@ all vocabulary translation happens in `src/lib/mapping`, pinned by Vitest
 tests built from the real bodies. Audit rows: `audit_id` → `eventId`,
 `event_type` → `AuditKind` (the backend's `evidence_uploaded` is the view
 model's `evidence_ingested`; unknown types → `other`), `timestamp` → `at`,
-`details` → `payload`. List order: real Firestore streams collections in
+`details` → `payload`. Report action rows carry the action lifecycle
+`status`, which is never printed as a decision. `verified`/`failed` imply
+an approval, and `failed` reads "approved, simulated, not validated
+effective"; the row can't tell an ineffective result from a failed
+execution. List order: real Firestore streams collections in
 document-ID order (random hex) where the test fake keeps insertion order,
 so the frontend sorts `GET /plans` by `created_at` (compared as instants,
 because the backend mixes `Z`, `+00:00` and local offsets) before deriving

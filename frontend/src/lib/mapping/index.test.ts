@@ -4,15 +4,18 @@
  * synthetic; field names and value shapes are the real ones.
  */
 import { describe, it, expect } from "vitest";
-import type { AuditEventDTO } from "../api/dto";
-import { PLANS_IN_DOC_ID_ORDER } from "@/test/realBackendBodies";
+import type { AuditEventDTO, ReportActionRowDTO } from "../api/dto";
+import { PLANS_IN_DOC_ID_ORDER, REPORT_ACTION_ROWS, reportBody } from "@/test/realBackendBodies";
 import {
   auditSummary,
   compareIsoInstants,
   mapAuditKind,
+  reportActionStage,
+  reportDecision,
   sortPlansOldestFirst,
   stageFromPlans,
   toAuditEventVM,
+  toReportVM,
 } from "./index";
 
 // Real GET /cases/{id}/audit rows: {audit_id, case_id, event_type, details, timestamp}.
@@ -152,5 +155,62 @@ describe("plan ordering (real Firestore streams in document-ID order)", () => {
     expect(stageFromPlans(PLANS_IN_DOC_ID_ORDER)).toBe("eradication");
     expect(stageFromPlans([...PLANS_IN_DOC_ID_ORDER].reverse())).toBe("eradication");
     expect(stageFromPlans([])).toBeNull();
+  });
+});
+
+describe("report action wording keeps proposed / approved / executed / effective apart", () => {
+  const lines = (key: string, actions: ReportActionRowDTO[] = REPORT_ACTION_ROWS) =>
+    toReportVM(reportBody("RPT-000000000001", actions)).sections.find((s) => s.key === key)?.lines;
+
+  it("derives the decision from the lifecycle status, never printing an outcome as a decision", () => {
+    expect(reportDecision("approved")).toBe("approved");
+    expect(reportDecision("verified")).toBe("approved");
+    expect(reportDecision("failed")).toBe("approved");
+    expect(reportDecision("rejected")).toBe("rejected");
+    expect(reportDecision("awaiting_approval")).toBeNull();
+    expect(reportDecision("recommended")).toBeNull();
+  });
+
+  it("decisions: an approved-then-ineffective action reads 'Approved by', not 'FAILED by'", () => {
+    expect(lines("decisions")).toEqual([
+      "Rejected by Analyst A: Host shows suspicious activity in current state. — reason: Synthetic test: not needed",
+      "Approved by Analyst A: Host shows suspicious activity in current state.",
+    ]);
+    expect(lines("decisions")?.join(" ")).not.toMatch(/FAILED|failed/);
+  });
+
+  it("actions: each lifecycle status gets a label that separates the stages", () => {
+    expect(lines("actions")).toEqual([
+      "Rejected: Host shows suspicious activity in current state.",
+      "Proposed, awaiting approval: Host shows suspicious activity in current state.",
+      "Approved, simulated, not validated effective: Host shows suspicious activity in current state.",
+    ]);
+    expect(reportActionStage("approved")).toBe("Approved, not yet simulated");
+    expect(reportActionStage("verified")).toBe("Approved, simulated, validated effective");
+  });
+
+  it("validation: shows the verdict next to the observed effect, only for executed actions", () => {
+    expect(lines("validation")).toEqual([
+      "Not validated effective: Host shows suspicious activity in current state. → Suspicious outbound communication continued.",
+    ]);
+    const verified: ReportActionRowDTO = { ...REPORT_ACTION_ROWS[2], status: "verified", result: "Outbound traffic stopped." };
+    expect(lines("validation", [verified])).toEqual([
+      "Validated effective: Host shows suspicious activity in current state. → Outbound traffic stopped.",
+    ]);
+  });
+
+  it("shows an unknown status verbatim instead of guessing a decision or outcome", () => {
+    const odd: ReportActionRowDTO = { ...REPORT_ACTION_ROWS[2], status: "not_applicable" };
+    expect(lines("decisions", [odd])).toEqual([
+      "Decided by Analyst A (status not_applicable): Host shows suspicious activity in current state.",
+    ]);
+    expect(lines("actions", [odd])).toEqual(["Status not_applicable: Host shows suspicious activity in current state."]);
+    expect(lines("validation", [odd])).toEqual([
+      "Status not_applicable: Host shows suspicious activity in current state. → Suspicious outbound communication continued.",
+    ]);
+  });
+
+  it("keeps the PDF unavailable (pdf_path is a server path)", () => {
+    expect(toReportVM(reportBody("RPT-000000000001")).pdfAvailable).toBe(false);
   });
 });
