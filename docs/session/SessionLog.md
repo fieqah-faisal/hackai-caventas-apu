@@ -3,6 +3,77 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-12 PR #9 review changes: clean default, approval change deferred (DONE)
+
+- Simulator default profile is now `clean` (`config.py`, `.env.example`,
+  adapter, engine); the scenario-specific `demo` CRM fault is enabled only
+  explicitly (evaluation harness, scripted demo). Tests pin both.
+- Reverted the stale re-approval change (`abab1c4`): `approval_service.py`
+  matches `main` again; approvals stay bound to `based_on_state_version`
+  until GAS-lite lineage (DEC-007 rewritten, BL-024).
+- Harness now re-plans before each further approved action instead of
+  re-approving; calibration scores unchanged (oracle 12/12, unsafe 0/12,
+  fake 0/12). Demo-path instructions updated for the re-plan step.
+- `not_applicable` status kept and documented for later frontend mapping.
+
+### 2026-10-11 PR #9 synced with main (DONE)
+
+- Merged `origin/main` (PR #7 emulator smoke, PR #8 review notes) into
+  `security-scenario-simulation-evaluation-lead`; conflicts only in
+  `docs/session/`.
+- Renumbered this branch's backlog items BL-010..019 -> BL-014..023 (main
+  already used BL-009..013); removed BL-008 (resolved by the simulator
+  catalogue); missing `GET /cases/{id}/actions` points to main's BL-013.
+
+### 2026-10-11 Evaluation harness, scorer, results + re-approval fix (DONE)
+
+- `backend/evaluation/`: harness replays each scenario through the real
+  endpoints (fake Firestore, real simulator, scripted analyst), scorer
+  (100 pts + safety gates), `run_eval` CLI, `SCORING_SHEET.md`,
+  `TEST_PLAN.md`, `INTEGRATION_GAPS.md`, committed results.
+- Results: oracle 12/12 checkpoints (ground truth reachable), unsafe 0/12
+  (gates fire), fake planner 0/12 (mean 48.2). No live results yet (no key
+  here) - BL-014.
+- Found and fixed: executing one approved action stranded every other
+  approval in the plan (stale + not re-decidable). Re-approval of stale
+  approvals now allowed (DEC-007) - flagged for Raaj/Syafieqah (BL-015).
+- Docs: `backend/README.md`, `.kiro/steering/structure.md`; backlog
+  BL-008 closed, BL-014..023 added; DEC-006, DEC-007.
+- Suite **128 passed** (`cd backend && ../.venv/bin/python -m pytest -q`).
+
+### 2026-10-11 Synthetic incident package + ground truth (DONE)
+
+- `backend/scenarios/`: `build_scenarios.py` (single source) generates 3
+  scenarios + 2 variants: sc01 infostealer -> CRM session replay (main
+  demo), sc02 phishing + prompt injection, sc03 false alarm (CHG-2026-118),
+  sc01 messy CSV, sc03 ticket mismatch.
+- `agent_inputs/` (uploadable batches, demo-path renders) vs
+  `evaluator_only/` (checkpoint ground truth, ATT&CK mapping CSV, timeline).
+  Branching via `conditions.py` on stored action results + simulated time.
+- Found and fixed: a naive timestamp next to aware ones 500'd the upload
+  and poisoned the case (`state_manager` sort) - flagged for Raaj.
+- Tests: `tests/test_scenarios.py` (freshness, synthetic IPs/domains,
+  referential integrity, no answer-key leakage, every batch ingests);
+  suite **101 passed**.
+- ATT&CK IDs not re-checked online (attack.mitre.org blocked here) - see
+  `scenarios/README.md`.
+
+### 2026-10-09 Bounded action simulator wired into the backend (DONE)
+
+- `backend/app/simulator/`: `catalog.py` (9 tools = the planner's
+  `approved_tools`; resolves BL-008), `engine.py` (pure, deterministic),
+  `environment.json` (fictional org assets + `demo` fault: CRM admin API
+  down until 10:30 on the infostealer day), `BoundedSimulatorAdapter`.
+- Stateless: simulated clock = latest evidence time + 5 min per action;
+  history = stored action results. No SQLite / no new store (DEC-006).
+- Backend wiring (small, flagged for Raaj): `execution_service` now uses
+  the real adapter, passes `case_id`, stores `simulated_at` / `services` /
+  `side_effects`, maps completed+not_applicable -> `not_applicable`;
+  `state_manager` orders result events by `simulated_at`;
+  `SIMULATOR_PROFILE` setting (`demo` | `clean`).
+- Tests: `tests/test_simulator.py` (23); suite **66 passed**
+  (`cd backend && ../.venv/bin/python -m pytest -q`).
+- Branch `security-scenario-simulation-evaluation-lead` (Aidan).
 ### 2026-10-08 PR #8 (frontend) merged; PR #7 synced (DONE)
 
 - PR #8 merged (`3a6a323`): React/Vite frontend — dashboard, create-case

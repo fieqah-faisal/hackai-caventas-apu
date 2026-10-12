@@ -19,9 +19,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.ai.langgraph_planner import load_guidance
+from app.config import get_settings
 from app.database import repositories
 from app.services import audit_service, state_manager
-from app.simulator.simulator_adapter import FakeSimulatorAdapter, SimulatorAdapter
+from app.simulator.simulator_adapter import BoundedSimulatorAdapter, SimulatorAdapter
 
 
 class ExecutionError(RuntimeError):
@@ -33,8 +34,17 @@ class ExecutionError(RuntimeError):
 
 
 def get_simulator_adapter() -> SimulatorAdapter:
-    """The bounded simulator (Aidan's real adapter drops in behind this)."""
-    return FakeSimulatorAdapter()
+    """The bounded simulator (``app/simulator``), fault profile from settings."""
+    return BoundedSimulatorAdapter(profile=get_settings().simulator_profile)
+
+
+def _action_status(execution_status: str, validation_status: str) -> str:
+    """Map a simulator outcome onto the report-schema v1.2 action status."""
+    if execution_status == "completed" and validation_status == "effective":
+        return "verified"
+    if execution_status == "completed" and validation_status == "not_applicable":
+        return "not_applicable"
+    return "failed"
 
 
 def _find_result(case_id: str, action_id: str) -> dict[str, Any] | None:
@@ -103,16 +113,12 @@ def execute(case_id: str, action_id: str) -> dict[str, Any]:
                 f"evidence '{evidence_id}' does not exist", "conflict"
             )
 
-    outcome = get_simulator_adapter().execute_action(tool, target)
+    outcome = get_simulator_adapter().execute_action(tool, target, case_id=case_id)
 
     execution_id = f"EXEC-{uuid.uuid4().hex[:12]}"
     execution_status = str(outcome.get("execution_status", "unknown"))
     validation_status = str(outcome.get("validation_status", "unknown"))
-    action_status = (
-        "verified"
-        if execution_status == "completed" and validation_status == "effective"
-        else "failed"
-    )
+    action_status = _action_status(execution_status, validation_status)
     result_doc = {
         "execution_id": execution_id,
         "case_id": case_id,
@@ -122,6 +128,9 @@ def execute(case_id: str, action_id: str) -> dict[str, Any]:
         "execution_status": execution_status,
         "validation_status": validation_status,
         "observed_effect": str(outcome.get("observed_effect", "")),
+        "simulated_at": outcome.get("simulated_at"),
+        "services": dict(outcome.get("services") or {}),
+        "side_effects": list(outcome.get("side_effects") or []),
         "result_source": "simulator",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }

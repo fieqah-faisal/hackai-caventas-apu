@@ -8,6 +8,13 @@
 
 ### P1
 
+- BL-014 — Run the live evaluation (`python -m evaluation.run_eval
+  --planner live`, needs `OPENCODE_GO_API_KEY`) and commit results. — open
+  / Airil + Aidan
+- BL-015 — Review Aidan's branch changes to backend services (PR #9):
+  simulator wiring (default profile `clean`), naive-timestamp crash fix,
+  `not_applicable` action status (frontend DTO mapping at integration). —
+  open / Raaj + Syafieqah
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
 - BL-003 — Approvals → bounded simulated execution → reporting implemented;
@@ -17,9 +24,6 @@
 
 - BL-004 — Emulator smoke executed and passing (script + `firebase.py`
   anonymous-credential fix in PR #7). — in review / Airil
-- BL-008 — Sync the planner's proposed action vocabulary with Aidan's
-  approved simulator catalogue (defer to system integration, 6–8 Oct). —
-  open / Airil + Aidan
 - BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
   created; if so, obtain the project ID and have the service-account key
   placed at `backend/secrets/serviceAccount.json` (gitignored) to enable an
@@ -42,10 +46,32 @@
   queue), plan-detail, execution-results list; align the frontend audit DTO
   to the real fields (`event_type`/`timestamp`/`audit_id`). — open /
   Airil + Syafieqah
+- BL-024 — Decide which state changes invalidate an approval once
+  GAS-lite adds `parent_version`, `change_reason` and `created_from`.
+  Today one execution strands the plan's other approvals (only one action
+  per plan runs; the next needs a fresh plan). Re-approval prototype kept
+  out of PR #9 (commit `abab1c4`, reverted). See DEC-007. — deferred /
+  Raaj + Syafieqah + Aidan
+- BL-016 — Extract DOMAIN/IP entities into the incident state so
+  `block_domain` can be proposed. — open / Raaj
+- BL-017 — Persist planner analysis (type, severity, confidence) and fill
+  report findings + ATT&CK (ground truth ready in `scenarios/`). — open /
+  Airil + Raaj
+- BL-018 — Approver roles so POL-02 (IT manager) is enforced. — open /
+  Raaj + Syafieqah
+- BL-019 — Refuse execution of actions that cite no evidence. — open / Raaj
+- BL-020 — Mark evidence as untrusted data in planner prompts (sc02
+  prompt-injection test). — open / Airil
 
 ### P3
 
-- (none open)
+- BL-021 — Align frontend fixtures with the scenario package
+  (SALES-LT-07, `.example` domains, no T1566.002 for the infostealer). —
+  open / Syafieqah
+- BL-022 — Re-check ATT&CK technique IDs on attack.mitre.org (blocked in
+  the build environment), esp. T1213.004. — open / Aidan
+- BL-023 — Decide whether POL-03 gets a record-only `notify_dpo` action
+  (guidance + simulator catalogue together). — open / Aida + Aidan
 
 ## Deferred
 
