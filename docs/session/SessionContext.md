@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-09.
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-12.
 
 ## Project
 
@@ -45,6 +45,16 @@ Firestore; no credentials needed).
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).
+- Security scenario, simulation and evaluation (Aidan, branch
+  `security-scenario-simulation-evaluation-lead`): bounded simulator wired
+  into execution (DEC-006), synthetic incident package
+  (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
+  scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
+  unsafe 0/12, fake planner 0/12; **no live-planner results yet** (BL-014).
+  Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
+  explicitly by the demo / harness. Naive-timestamp crash fixed; stale
+  approvals deferred to GAS-lite (DEC-007, BL-024).
+  Suite **129 passed** after syncing with main.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).

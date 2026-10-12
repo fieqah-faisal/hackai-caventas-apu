@@ -1,0 +1,147 @@
+[
+  {
+    "event_time": "2026-10-06T17:40:00+08:00",
+    "event_type": "scheduled_task_created",
+    "host": "FS-01",
+    "account": "ravi.adm",
+    "source": "endpoint",
+    "task_name": "BackupMigration-Offsite",
+    "command": "C:\\Program Files\\VaultSync\\vaultsync.exe --job fs01-nightly",
+    "run_as": "svc_backup",
+    "trigger": "2026-10-07 01:00",
+    "record_id": "SC3-B1-01"
+  },
+  {
+    "event_time": "2026-10-07T00:58:00+08:00",
+    "event_type": "service_logon",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "signin",
+    "logon_type": "batch",
+    "result": "success",
+    "record_id": "SC3-B1-02"
+  },
+  {
+    "event_time": "2026-10-07T01:00:00+08:00",
+    "event_type": "process_start",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "endpoint",
+    "process": "vaultsync.exe",
+    "signed": "true",
+    "signer": "VaultSync Ltd (fictional)",
+    "parent": "taskeng.exe",
+    "record_id": "SC3-B1-03"
+  },
+  {
+    "event_time": "2026-10-07T01:01:00+08:00",
+    "event_type": "dns_query",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "dns",
+    "query": "ingest.offsite-vault.example",
+    "answer": "203.0.113.80",
+    "record_id": "SC3-B1-04"
+  },
+  {
+    "event_time": "2026-10-07T01:02:00+08:00",
+    "event_type": "network_connection",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "firewall",
+    "dst_ip": "203.0.113.80",
+    "dst_port": 443,
+    "rule": "ANY-OUT-443",
+    "verdict": "allowed",
+    "first_seen": "true",
+    "record_id": "SC3-B1-05"
+  },
+  {
+    "event_time": "2026-10-07T01:30:00+08:00",
+    "event_type": "file_read_burst",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "endpoint",
+    "share": "\\\\FS-01\\Finance",
+    "files_read": 18240,
+    "process": "vaultsync.exe",
+    "record_id": "SC3-B1-06"
+  },
+  {
+    "event_time": "2026-10-07T02:15:00+08:00",
+    "event_type": "file_read_burst",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "endpoint",
+    "share": "\\\\FS-01\\HR",
+    "files_read": 9620,
+    "process": "vaultsync.exe",
+    "record_id": "SC3-B1-07"
+  },
+  {
+    "event_time": "2026-10-07T03:28:00+08:00",
+    "event_type": "flow_summary",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "firewall",
+    "dst_ip": "203.0.113.80",
+    "bytes_out": 193273528320,
+    "duration": "2h26m",
+    "verdict": "allowed",
+    "record_id": "SC3-B1-08"
+  },
+  {
+    "event_time": "2026-10-07T03:29:00+08:00",
+    "event_type": "process_end",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "endpoint",
+    "process": "vaultsync.exe",
+    "exit_code": 0,
+    "record_id": "SC3-B1-09"
+  },
+  {
+    "event_time": "2026-10-07T03:35:00+08:00",
+    "event_type": "siem_alert",
+    "host": "FS-01",
+    "account": "svc_backup",
+    "source": "siem",
+    "alert": "Possible data exfiltration: 180 GB outbound to first-seen destination 203.0.113.80",
+    "severity": "high",
+    "rule": "EXFIL-VOLUME-NEWDEST",
+    "record_id": "SC3-B1-10"
+  },
+  {
+    "event_time": "2026-10-07T07:55:00+08:00",
+    "event_type": "idp_signin",
+    "host": "MKT-LT-11",
+    "account": "aina",
+    "source": "signin",
+    "application": "SSO portal",
+    "result": "success",
+    "mfa": "push_approved",
+    "src_ip": "192.0.2.61",
+    "record_id": "SC3-B1-11"
+  },
+  {
+    "event_time": "2026-10-07T08:10:00+08:00",
+    "event_type": "idp_signin",
+    "host": "ADM-WS-02",
+    "account": "ravi.adm",
+    "source": "signin",
+    "application": "SSO portal",
+    "result": "success",
+    "mfa": "push_approved",
+    "src_ip": "192.0.2.70",
+    "record_id": "SC3-B1-12"
+  },
+  {
+    "event_time": "2026-10-07T08:30:00+08:00",
+    "event_type": "analyst_note",
+    "host": "FS-01",
+    "source": "analyst_note",
+    "note": "Overnight alert on FS-01: 180 GB to first-seen 203.0.113.80 under svc_backup. No user complaints. IT has a backup project this month; not yet confirmed this transfer was planned.",
+    "author": "soc.analyst",
+    "record_id": "SC3-B1-13"
+  }
+]

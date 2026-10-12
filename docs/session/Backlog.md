@@ -4,34 +4,37 @@
 > Completed items are removed (their history lives in `SessionLog.md`).
 > Protocol: [README.md](README.md).
 >
-> **ID registry (2026-10-12):** BL-014..BL-024 and DEC-006/DEC-007 are
-> claimed on unmerged branches `feat/policy-pack-v1` (BL-014..018, DEC-006)
-> and `security-scenario-simulation-evaluation-lead` (BL-014..024, DEC-006,
-> DEC-007); the two branches collide with each other.
-> `feat/gas-lite-state-fieqah` claims BL-020 and DEC-010. `link` uses
-> BL-024 (npm audit), BL-025, BL-026, BL-027, DEC-008, DEC-009 and DEC-011.
-> `link`'s BL-024 also collides with security-lead's BL-024 (approval
-> invalidation); it is not renumbered here and must be resolved when the
-> branches merge. `link` S6 adds BL-028 and BL-029. Next free IDs:
-> **BL-030** and **DEC-012**.
+> **ID registry (2026-10-12):** PR #9 (security-lead) is merged: BL-014..024
+> and DEC-006/DEC-007 are on `main`. `feat/policy-pack-v1` still claims
+> BL-014..018 and DEC-006 (collides with merged #9).
+> `feat/gas-lite-state-fieqah` claims BL-020 (collides with merged BL-020)
+> and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
+> npm-audit item was renumbered BL-024 → BL-030 on this merge, because
+> main's BL-024 is the approval-invalidation item. Next free IDs:
+> **BL-031** and **DEC-012**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
-> **Closed (removed):** BL-003 is merged on `main` (PR #6 `b93fa6c`).
-> BL-004 is done: the emulator smoke test is merged (PR #7, `3cecd3e`) and
-> was re-confirmed by the `link` UI runs on the emulator (S2/S5/S6).
+> **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
+> (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done
+> (PR #5); BL-008 resolved by PR #9's simulator catalogue (tool names = the
+> guidance allowlist, drift pinned by a test).
 
 ## Open Items
 
 ### P1
 
+- BL-014 — Run the live evaluation (`python -m evaluation.run_eval
+  --planner live`, needs `OPENCODE_GO_API_KEY`) and commit results. — open
+  / Airil + Aidan
+- BL-015 — Review Aidan's branch changes to backend services (PR #9):
+  simulator wiring (default profile `clean`), naive-timestamp crash fix,
+  `not_applicable` action status (frontend DTO mapping at integration). —
+  open / Raaj + Syafieqah
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
 
 ### P2
 
-- BL-008 — Sync the planner's proposed action vocabulary with Aidan's
-  approved simulator catalogue (defer to system integration, 6–8 Oct). —
-  open / Airil + Aidan
 - BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
   created; if so, obtain the project ID and have the service-account key
   placed at `backend/secrets/serviceAccount.json` (gitignored) to enable an
@@ -54,9 +57,34 @@
   split out to BL-027 (on `link`); the audit DTO is aligned on `link`
   (DEC-008). — open / Airil + Syafieqah
 
+- BL-024 — Decide which state changes invalidate an approval once
+  GAS-lite adds `parent_version`, `change_reason` and `created_from`.
+  Today one execution strands the plan's other approvals (only one action
+  per plan runs; the next needs a fresh plan). Re-approval prototype kept
+  out of PR #9 (commit `abab1c4`, reverted). See DEC-007. — deferred /
+  Raaj + Syafieqah + Aidan
+- BL-016 — Extract DOMAIN/IP entities into the incident state so
+  `block_domain` can be proposed. — open / Raaj
+- BL-017 — Persist planner analysis (type, severity, confidence) and fill
+  report findings + ATT&CK (ground truth ready in `scenarios/`). — open /
+  Airil + Raaj
+- BL-018 — Approver roles so POL-02 (IT manager) is enforced. — open /
+  Raaj + Syafieqah
+- BL-019 — Refuse execution of actions that cite no evidence. — open / Raaj
+- BL-020 — Mark evidence as untrusted data in planner prompts (sc02
+  prompt-injection test). — open / Airil
+
 ### P3
 
-- BL-024 — `npm audit --omit=dev` (2026-10-12): 2 moderate runtime
+- BL-021 — Align frontend fixtures with the scenario package
+  (SALES-LT-07, `.example` domains, no T1566.002 for the infostealer). —
+  open / Syafieqah
+- BL-022 — Re-check ATT&CK technique IDs on attack.mitre.org (blocked in
+  the build environment), esp. T1213.004. — open / Aidan
+- BL-023 — Decide whether POL-03 gets a record-only `notify_dpo` action
+  (guidance + simulator catalogue together). — open / Aida + Aidan
+
+- BL-030 — `npm audit --omit=dev` (2026-10-12): 2 moderate runtime
   advisories in `react-router` / `react-router-dom` 6.x (GHSA-wrjc-x8rr-h8h6
   open redirect via backslash in `<Link>`/`useNavigate`; GHSA-337j-9hxr-rhxg
   SSR hydration, which should not apply to this client-rendered SPA). Fix

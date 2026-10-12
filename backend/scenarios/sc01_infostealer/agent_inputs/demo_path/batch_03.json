@@ -1,0 +1,50 @@
+[
+  {
+    "event_time": "2026-10-05T11:40:00+08:00",
+    "event_type": "crm_signin",
+    "account": "farah",
+    "source": "signin",
+    "application": "CRM",
+    "src_ip": "198.51.100.23",
+    "session_id": "crm-s-7731",
+    "result": "failure",
+    "reason": "session invalid",
+    "record_id": "SC1-B3-04"
+  },
+  {
+    "event_time": "2026-10-05T11:41:00+08:00",
+    "event_type": "idp_signin",
+    "account": "farah",
+    "source": "signin",
+    "src_ip": "198.51.100.23",
+    "auth": "session cookie",
+    "result": "failure",
+    "reason": "session revoked",
+    "record_id": "SC1-B3-07"
+  },
+  {
+    "event_time": "2026-10-05T11:50:00+08:00",
+    "event_type": "analyst_note",
+    "host": "SALES-LT-07",
+    "source": "analyst_note",
+    "note": "SALES-LT-07 collected from Farah. Forensic memory and disk images verified against the chain-of-custody hashes.",
+    "author": "soc.analyst",
+    "record_id": "SC1-B3-08"
+  },
+  {
+    "event_time": "2026-10-05T12:00:00+08:00",
+    "event_type": "threat_intel",
+    "source": "analyst_note",
+    "note": "203.0.113.45 and cdn-sync-update.example belong to a commodity infostealer campaign ('SyncStealer', fictional). Persistence: HKCU Run key 'SyncUpdate'.",
+    "author": "threat.intel",
+    "record_id": "SC1-B3-10"
+  },
+  {
+    "event_time": "2026-10-05T12:05:00+08:00",
+    "event_type": "analyst_note",
+    "source": "analyst_note",
+    "note": "IT manager (it.manager) is available to approve account actions until 17:00.",
+    "author": "soc.lead",
+    "record_id": "SC1-B3-11"
+  }
+]

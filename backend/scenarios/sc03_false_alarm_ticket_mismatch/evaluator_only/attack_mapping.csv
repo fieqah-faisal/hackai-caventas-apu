@@ -1,0 +1,4 @@
+technique_id,technique_name,tactic,status,record_ids,confidence,reasoning,missing_evidence,url
+T1053.005,Scheduled Task/Job: Scheduled Task,"execution, persistence",acceptable,SC3-B1-01,0.5,"Legitimate task, but its job did more than approved.",,https://attack.mitre.org/techniques/T1053/005/
+T1078.003,Valid Accounts: Local Accounts,"defense-evasion, persistence",acceptable,SC3V-B2-03,0.4,svc_backup credentials may be misused; domain vs local account not established.,Directory type of svc_backup; who else knows its credential.,https://attack.mitre.org/techniques/T1078/003/
+T1048,Exfiltration Over Alternative Protocol,exfiltration,acceptable,SC3V-B2-03,0.5,60 GB to an unknown destination outside the change window.,Destination ownership; protocol details.,https://attack.mitre.org/techniques/T1048/

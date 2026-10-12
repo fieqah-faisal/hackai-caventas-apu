@@ -1,0 +1,113 @@
+[
+  {
+    "event_time": "2026-10-05T09:15:00+08:00",
+    "event_type": "edr_containment",
+    "host": "SALES-LT-07",
+    "account": "farah",
+    "source": "endpoint",
+    "event": "Outbound connection to 203.0.113.45 dropped by network containment",
+    "process": "svchost-update.exe",
+    "verdict": "blocked",
+    "record_id": "SC1-B2-04"
+  },
+  {
+    "event_time": "2026-10-05T09:30:00+08:00",
+    "event_type": "idp_signin",
+    "host": "MKT-LT-11",
+    "account": "aina",
+    "source": "signin",
+    "application": "SSO portal",
+    "result": "success",
+    "mfa": "push_approved",
+    "src_ip": "192.0.2.61",
+    "record_id": "SC1-B2-05"
+  },
+  {
+    "event_time": "2026-10-05T10:05:00+08:00",
+    "event_type": "crm_signin",
+    "host": "MKT-LT-11",
+    "account": "aina",
+    "source": "signin",
+    "application": "CRM",
+    "auth": "SSO",
+    "result": "success",
+    "src_ip": "192.0.2.61",
+    "session_id": "crm-s-8120",
+    "record_id": "SC1-B2-06"
+  },
+  {
+    "event_time": "2026-10-05T10:18:00+08:00",
+    "event_type": "idp_signin",
+    "account": "farah",
+    "source": "signin",
+    "src_ip": "198.51.100.23",
+    "device": "unregistered Windows / Chrome",
+    "auth": "session cookie",
+    "result": "failure",
+    "reason": "session revoked",
+    "record_id": "SC1-B2-08"
+  },
+  {
+    "event_time": "2026-10-05T10:19:00+08:00",
+    "event_type": "idp_signin",
+    "account": "farah",
+    "source": "signin",
+    "src_ip": "198.51.100.23",
+    "auth": "password",
+    "result": "failure",
+    "reason": "invalid password or account disabled",
+    "record_id": "SC1-B2-10"
+  },
+  {
+    "event_time": "2026-10-05T10:20:00+08:00",
+    "event_type": "crm_signin",
+    "account": "farah",
+    "source": "signin",
+    "application": "CRM",
+    "src_ip": "198.51.100.23",
+    "session_id": "crm-s-7731",
+    "auth": "existing session token",
+    "device": "new device fingerprint",
+    "result": "success",
+    "record_id": "SC1-B2-11"
+  },
+  {
+    "event_time": "2026-10-05T10:24:00+08:00",
+    "event_type": "crm_export",
+    "account": "farah",
+    "source": "crm_audit",
+    "report": "Customers - Central region",
+    "record_count": 1200,
+    "columns": "name, phone, email, company",
+    "src_ip": "198.51.100.23",
+    "session_id": "crm-s-7731",
+    "record_id": "SC1-B2-13"
+  },
+  {
+    "event_time": "2026-10-05T10:27:00+08:00",
+    "event_type": "crm_file_download",
+    "account": "farah",
+    "source": "crm_audit",
+    "file": "export_customers_central.csv",
+    "bytes": 412000,
+    "src_ip": "198.51.100.23",
+    "record_id": "SC1-B2-14"
+  },
+  {
+    "event_time": "2026-10-05T10:35:00+08:00",
+    "event_type": "analyst_note",
+    "source": "analyst_note",
+    "note": "CRM vendor status page: admin API maintenance 08:00-10:30 has finished; the admin API is available again.",
+    "author": "soc.analyst",
+    "record_id": "SC1-B2-15"
+  },
+  {
+    "event_time": "2026-10-05T10:40:00+08:00",
+    "event_type": "analyst_note",
+    "account": "farah",
+    "source": "analyst_note",
+    "note": "Called Farah: she installed a free PDF editor on Sunday night. She has been in a client meeting since 10:00 and has not used the CRM today.",
+    "author": "soc.analyst",
+    "record_id": "SC1-B2-16"
+  }
+]
