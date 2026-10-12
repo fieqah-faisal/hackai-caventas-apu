@@ -87,6 +87,9 @@ function fromApi<T>(r: ApiResult<T>, source: "real"): Outcome<T> {
 const UNSUPPORTED_DASHBOARD =
   "No global dashboard endpoint exists in the backend. Switch to fixture mode for the demo dashboard.";
 
+export const PLAN_ACTIONS_UNAVAILABLE =
+  "Action detail is unavailable in API mode: the backend lists only action IDs for stored plans and has no stored-action read endpoint.";
+
 export class RealProvider implements DataProvider {
   readonly mode = "api" as const;
   readonly synthetic = false;
@@ -201,6 +204,7 @@ export class RealProvider implements DataProvider {
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
     if (r.kind !== "ok") return fromApi<PlanVM[]>(r as ApiResult<never>, "real");
     // Version numbers are ordinals by created_at (the backend list is unordered).
+    // No replanExplanation: the backend records no reason for a re-plan.
     const vms: PlanVM[] = sortPlansOldestFirst(r.data).map((p, idx) => ({
       planId: p.plan_id,
       version: idx + 1,
@@ -209,6 +213,9 @@ export class RealProvider implements DataProvider {
       createdAt: p.created_at,
       missingEvidence: p.missing_evidence,
       actions: [], // historical action detail is not retrievable (no endpoint)
+      ...(p.action_ids.length > 0
+        ? { actionsUnavailable: { count: p.action_ids.length, reason: PLAN_ACTIONS_UNAVAILABLE } }
+        : {}),
     }));
     return ok(vms, "real");
   }

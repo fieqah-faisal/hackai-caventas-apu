@@ -219,6 +219,18 @@ export interface PlanVM {
   createdAt: string;
   missingEvidence: string[];
   actions: ResponsePlanActionVM[];
+  /**
+   * Set when the plan HAS actions the provider cannot load (API mode: GET
+   * /plans returns action IDs only, with no stored-action read endpoint).
+   * `actions` is then [] and must never be shown as "no actions".
+   */
+  actionsUnavailable?: { count: number; reason: string };
+  /**
+   * The recorded reason this version replaced the previous one. Only the
+   * fixture scenario supplies it; the backend stores no re-plan rationale,
+   * so API mode never shows re-plan copy.
+   */
+  replanExplanation?: string;
 }
 
 export type DiffCategory =

@@ -139,7 +139,12 @@ model's `evidence_ingested`; unknown types → `other`), `timestamp` → `at`,
 `status`, which is never printed as a decision. `verified`/`failed` imply
 an approval, and `failed` reads "approved, simulated, not validated
 effective"; the row can't tell an ineffective result from a failed
-execution. List order: real Firestore streams collections in
+execution. Data a provider cannot load is marked as such, never returned
+as an empty fact: `PlanVM.actionsUnavailable` carries the real action
+count when `GET /plans` lists only action IDs. Narrative such as a re-plan
+explanation is shown only when the provider supplies it, which today means
+fixture mode; API mode never borrows fixture copy. List order: real
+Firestore streams collections in
 document-ID order (random hex) where the test fake keeps insertion order,
 so the frontend sorts `GET /plans` by `created_at` (compared as instants,
 because the backend mixes `Z`, `+00:00` and local offsets) before deriving

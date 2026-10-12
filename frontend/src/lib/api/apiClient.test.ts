@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { apiGet } from "./apiClient";
-import { RealProvider } from "./realProvider";
+import { PLAN_ACTIONS_UNAVAILABLE, RealProvider } from "./realProvider";
 import type { AuditEventDTO, DecisionResponseDTO, StoredActionDTO } from "./dto";
 import { PLANS_IN_DOC_ID_ORDER, reportBody } from "@/test/realBackendBodies";
 
@@ -258,6 +258,21 @@ describe("RealProvider contract (real backend bodies)", () => {
       [2, "PLAN-730000000002", "containment"],
       [3, "PLAN-4e0000000003", "eradication"],
     ]);
+  });
+
+  it("getPlans marks action detail unavailable (with the real count) and carries no re-plan copy", async () => {
+    const withEmpty = [...PLANS_IN_DOC_ID_ORDER, { ...PLANS_IN_DOC_ID_ORDER[0], plan_id: "PLAN-ee0000000004", action_ids: [], created_at: "2026-10-12T02:50:00.000000+00:00" }];
+    globalThis.fetch = mockFetch(200, withEmpty);
+    const out = await new RealProvider().getPlans("CASE-TEST0001");
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    const [v1, , , v4] = out.value.data;
+    expect(v1.actions).toEqual([]);
+    expect(v1.actionsUnavailable).toEqual({ count: 1, reason: PLAN_ACTIONS_UNAVAILABLE });
+    // A plan with no action IDs really has no actions: nothing is "unavailable".
+    expect(v4.planId).toBe("PLAN-ee0000000004");
+    expect(v4.actionsUnavailable).toBeUndefined();
+    for (const p of out.value.data) expect(p.replanExplanation).toBeUndefined();
   });
 
   it("getPlanRefs uses the same created_at ordinals", async () => {
