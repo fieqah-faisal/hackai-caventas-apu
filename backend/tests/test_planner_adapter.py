@@ -474,3 +474,10 @@ def test_analysis_is_kept_when_evidence_is_insufficient():
     assert plan.actions == []
     assert plan.analysis is not None
     assert plan.analysis.incident_type == "infostealer_session_hijack"
+
+
+def test_non_finite_confidence_is_rejected():
+    llm = ScriptedLLM([_analysis(confidence=float("nan")), _proposal()])
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert plan.analysis.confidence == 0.0

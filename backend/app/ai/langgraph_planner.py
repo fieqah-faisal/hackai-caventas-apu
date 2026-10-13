@@ -19,6 +19,7 @@ allowlist, and ``based_on_state_version`` always comes from the state.
 from __future__ import annotations
 
 import json
+import math
 import re
 from pathlib import Path
 from typing import Any, Callable, Optional, TypedDict
@@ -242,6 +243,8 @@ def _confidence(raw: Any) -> float:
     try:
         value = float(raw)
     except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(value):
         return 0.0
     return min(max(value, 0.0), 1.0)
 
