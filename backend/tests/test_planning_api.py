@@ -13,7 +13,13 @@ from pathlib import Path
 
 from app.ai.langgraph_planner import PlannerError
 from app.ai.planner_adapter import FakePlannerAdapter
-from app.schemas.plan import PlanProposal, ProposedAction, Stage
+from app.schemas.plan import (
+    PlanAnalysis,
+    PlanProposal,
+    ProposedAction,
+    ProposedFinding,
+    Stage,
+)
 
 FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "login_logs.csv"
 
@@ -44,6 +50,7 @@ def test_run_planning_creates_plan_and_persists_actions(client, monkeypatch):
     assert resp.status_code == 200, resp.text
     plan = resp.json()
     assert plan["plan_id"].startswith("PLAN-")
+    assert "analysis" not in plan  # the fake adapter produces no analysis
     assert plan["case_id"] == case_id
     assert plan["based_on_state_version"] == 1
     assert plan["stage"] == "containment"
@@ -111,3 +118,42 @@ def test_policy_refs_outside_the_pack_are_dropped(client, monkeypatch):
     assert resp.status_code == 200, resp.text
     refs = resp.json()["actions"][0]["proposal"]["policy_refs"]
     assert refs == ["POL-04"]
+
+
+def test_plan_analysis_is_persisted(client, monkeypatch):
+    class AnalysisAdapter:
+        def generate_plan(self, incident_state, approved_guidance=None):
+            return PlanProposal(
+                based_on_state_version=incident_state.version,
+                stage=Stage.CONTAINMENT,
+                actions=[],
+                analysis=PlanAnalysis(
+                    incident_type="infostealer_session_hijack",
+                    scope="one laptop and the CRM session",
+                    severity="high",
+                    confidence=0.7,
+                    findings=[
+                        ProposedFinding(
+                            summary="Unsigned installer ran on SALES-LT-07.",
+                            evidence_ids=["EV-1"],
+                            confidence=0.8,
+                        )
+                    ],
+                    attack_techniques=["T1204.002"],
+                ),
+            )
+
+    monkeypatch.setattr(ADAPTER_PATH, lambda: AnalysisAdapter())
+    case_id = _create_case_with_evidence(client)
+
+    resp = client.post(f"/cases/{case_id}/runs")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["analysis"]["severity"] == "high"
+    assert body["analysis"]["attack_techniques"] == ["T1204.002"]
+    assert body["analysis"]["findings"][0]["summary"] == (
+        "Unsigned installer ran on SALES-LT-07."
+    )
+
+    listed = client.get(f"/cases/{case_id}/plans").json()
+    assert listed[0]["analysis"]["incident_type"] == "infostealer_session_hijack"
