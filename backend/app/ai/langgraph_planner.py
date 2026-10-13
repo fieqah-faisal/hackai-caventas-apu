@@ -170,8 +170,11 @@ def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
         + "\n\n"
         + load_verification_first_skill()
         + "\n\nList concrete findings, each citing the supporting evidence "
-        "ids, and map only ATT&CK techniques the evidence directly supports. "
-        "Never invent entity ids, evidence ids or ATT&CK technique ids. "
+        "ids. Map the observed activity to MITRE ATT&CK techniques even when "
+        "you judge it benign or a false positive (for example, an "
+        "administrator-created scheduled task is still T1053.005); never "
+        "invent techniques the evidence does not support, and never invent "
+        "entity ids, evidence ids or ATT&CK technique ids. "
         "Return ONLY a JSON object with keys: incident_type, scope, severity "
         "(low|medium|high|critical), confidence, sufficient, missing_evidence, "
         "stage (assessment|preservation|containment|eradication|hardening|"
