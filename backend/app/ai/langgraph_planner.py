@@ -50,6 +50,15 @@ DEFAULT_GUIDANCE_PATH = (
     Path(__file__).resolve().parents[2] / "fixtures" / "guidance.json"
 )
 
+VERIFICATION_FIRST_SKILL_PATH = (
+    Path(__file__).resolve().parent / "skills" / "verification_first" / "SKILL.md"
+)
+
+
+def load_verification_first_skill() -> str:
+    """Load the verification-first grounding skill the planner prompts embed."""
+    return VERIFICATION_FIRST_SKILL_PATH.read_text(encoding="utf-8").strip()
+
 
 class PlannerError(RuntimeError):
     """Raised when the planner cannot produce a valid proposal."""
@@ -145,8 +154,11 @@ def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
         "warrant an initial plan: set sufficient=true and still list any "
         "remaining gaps in missing_evidence. Set sufficient=false only when "
         "no defensible action can be recommended yet, e.g. events look "
-        "ambiguous or benign without corroboration. Never invent entity ids "
-        "or evidence ids. Return ONLY a JSON object with keys: "
+        "ambiguous or benign without corroboration. "
+        + "\n\n"
+        + load_verification_first_skill()
+        + "\n\nNever invent entity ids or evidence ids. Return ONLY a JSON "
+        "object with keys: "
         "incident_type, scope, severity (low|medium|high|critical), "
         "confidence, sufficient, missing_evidence, stage (assessment|"
         "preservation|containment|eradication|hardening|restoration)."
@@ -170,7 +182,10 @@ def _proposal_messages(
         "approved tool list in the guidance; target_id must be one of the "
         "valid entity ids; evidence_ids must come only from the valid "
         "evidence ids; reference policy rule ids in policy_refs when "
-        "relevant. Every action needs rationale, risk, expected_effect and "
+        "relevant. "
+        + "\n\n"
+        + load_verification_first_skill()
+        + "\n\nEvery action needs rationale, risk, expected_effect and "
         "validation_checks. Never invent ids. Return ONLY a JSON object "
         "with exactly these keys: {\"stage\": <assessment|preservation|"
         "containment|eradication|hardening|restoration>, \"actions\": "
