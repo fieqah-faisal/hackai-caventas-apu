@@ -174,3 +174,38 @@ def test_report_fills_classification_findings_and_attack(client, monkeypatch, tm
     assert report["findings"][0]["evidence_ids"] == ["EV-1"]
     assert report["findings"][0]["confidence"] == 0.8
     assert Path(report["pdf_path"]).exists()
+
+
+def test_report_survives_malformed_analysis(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "malformed analysis"}).json()["case_id"]
+    repositories.add_plan(
+        case_id,
+        "PLAN-malformed",
+        {
+            "plan_id": "PLAN-malformed",
+            "case_id": case_id,
+            "based_on_state_version": 1,
+            "stage": "assessment",
+            "missing_evidence": [],
+            "action_ids": [],
+            "created_at": "2026-10-13T10:00:00+00:00",
+            "analysis": {
+                "findings": [None, {"summary": "Kept.", "evidence_ids": [123, "EV-1"], "confidence": "bad"}],
+                "confidence": "not-a-number",
+                "attack_techniques": [7, "T1204.002"],
+            },
+        },
+    )
+
+    resp = client.post(f"/cases/{case_id}/reports")
+    assert resp.status_code == 200, resp.text
+    report = resp.json()
+
+    assert report["classification"]["incident_type"] == "other"
+    assert report["classification"]["severity"] == "unknown"
+    assert report["classification"]["confidence"] == 0.0
+    assert report["classification"]["attack_techniques"] == ["T1204.002"]
+    assert report["findings"] == [
+        {"finding_id": "FND-02", "summary": "Kept.", "evidence_ids": ["EV-1"], "confidence": 0.0}
+    ]

@@ -49,6 +49,31 @@ def _created_at_key(doc: dict[str, Any]) -> datetime:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
+def _float_or_zero(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _finding_rows(analysis: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for index, finding in enumerate(analysis.get("findings") or [], start=1):
+        if not isinstance(finding, dict):
+            continue
+        rows.append(
+            {
+                "finding_id": f"FND-{index:02d}",
+                "summary": str(finding.get("summary", "")),
+                "evidence_ids": [
+                    e for e in finding.get("evidence_ids") or [] if isinstance(e, str)
+                ],
+                "confidence": _float_or_zero(finding.get("confidence")),
+            }
+        )
+    return rows
+
+
 def _latest_plan(case_id: str) -> dict[str, Any] | None:
     # Real Firestore streams documents in document-ID order (random hex ids),
     # not insertion order like the test fake, so sort by creation time.
@@ -170,7 +195,14 @@ def generate_report(case_id: str) -> dict[str, Any]:
     plan = _latest_plan(case_id)
     phase = (plan or {}).get("stage", "assessment")
     gaps = list((plan or {}).get("missing_evidence", []))
-    analysis = (plan or {}).get("analysis") or {}
+    analysis = (plan or {}).get("analysis")
+    if not isinstance(analysis, dict):
+        analysis = {}
+    incident_type = analysis.get("incident_type")
+    incident_type = incident_type if isinstance(incident_type, str) and incident_type else "other"
+    severity = analysis.get("severity")
+    severity = severity if isinstance(severity, str) and severity else "unknown"
+    techniques = [t for t in (analysis.get("attack_techniques") or []) if isinstance(t, str)]
     guidance = load_guidance()
     now = datetime.now(timezone.utc).isoformat()
     report_id = f"RPT-{uuid.uuid4().hex[:12]}"
@@ -199,18 +231,18 @@ def generate_report(case_id: str) -> dict[str, Any]:
         "updated_at": now,
         "executive_summary": {"text": summary, "finding_ids": []},
         "classification": {
-            "incident_type": analysis.get("incident_type") or "other",
+            "incident_type": incident_type,
             "status": "suspected",
             "closure_reason": None,
-            "severity": analysis.get("severity") or "unknown",
+            "severity": severity,
             "severity_reason": (
                 "Assessed by the planner from stored evidence."
                 if analysis
                 else "Not assessed by the prototype."
             ),
-            "confidence": float(analysis.get("confidence") or 0.0),
+            "confidence": _float_or_zero(analysis.get("confidence")),
             "current_phase": phase,
-            "attack_techniques": list(analysis.get("attack_techniques") or []),
+            "attack_techniques": list(techniques),
             "confirmed_by_analyst": False,
         },
         "affected": [
@@ -228,15 +260,7 @@ def generate_report(case_id: str) -> dict[str, Any]:
         ],
         "exposed_credentials": [],
         "timeline": _timeline_rows(state),
-        "findings": [
-            {
-                "finding_id": f"FND-{index:02d}",
-                "summary": finding.get("summary", ""),
-                "evidence_ids": list(finding.get("evidence_ids") or []),
-                "confidence": float(finding.get("confidence") or 0.0),
-            }
-            for index, finding in enumerate(analysis.get("findings") or [], start=1)
-        ],
+        "findings": _finding_rows(analysis),
         "root_cause": {"text": "", "finding_ids": [], "status": "hypothesis"},
         "impact": {
             "operational": "",
