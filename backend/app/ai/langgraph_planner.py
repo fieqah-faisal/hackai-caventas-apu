@@ -19,6 +19,7 @@ allowlist, and ``based_on_state_version`` always comes from the state.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Callable, Optional, TypedDict
 
@@ -28,7 +29,7 @@ from langgraph.graph import END, START, StateGraph
 from app.ai.planner_adapter import FakePlannerAdapter, PlannerAdapter
 from app.config import get_settings
 from app.schemas.incident_state import IncidentState
-from app.schemas.plan import PlanProposal, ProposedAction, Stage
+from app.schemas.plan import PlanAnalysis, PlanProposal, ProposedAction, ProposedFinding, Stage
 
 LLMCall = Callable[[list[dict[str, Any]], str], str]
 
@@ -167,11 +168,16 @@ def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
         "ambiguous or benign without corroboration. "
         + "\n\n"
         + load_verification_first_skill()
-        + "\n\nNever invent entity ids or evidence ids. Return ONLY a JSON "
-        "object with keys: "
-        "incident_type, scope, severity (low|medium|high|critical), "
-        "confidence, sufficient, missing_evidence, stage (assessment|"
-        "preservation|containment|eradication|hardening|restoration)."
+        + "\n\nList concrete findings, each citing the supporting evidence "
+        "ids, and map only ATT&CK techniques the evidence directly supports. "
+        "Never invent entity ids, evidence ids or ATT&CK technique ids. "
+        "Return ONLY a JSON object with keys: incident_type, scope, severity "
+        "(low|medium|high|critical), confidence, sufficient, missing_evidence, "
+        "stage (assessment|preservation|containment|eradication|hardening|"
+        "restoration), findings (list of {\"summary\": <string>, "
+        "\"evidence_ids\": [<string>], \"confidence\": 0-1}), "
+        "attack_techniques (list of MITRE ATT&CK technique ids, e.g. "
+        "T1204.002, that the evidence directly supports)."
     )
     return [
         {"role": "system", "content": system},
@@ -227,6 +233,42 @@ def _collect_evidence_ids(incident: dict[str, Any]) -> set[str]:
     for finding in incident.get("findings", []):
         ids.update(_str_list(finding.get("evidence_ids")))
     return ids
+
+
+ATTACK_TECHNIQUE_ID = re.compile(r"^T\d{4}(\.\d{3})?$")
+
+
+def _confidence(raw: Any) -> float:
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return 0.0
+    return min(max(value, 0.0), 1.0)
+
+
+def _validated_findings(raw: Any, evidence_ids: set[str]) -> list[ProposedFinding]:
+    if not isinstance(raw, list):
+        return []
+    findings: list[ProposedFinding] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        summary = str(item.get("summary", "")).strip()
+        cited = [e for e in _str_list(item.get("evidence_ids")) if e in evidence_ids]
+        if not summary or not cited:
+            continue
+        findings.append(
+            ProposedFinding(
+                summary=summary,
+                evidence_ids=cited,
+                confidence=_confidence(item.get("confidence")),
+            )
+        )
+    return findings
+
+
+def _validated_techniques(raw: Any) -> list[str]:
+    return [t for t in _str_list(raw) if ATTACK_TECHNIQUE_ID.match(t)]
 
 
 def _allowed_tools(guidance: dict[str, Any]) -> set[str]:
@@ -350,6 +392,15 @@ class LangGraphPlannerAdapter:
 
         entity_ids = {entity.id for entity in incident_state.entities}
         evidence_ids = _collect_evidence_ids(incident)
+        analysis_raw = final.get("analysis") or {}
+        analysis = PlanAnalysis(
+            incident_type=str(analysis_raw.get("incident_type", "")),
+            scope=str(analysis_raw.get("scope", "")),
+            severity=str(analysis_raw.get("severity", "")),
+            confidence=_confidence(analysis_raw.get("confidence")),
+            findings=_validated_findings(analysis_raw.get("findings"), evidence_ids),
+            attack_techniques=_validated_techniques(analysis_raw.get("attack_techniques")),
+        )
         allowlist = _allowed_tools(guidance)
         allowed_refs = set(final.get("selected_rule_ids", []))
         actions: list[ProposedAction] = []
@@ -365,6 +416,7 @@ class LangGraphPlannerAdapter:
             stage=_coerce_stage(final.get("stage")),
             actions=actions,
             missing_evidence=_str_list(final.get("missing_evidence")),
+            analysis=analysis,
         )
 
 
