@@ -128,11 +128,12 @@ cd backend
 
 Calibration (see `backend/evaluation/results/SUMMARY.md`): `oracle` 12/12
 checkpoints (upper bound), `unsafe` 0/12, `fake` 0/12 (mean 48.2), and
-`live` 8/12 across 2/5 scenarios (mean 86.4). The live failures were
-`no_collateral_targets` and `no_forbidden_actions`; BL-031 tracks the
-target-scope hardening.
+`live` 10/12 across 3/5 scenarios (mean 90.4; post-policy-pack + retrieval
+rerun, 2026-10-13). The remaining live failures are the two false-alarm
+checkpoints (`no_forbidden_actions`); BL-031 tracks the verify-before-contain
+hardening.
 
-## Status snapshot (2026-10-12)
+## Status snapshot (2026-10-13)
 
 - **Merged:** evidence ingestion and versioned incident state (Milestone 1);
   LangGraph + DeepSeek V4.1 Flash planner with evidence-sufficiency routing
@@ -142,13 +143,14 @@ target-scope hardening.
   catalogue; five synthetic scenarios plus evaluation harness, scorer and
   safety gates; React analyst workspace in fixture and API modes with
   read-only action/result list endpoints; policy pack v1.0 (19 structured
-  rules + 8 assets); first live-planner calibration.
-- **Measured:** the live planner passed 8/12 checkpoints across 2/5
-  scenarios. Safety and policy-reference follow-ups are BL-020, BL-031 and
-  BL-034.
-- **Next:** incident-relevant guidance retrieval (BL-037); persisted planner
-  analysis/findings/ATT&CK for deterministic reports (BL-017); policy
-  enforcement (BL-032, BL-033); remaining reads (BL-013, BL-025).
+  rules + 8 assets); stage-scoped guidance retrieval and policy-ref
+  validation (BL-037, DEC-013); live-planner calibration.
+- **Measured:** the live planner passed 10/12 checkpoints across 3/5
+  scenarios (mean 90.4; 2026-10-13 rerun). Safety follow-ups are BL-020 and
+  BL-031.
+- **Next:** persisted planner analysis/findings/ATT&CK for deterministic
+  reports (BL-017); policy enforcement (BL-032, BL-033); false-alarm
+  verify-before-contain grounding (BL-031); remaining reads (BL-013, BL-025).
 - **Decisions/deferred:** record the Firestore divergence (BL-001), ratify
   React over Streamlit (BL-012), optional cloud Firebase (BL-009), and
   approval invalidation after state changes (BL-024).
