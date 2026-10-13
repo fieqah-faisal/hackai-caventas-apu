@@ -20,6 +20,10 @@ theft, interactive logon by a person, known-bad indicators):
   devices, service or administrator accounts, or organization-approved
   provider domains until the change is verified.
 
-If independent compromise indicators are present, containment is the
-expected stage, and user endpoints with independent evidence of compromise
-(unsigned or unknown execution, credential theft) are contained as usual.
+If independent compromise indicators are present, containment is not
+delayed: user endpoints with independent evidence of compromise (unsigned
+or unknown execution, credential theft) are contained as usual, and normal
+progression continues: eradication and recovery follow once access is cut.
+The verification requirement above applies only to servers, data stores,
+network devices, service or administrator accounts, and
+organization-approved provider domains.
