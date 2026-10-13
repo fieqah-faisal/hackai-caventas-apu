@@ -47,10 +47,11 @@ report, not a chatbot answer.
 The loop continues until analyst-verified closure. Every version of the
 state, every decision and every outcome is kept for traceability.
 
-The current planner loads the complete approved guidance fixture into the
-proposal prompt. It does not yet select incident- and stage-relevant
-passages. BL-037 tracks that retrieval step and validation of returned
-`policy_refs` against the selected rule IDs.
+The planner retrieves stage-relevant approved guidance (deterministic
+retrieve step between analysis and proposal; BL-037, DEC-013) and embeds the
+verification-first grounding skill (BL-031, DEC-014). Its analysis — incident
+type, severity, confidence, findings and ATT&CK mappings — is persisted with
+the plan and rendered into the report (BL-017, DEC-015).
 
 ## Repository layout
 
