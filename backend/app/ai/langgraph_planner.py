@@ -57,7 +57,17 @@ VERIFICATION_FIRST_SKILL_PATH = (
 
 def load_verification_first_skill() -> str:
     """Load the verification-first grounding skill the planner prompts embed."""
-    return VERIFICATION_FIRST_SKILL_PATH.read_text(encoding="utf-8").strip()
+    try:
+        content = VERIFICATION_FIRST_SKILL_PATH.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise PlannerError(
+            f"verification-first skill not readable: {exc}"
+        ) from exc
+    if not content:
+        raise PlannerError(
+            f"verification-first skill is empty: {VERIFICATION_FIRST_SKILL_PATH}"
+        )
+    return content
 
 
 class PlannerError(RuntimeError):
