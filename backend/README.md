@@ -6,7 +6,7 @@ audit trail and reports.
 
 Owner: Raaj (Backend, Incident State, Data & Integration).
 
-## Status: Milestone 1, AI planning and BL-003 working
+## Status: Milestone 1, planning, approval, execution and reporting working
 
 **Functional now:**
 
@@ -39,6 +39,12 @@ OpenCode Go gateway, model `deepseek-v4.1-flash`). It returns proposals only;
 the backend validates every id before persisting. With no
 `OPENCODE_GO_API_KEY` configured it falls back to `FakePlannerAdapter`, so
 the backend works without a key.
+
+The planner also returns a validated analysis block — incident type, severity,
+confidence, findings (each citing stored evidence ids) and ATT&CK technique
+ids. It is persisted with the plan and rendered into the report (BL-017,
+DEC-015); findings without stored evidence and malformed technique ids are
+dropped, so the report only carries evidence-backed claims.
 
 Approvals, simulated execution and reports (BL-003):
 
@@ -118,9 +124,9 @@ cd backend
 Tests use an in-memory fake Firestore (`tests/fake_firestore.py`), so they
 run without the emulator or any credentials. The suite covers the Milestone 1
 endpoints, persistence, state versioning, malformed/unsupported uploads,
-404s, the audit trail, the planner adapter (scripted LLM), the planning
-endpoints, the approval, execution and reporting endpoints, and the
-read-only action/result lists.
+404s, the audit trail, the planner adapter (scripted LLM, analysis
+validation, malformed-JSON retry), the planning endpoints, the approval,
+execution and reporting endpoints, and the read-only action/result lists.
 
 ## Action simulator, scenarios and evaluation (Aidan)
 
