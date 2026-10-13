@@ -16,7 +16,10 @@ import pytest
 from app.ai.langgraph_planner import (
     LangGraphPlannerAdapter,
     PlannerError,
+    _analysis_messages,
+    _proposal_messages,
     load_guidance,
+    load_verification_first_skill,
     select_guidance,
 )
 from app.schemas.incident_state import (
@@ -274,6 +277,41 @@ def test_load_guidance_reads_repo_fixture():
     assert guidance["policy_pack_version"]
     assert any(r["rule_id"] == "POL-01" for r in guidance["policy_rules"])
     assert "isolate_host" in guidance["approved_tools"]
+
+
+def test_verification_first_skill_grounds_analysis_prompt():
+    system = _analysis_messages({"case_id": "CASE-001"})[0]["content"]
+
+    assert "Verification-first grounding" in system
+    assert "The analysis stage is assessment." in system
+    assert "change verification" in system
+
+
+def test_verification_first_skill_grounds_proposal_prompt():
+    system = _proposal_messages({}, {}, {}, set(), set())[0]["content"]
+
+    assert "Verification-first grounding" in system
+    assert "Keep the proposed actions non-disruptive" in system
+    assert "contained as usual" in system
+
+
+def test_verification_first_skill_loader_rejects_missing_file(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "app.ai.langgraph_planner.VERIFICATION_FIRST_SKILL_PATH",
+        tmp_path / "nope" / "SKILL.md",
+    )
+    with pytest.raises(PlannerError, match="not readable"):
+        load_verification_first_skill()
+
+
+def test_verification_first_skill_loader_rejects_empty_file(monkeypatch, tmp_path):
+    empty = tmp_path / "SKILL.md"
+    empty.write_text("   \n", encoding="utf-8")
+    monkeypatch.setattr(
+        "app.ai.langgraph_planner.VERIFICATION_FIRST_SKILL_PATH", empty
+    )
+    with pytest.raises(PlannerError, match="empty"):
+        load_verification_first_skill()
 
 
 def test_alternate_tool_and_target_keys_are_normalized():

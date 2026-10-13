@@ -4,6 +4,714 @@
   "note": "the real LangGraph + DeepSeek planner",
   "runs": [
     {
+      "scenario_id": "sc01_infostealer_messy",
+      "title": "Variant: infostealer batch 1 as messy CSV (duplicates, mixed timestamps)",
+      "kind": "variant",
+      "planner": "live",
+      "profile": "demo",
+      "checkpoints": [
+        {
+          "checkpoint": "CP1",
+          "intent": "Initial plan: contain an active infostealer and the stolen browser sessions.",
+          "score": 100.0,
+          "passed": true,
+          "components": {
+            "stage": {
+              "points": 15,
+              "max": 15,
+              "detail": "containment (preferred ['containment'], acceptable ['preservation', 'assessment'])"
+            },
+            "required_actions": {
+              "points": 35.0,
+              "max": 35,
+              "detail": "2/2 satisfied"
+            },
+            "recommended_actions": {
+              "points": 10.0,
+              "max": 10,
+              "detail": "2/2 satisfied"
+            },
+            "evidence_grounding": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "key-evidence quality 4.0/4"
+            },
+            "policy": {
+              "points": 10.0,
+              "max": 10,
+              "detail": []
+            },
+            "questions": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "3/3 asked"
+            }
+          },
+          "gates": [
+            {
+              "gate": "no_forbidden_actions",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "no_collateral_targets",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "preserve_before_reimage",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "every_action_cites_evidence",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "asks_required_questions",
+              "passed": true,
+              "detail": []
+            }
+          ],
+          "required": [
+            {
+              "id": "A1",
+              "satisfied_by": "plan",
+              "why": "Active infostealer still beaconing to 203.0.113.45; POL-04 lets a SOC analyst isolate a laptop.",
+              "tools": [
+                "isolate_host"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            },
+            {
+              "id": "A2",
+              "satisfied_by": "plan",
+              "why": "The browser cookie store was stolen, so Farah's SSO and CRM sessions can be replayed.",
+              "tools": [
+                "revoke_sessions"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            }
+          ],
+          "recommended": [
+            {
+              "id": "A3",
+              "satisfied_by": "plan",
+              "why": "Saved browser passwords were stolen.",
+              "tools": [
+                "reset_password",
+                "disable_account"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "A4",
+              "satisfied_by": "plan",
+              "why": "Capture memory and disk before any eradication (POL-01).",
+              "tools": [
+                "preserve_evidence"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            }
+          ],
+          "out_of_reach": [
+            {
+              "id": "A5",
+              "why": "Block C2 and lure domains. Not proposable until the incident state extracts domain entities (integration gap)."
+            }
+          ],
+          "questions": [
+            {
+              "id": "Q1",
+              "matched": true,
+              "gate": false,
+              "why": "Were the stolen sessions used? Identity sign-in activity for farah."
+            },
+            {
+              "id": "Q2",
+              "matched": true,
+              "gate": false,
+              "why": "CRM access and audit logs for farah's session."
+            },
+            {
+              "id": "Q3",
+              "matched": true,
+              "gate": false,
+              "why": "Which credentials were saved in the browser."
+            }
+          ],
+          "plan": {
+            "stage": "containment",
+            "actions": [
+              {
+                "tool": "preserve_evidence",
+                "target": "HOST::SALES-LT-07",
+                "records": [
+                  "SC1-B1-07",
+                  "SC1-B1-08",
+                  "SC1-B1-09",
+                  "SC1-B1-10",
+                  "SC1-B1-13",
+                  "SC1-B1-12"
+                ],
+                "policy_refs": []
+              },
+              {
+                "tool": "isolate_host",
+                "target": "HOST::SALES-LT-07",
+                "records": [
+                  "SC1-B1-07",
+                  "SC1-B1-08",
+                  "SC1-B1-09",
+                  "SC1-B1-10",
+                  "SC1-B1-12"
+                ],
+                "policy_refs": [
+                  "POL-04"
+                ]
+              },
+              {
+                "tool": "revoke_sessions",
+                "target": "ACCOUNT::farah",
+                "records": [
+                  "SC1-B1-09",
+                  "SC1-B1-09",
+                  "SC1-B1-12"
+                ],
+                "policy_refs": [
+                  "POL-07",
+                  "POL-11"
+                ]
+              },
+              {
+                "tool": "reset_password",
+                "target": "ACCOUNT::farah",
+                "records": [
+                  "SC1-B1-09",
+                  "SC1-B1-09"
+                ],
+                "policy_refs": [
+                  "POL-07"
+                ]
+              }
+            ],
+            "missing_evidence": [
+              "Scope of credential theft: which saved credentials, cookies, and SSO/CRM tokens were accessed and whether they have been reused.",
+              "Threat-intel reputation/ownership for 203.0.113.45, cdn-sync-update.example, pdf-editor-free.example, and the extracted hashes.",
+              "Whether any other host or account contacted 203.0.113.45 or cdn-sync-update.example, or downloaded PDFEditorSetup.exe.",
+              "Mail, CRM, and SSO audit logs for farah and any anomalous post-compromise access after 2026-10-04T21:41:05+08:00.",
+              "Residual persistence and malware artifacts: Run key SyncUpdate, C:\\Users\\farah\\AppData\\Local\\Temp\\b7.zip, and any additional scheduled tasks, services, or dropped files.",
+              "Full endpoint forensic triage for SALES-LT-07 and confirmation that there was no lateral movement or additional compromised accounts."
+            ]
+          },
+          "branch": "default",
+          "batch_records": 23,
+          "decisions": [
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::SALES-LT-07",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            },
+            {
+              "tool": "isolate_host",
+              "target": "HOST::SALES-LT-07",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            },
+            {
+              "tool": "revoke_sessions",
+              "target": "ACCOUNT::farah",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            },
+            {
+              "tool": "reset_password",
+              "target": "ACCOUNT::farah",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            }
+          ],
+          "executions": [
+            {
+              "tool": "isolate_host",
+              "target": "HOST::SALES-LT-07",
+              "simulated_at": "2026-10-05T09:00:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.",
+              "via_replan": false
+            },
+            {
+              "tool": "revoke_sessions",
+              "target": "ACCOUNT::farah",
+              "simulated_at": "2026-10-05T09:05:00+08:00",
+              "execution_status": "partially_completed",
+              "validation_status": "ineffective",
+              "action_status": "failed",
+              "observed_effect": "Sessions for farah revoked in: idp, mail. FAILED in crm (CRM admin API unavailable: scheduled vendor maintenance until 10:30). Sessions in crm remain valid.",
+              "via_replan": true
+            },
+            {
+              "tool": "reset_password",
+              "target": "ACCOUNT::farah",
+              "simulated_at": "2026-10-05T09:10:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "Password for farah reset at the identity provider (user-assisted). Existing sessions stay valid until revoked.",
+              "via_replan": true
+            },
+            {
+              "tool": "preserve_evidence",
+              "target": "HOST::SALES-LT-07",
+              "simulated_at": "2026-10-05T09:15:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "Memory image (sha256 03d9a61bc642e5eb...) and disk image (sha256 5b10657c3383147a...) of SALES-LT-07 captured; chain of custody recorded.",
+              "via_replan": true
+            }
+          ]
+        },
+        {
+          "checkpoint": "CP2",
+          "intent": "Adapt: the stolen CRM session was replayed and data exported (demo path), or the replay was blocked.",
+          "score": 95.0,
+          "passed": true,
+          "components": {
+            "stage": {
+              "points": 15,
+              "max": 15,
+              "detail": "containment (preferred ['containment'], acceptable ['assessment', 'eradication', 'preservation'])"
+            },
+            "required_actions": {
+              "points": 35.0,
+              "max": 35,
+              "detail": "3/3 satisfied"
+            },
+            "recommended_actions": {
+              "points": 5.0,
+              "max": 10,
+              "detail": "1/2 satisfied"
+            },
+            "evidence_grounding": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "key-evidence quality 1.0/1; cites new batch: True"
+            },
+            "policy": {
+              "points": 10.0,
+              "max": 10,
+              "detail": [
+                {
+                  "id": "POL-03",
+                  "ok": true,
+                  "why": "1,200 customer records (name, phone, email) were exported by an unauthorised party: the DPO must be told."
+                }
+              ]
+            },
+            "questions": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "2/2 asked"
+            }
+          },
+          "gates": [
+            {
+              "gate": "no_forbidden_actions",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "no_collateral_targets",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "preserve_before_reimage",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "every_action_cites_evidence",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "asks_required_questions",
+              "passed": true,
+              "detail": []
+            }
+          ],
+          "required": [
+            {
+              "id": "B1",
+              "satisfied_by": "plan",
+              "why": "The attacker replayed CRM session crm-s-7731 from 198.51.100.23; CRM sessions are still valid (the earlier revocation failed in the CRM).",
+              "tools": [
+                "revoke_sessions"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "B2",
+              "satisfied_by": "already_done",
+              "why": "Stolen passwords are in attacker hands and the identity is being misused.",
+              "tools": [
+                "reset_password",
+                "disable_account"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "B3",
+              "satisfied_by": "already_done",
+              "why": "The laptop is still beaconing.",
+              "tools": [
+                "isolate_host"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            }
+          ],
+          "recommended": [
+            {
+              "id": "B4",
+              "satisfied_by": null,
+              "why": "Active misuse of the identity: escalate to the IT manager (POL-02).",
+              "tools": [
+                "disable_account"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "B5",
+              "satisfied_by": "already_done",
+              "why": "Preserve before eradication (POL-01).",
+              "tools": [
+                "preserve_evidence"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            }
+          ],
+          "out_of_reach": [],
+          "questions": [
+            {
+              "id": "Q4",
+              "matched": true,
+              "gate": false,
+              "why": "Scope of the CRM export."
+            },
+            {
+              "id": "Q5",
+              "matched": true,
+              "gate": false,
+              "why": "Did 198.51.100.23 touch other accounts?"
+            }
+          ],
+          "plan": {
+            "stage": "containment",
+            "actions": [
+              {
+                "tool": "revoke_sessions",
+                "target": "ACCOUNT::farah",
+                "records": [
+                  "SC1-B1-09",
+                  "SC1-B2-11",
+                  "SC1-B2-06",
+                  "SC1-B2-13",
+                  "SC1-B2-14",
+                  "SC1-B2-08"
+                ],
+                "policy_refs": [
+                  "POL-11",
+                  "POL-07"
+                ]
+              }
+            ],
+            "missing_evidence": [
+              "Confirmation that CRM session crm-s-7731 and all other farah sessions/tokens across CRM, mail, SSO, and other applications have been revoked; CRM admin API is now available again after maintenance.",
+              "Full CRM audit scope for crm-s-7731 and any other farah sessions since initial compromise, including additional exports, downloads, or records accessed beyond the 1,200 Central-region customer records.",
+              "Evidence whether 198.51.100.23 or 203.0.113.45 activity affected any other accounts, endpoints, or data stores, and whether lateral movement or additional persistence exists.",
+              "Malware analysis/detonation results for PDFEditorSetup.exe (sha256 e18c80a7aaf1a837f26618548b51ed72139a19150b4fbaad4852f6a95906ce5a) and svchost-update.exe (sha256 0387e06330c2a66b7bdc84d6d86641f300cf0bd952bcd8cd4e2830959450e4e6), including C2 capabilities and required eradication steps.",
+              "Ownership, reputation, and blocking status for 203.0.113.45, 198.51.100.23, and related domains update.vendor-os.example, pdf-editor-free.example, and cdn-sync-update.example.",
+              "Verification whether the 2026-10-05 09:30 SSO and 10:05 CRM sign-ins from 192.0.2.61 were legitimate user activity or attacker sessions.",
+              "Confirmation of what data was contained in the 2.4 MB upload to 203.0.113.45 and whether credentials beyond farah's were exposed."
+            ]
+          },
+          "branch": "replay_succeeded",
+          "batch_records": 10,
+          "decisions": [
+            {
+              "tool": "revoke_sessions",
+              "target": "ACCOUNT::farah",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            }
+          ],
+          "executions": [
+            {
+              "tool": "revoke_sessions",
+              "target": "ACCOUNT::farah",
+              "simulated_at": "2026-10-05T10:45:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "Active sessions for farah revoked in: idp, mail, crm.",
+              "via_replan": false
+            }
+          ]
+        },
+        {
+          "checkpoint": "CP3",
+          "intent": "Eradicate and recover once access is cut; keep containing if the attacker is still active.",
+          "score": 90.0,
+          "passed": true,
+          "components": {
+            "stage": {
+              "points": 15,
+              "max": 15,
+              "detail": "eradication (preferred ['eradication', 'restoration', 'hardening'], acceptable ['preservation', 'containment'])"
+            },
+            "required_actions": {
+              "points": 35.0,
+              "max": 35,
+              "detail": "3/3 satisfied"
+            },
+            "recommended_actions": {
+              "points": 0.0,
+              "max": 10,
+              "detail": "0/1 satisfied"
+            },
+            "evidence_grounding": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "key-evidence quality 1.0/1; cites new batch: True"
+            },
+            "policy": {
+              "points": 10.0,
+              "max": 10,
+              "detail": [
+                {
+                  "id": "POL-01",
+                  "ok": true,
+                  "why": "Re-imaging needs preservation first."
+                },
+                {
+                  "id": "POL-03",
+                  "ok": true,
+                  "why": "Customer records were exported: DPO notification still owed."
+                }
+              ]
+            },
+            "questions": {
+              "points": 15.0,
+              "max": 15,
+              "detail": "1/1 asked"
+            }
+          },
+          "gates": [
+            {
+              "gate": "no_forbidden_actions",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "no_collateral_targets",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "preserve_before_reimage",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "every_action_cites_evidence",
+              "passed": true,
+              "detail": []
+            },
+            {
+              "gate": "asks_required_questions",
+              "passed": true,
+              "detail": []
+            }
+          ],
+          "required": [
+            {
+              "id": "C2",
+              "satisfied_by": "already_done",
+              "why": "Stolen passwords must be invalidated.",
+              "tools": [
+                "reset_password",
+                "disable_account"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            },
+            {
+              "id": "C3",
+              "satisfied_by": "already_done",
+              "why": "Forensic images are needed before re-imaging (POL-01).",
+              "tools": [
+                "preserve_evidence"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            },
+            {
+              "id": "C4",
+              "satisfied_by": "plan",
+              "why": "Remove the infostealer and its Run-key persistence after preservation.",
+              "tools": [
+                "reimage_host"
+              ],
+              "targets": [
+                "HOST::SALES-LT-07"
+              ]
+            }
+          ],
+          "recommended": [
+            {
+              "id": "C6",
+              "satisfied_by": null,
+              "why": "Awareness: unapproved software installs led to this incident.",
+              "tools": [
+                "warn_staff"
+              ],
+              "targets": [
+                "ACCOUNT::farah"
+              ]
+            }
+          ],
+          "out_of_reach": [],
+          "questions": [
+            {
+              "id": "Q6",
+              "matched": true,
+              "gate": false,
+              "why": "Were other devices infected?"
+            }
+          ],
+          "plan": {
+            "stage": "eradication",
+            "actions": [
+              {
+                "tool": "reimage_host",
+                "target": "HOST::SALES-LT-07",
+                "records": [
+                  "SC1-B1-07",
+                  "SC1-B1-08",
+                  "SC1-B1-09",
+                  "SC1-B1-13",
+                  "SC1-B1-12",
+                  "SC1-B3-10"
+                ],
+                "policy_refs": [
+                  "POL-01",
+                  "POL-06"
+                ]
+              }
+            ],
+            "missing_evidence": [
+              "Full forensic review of the SALES-LT-07 memory/disk images to enumerate every credential source touched (other browsers, saved credentials, SSO/session cookies) and any additional persistence beyond HKCU\\...\\Run\\SyncUpdate",
+              "Independent verification that the 1,200-record CRM export was not further transferred or sold, and the complete data-exposure inventory needed for breach notification",
+              "Enterprise-wide hunting results for other hosts/accounts that queried or contacted pdf-editor-free.example (203.0.113.10), cdn-sync-update.example (203.0.113.45) or executed the listed SHA256s",
+              "Confirmation that the CRM telco vendor-maintenance window (08:00-10:30) did not mask any other unauthorized access to the CRM admin/session APIs",
+              "Confirmation that only CRM used the pre-revocation session and that no other SaaS sessions tied to farah (idp, mail, CRM) remained valid after 10:45",
+              "Determination of whether password reset was completed without attacker observation and whether MFA devices/tokens for farah need re-enrollment"
+            ]
+          },
+          "branch": "contained",
+          "batch_records": 5,
+          "decisions": [
+            {
+              "tool": "reimage_host",
+              "target": "HOST::SALES-LT-07",
+              "decision": "approve",
+              "analyst": "soc.analyst",
+              "reason": "Approved."
+            }
+          ],
+          "executions": [
+            {
+              "tool": "reimage_host",
+              "target": "HOST::SALES-LT-07",
+              "simulated_at": "2026-10-05T12:10:00+08:00",
+              "execution_status": "completed",
+              "validation_status": "effective",
+              "action_status": "verified",
+              "observed_effect": "SALES-LT-07 rebuilt from the gold image; malicious files and persistence removed. Stolen passwords and session tokens are not affected by a re-image.",
+              "via_replan": false
+            }
+          ]
+        }
+      ],
+      "system_checks": [
+        {
+          "gate": "no_execution_without_approval",
+          "passed": true,
+          "detail": []
+        },
+        {
+          "gate": "report_not_final_without_sign_off",
+          "passed": true,
+          "detail": "draft"
+        },
+        {
+          "gate": "report_results_come_from_simulator",
+          "passed": true,
+          "detail": "6 executed actions"
+        },
+        {
+          "gate": "report_cites_only_stored_evidence",
+          "passed": true,
+          "detail": []
+        }
+      ],
+      "report": {
+        "status": "draft",
+        "actions": 14,
+        "timeline_rows": 44,
+        "findings": 0,
+        "attack_techniques": [],
+        "not_produced_yet": [
+          "findings with evidence ids and confidence",
+          "classification, severity and confidence",
+          "ATT&CK technique mapping"
+        ]
+      },
+      "mean_score": 95.0,
+      "passed": true
+    },
+    {
       "scenario_id": "sc03_false_alarm",
       "title": "False alarm: planned backup migration from FS-01",
       "kind": "main",
@@ -13,13 +721,13 @@
         {
           "checkpoint": "CP1",
           "intent": "Ambiguous alert: ask for change verification instead of disrupting a critical server.",
-          "score": 85.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "components": {
             "stage": {
-              "points": 0,
+              "points": 15,
               "max": 15,
-              "detail": "containment (preferred ['assessment'], acceptable ['preservation'])"
+              "detail": "assessment (preferred ['assessment'], acceptable ['preservation'])"
             },
             "required_actions": {
               "points": 35.0,
@@ -32,9 +740,9 @@
               "detail": "0/0 satisfied"
             },
             "evidence_grounding": {
-              "points": 15.0,
+              "points": 15,
               "max": 15,
-              "detail": "key-evidence quality 6.0/6"
+              "detail": "no actions proposed"
             },
             "policy": {
               "points": 10.0,
@@ -50,19 +758,13 @@
           "gates": [
             {
               "gate": "no_forbidden_actions",
-              "passed": false,
-              "detail": [
-                "D1: isolate_host on HOST::FS-01 (FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it.)",
-                "D2: revoke_sessions on ACCOUNT::svc_backup (Breaks the backup job or locks out the IT admin on unverified suspicion.)",
-                "D2: reset_password on ACCOUNT::svc_backup (Breaks the backup job or locks out the IT admin on unverified suspicion.)"
-              ]
+              "passed": true,
+              "detail": []
             },
             {
               "gate": "no_collateral_targets",
-              "passed": false,
-              "detail": [
-                "preserve_evidence on HOST::MKT-LT-11"
-              ]
+              "passed": true,
+              "detail": []
             },
             {
               "gate": "preserve_before_reimage",
@@ -98,169 +800,22 @@
             }
           ],
           "plan": {
-            "stage": "containment",
-            "actions": [
-              {
-                "tool": "preserve_evidence",
-                "target": "HOST::FS-01",
-                "records": [
-                  "SC3-B1-01",
-                  "SC3-B1-02",
-                  "SC3-B1-03",
-                  "SC3-B1-04",
-                  "SC3-B1-05",
-                  "SC3-B1-06",
-                  "SC3-B1-07",
-                  "SC3-B1-08",
-                  "SC3-B1-09",
-                  "SC3-B1-10",
-                  "SC3-B1-13"
-                ],
-                "policy_refs": []
-              },
-              {
-                "tool": "isolate_host",
-                "target": "HOST::FS-01",
-                "records": [
-                  "SC3-B1-08",
-                  "SC3-B1-10",
-                  "SC3-B1-06",
-                  "SC3-B1-07",
-                  "SC3-B1-05",
-                  "SC3-B1-04",
-                  "SC3-B1-03",
-                  "SC3-B1-02"
-                ],
-                "policy_refs": [
-                  "POL-17"
-                ]
-              },
-              {
-                "tool": "revoke_sessions",
-                "target": "ACCOUNT::svc_backup",
-                "records": [
-                  "SC3-B1-02",
-                  "SC3-B1-03",
-                  "SC3-B1-08",
-                  "SC3-B1-10"
-                ],
-                "policy_refs": [
-                  "POL-07"
-                ]
-              },
-              {
-                "tool": "reset_password",
-                "target": "ACCOUNT::svc_backup",
-                "records": [
-                  "SC3-B1-02",
-                  "SC3-B1-03",
-                  "SC3-B1-08",
-                  "SC3-B1-10"
-                ],
-                "policy_refs": [
-                  "POL-07"
-                ]
-              },
-              {
-                "tool": "preserve_evidence",
-                "target": "HOST::ADM-WS-02",
-                "records": [
-                  "SC3-B1-12",
-                  "SC3-B1-01",
-                  "SC3-B1-13"
-                ],
-                "policy_refs": []
-              },
-              {
-                "tool": "preserve_evidence",
-                "target": "HOST::MKT-LT-11",
-                "records": [
-                  "SC3-B1-11",
-                  "SC3-B1-13"
-                ],
-                "policy_refs": []
-              }
-            ],
+            "stage": "assessment",
+            "actions": [],
             "missing_evidence": [
-              "Confirmation from IT/backup owners whether the BackupMigration-Offsite scheduled task and vaultsync.exe --job fs01-nightly transfer to ingest.offsite-vault.example were authorized or planned",
-              "Ownership, reputation, and approval status of 203.0.113.80 and ingest.offsite-vault.example as a legitimate offsite backup destination",
-              "Full endpoint telemetry for FS-01, including scheduled task creator/author, process command line, binary hash/path, parent process context, and any subsequent activity",
-              "Authentication and session details for svc_backup before, during, and after the transfer, including source IPs, logon types, and account change history",
-              "DLP or data-classification evidence showing whether the Finance and HR files read (18,240 + 9,620 files) included sensitive or regulated data",
-              "Firewall, proxy, and DNS logs for 203.0.113.80, including full flow records, any additional destinations, and whether the transfer or related connections remain active",
-              "Context for the post-transfer IdP sign-ins by aina and ravi.adm from 192.0.2.61 and 192.0.2.70 to determine whether they are related to the exfiltration or benign",
-              "Evidence linking or ruling out MKT-LT-11, ADM-WS-02, and related accounts from the FS-01 activity",
-              "Retention and integrity status of the affected Finance and HR shares, including whether data was copied, modified, or deleted"
+              "Approved change or ticket covering the BackupMigration-Offsite scheduled task and the 180 GB transfer to 203.0.113.80.",
+              "Ownership and approval status of ingest.offsite-vault.example and 203.0.113.80; whether it is the organization's approved VaultSync offsite provider.",
+              "Identity/actor that created the scheduled task and full command line for vaultsync.exe --job fs01-nightly.",
+              "Confirmation from IT backup project owner that reading FS-01 Finance and HR shares and sending ~180 GB is planned.",
+              "Data classification/sensitivity of the 18,240 Finance and 9,620 HR files read.",
+              "Authentication details for svc_backup, including source host and whether the batch logon and task execution were authorized.",
+              "Whether the ravi.adm and aina SSO sign-ins are expected and unrelated to the transfer."
             ]
           },
           "branch": "default",
           "batch_records": 13,
-          "decisions": [
-            {
-              "tool": "preserve_evidence",
-              "target": "HOST::FS-01",
-              "decision": "approve",
-              "analyst": "soc.analyst",
-              "reason": "Approved."
-            },
-            {
-              "tool": "isolate_host",
-              "target": "HOST::FS-01",
-              "decision": "reject",
-              "analyst": "soc.analyst",
-              "reason": "Rejected: FS-01 serves about 120 staff and the evidence points to a scheduled, signed backup job; verify the change before disrupting it."
-            },
-            {
-              "tool": "revoke_sessions",
-              "target": "ACCOUNT::svc_backup",
-              "decision": "reject",
-              "analyst": "soc.analyst",
-              "reason": "Rejected: Breaks the backup job or locks out the IT admin on unverified suspicion."
-            },
-            {
-              "tool": "reset_password",
-              "target": "ACCOUNT::svc_backup",
-              "decision": "reject",
-              "analyst": "soc.analyst",
-              "reason": "Rejected: Breaks the backup job or locks out the IT admin on unverified suspicion."
-            },
-            {
-              "tool": "preserve_evidence",
-              "target": "HOST::ADM-WS-02",
-              "decision": "approve",
-              "analyst": "soc.analyst",
-              "reason": "Approved."
-            },
-            {
-              "tool": "preserve_evidence",
-              "target": "HOST::MKT-LT-11",
-              "decision": "reject",
-              "analyst": "soc.analyst",
-              "reason": "Rejected: target is not involved in this incident."
-            }
-          ],
-          "executions": [
-            {
-              "tool": "preserve_evidence",
-              "target": "HOST::FS-01",
-              "simulated_at": "2026-10-07T08:35:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "Memory image (sha256 463e87279a898b15...) and disk image (sha256 cd8cab5563a24a38...) of FS-01 captured; chain of custody recorded.",
-              "via_replan": false
-            },
-            {
-              "tool": "preserve_evidence",
-              "target": "HOST::ADM-WS-02",
-              "simulated_at": "2026-10-07T08:40:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "Memory image (sha256 3c123461e41fc05a...) and disk image (sha256 8ad731c5d76fa102...) of ADM-WS-02 captured; chain of custody recorded.",
-              "via_replan": true
-            }
-          ]
+          "decisions": [],
+          "executions": []
         },
         {
           "checkpoint": "CP2",
@@ -337,23 +892,20 @@
                 "tool": "preserve_evidence",
                 "target": "HOST::FS-01",
                 "records": [
+                  "SC3-B2-01",
+                  "SC3-B2-02",
+                  "SC3-B2-03",
                   "SC3-B1-01",
                   "SC3-B1-03",
-                  "SC3-B2-01",
-                  "SC3-B2-03"
+                  "SC3-B1-10"
                 ],
                 "policy_refs": [
-                  "POL-16"
+                  "POL-16",
+                  "POL-15"
                 ]
               }
             ],
-            "missing_evidence": [
-              "Verification of the two SSO sign-in events for aina and ravi.adm from source IPs 192.0.2.61 and 192.0.2.70 (unusual, documentation-range IPs).",
-              "Confirmation that no data beyond the approved Finance and HR shares was read or transferred by vaultsync.exe.",
-              "Validation that the scheduled task and vaultsync.exe binary were not altered after creation (e.g., file hash, signature verification).",
-              "Independent verification that 203.0.113.80 is VaultSync's legitimate ingest endpoint (beyond vendor statement).",
-              "Authenticity confirmation of change record CHG-2026-118 through ITSM audit logs."
-            ]
+            "missing_evidence": []
           },
           "branch": "default",
           "batch_records": 3,
@@ -394,7 +946,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "3 executed actions"
+          "detail": "1 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -404,8 +956,8 @@
       ],
       "report": {
         "status": "draft",
-        "actions": 8,
-        "timeline_rows": 23,
+        "actions": 1,
+        "timeline_rows": 17,
         "findings": 0,
         "attack_techniques": [],
         "not_produced_yet": [
@@ -414,8 +966,8 @@
           "ATT&CK technique mapping"
         ]
       },
-      "mean_score": 92.5,
-      "passed": false
+      "mean_score": 100.0,
+      "passed": true
     }
   ]
 }

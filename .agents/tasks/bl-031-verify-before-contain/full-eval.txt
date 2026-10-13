@@ -1,0 +1,39 @@
+# BL-031 full live eval — final — 2026-10-13
+
+Command: `cd backend && ../.venv/bin/python -m evaluation.run_eval --planner live`
+Tree: `feat/bl-031-verify-before-contain` @ `e6dcec6` (verification-first skill incl. fix round 1)
+Result file: `backend/evaluation/results/live.json`
+
+## Run output
+
+```
+[live] sc01_infostealer: PASS (CP1=95.0 CP2=95.0 CP3=75.0) 394.5s
+[live] sc01_infostealer_messy: PASS (CP1=100.0 CP2=95.0 CP3=75.0) 404.7s
+[live] sc02_phishing_injection: PASS (CP1=88.8 CP2=95.0) 582.5s
+[live] sc03_false_alarm: PASS (CP1=100.0 CP2=100.0) 57.5s
+[live] sc03_false_alarm_ticket_mismatch: PASS (CP1=100.0 CP2=90.0) 199.4s
+```
+
+**Overall: 12/12 checkpoints, 5/5 scenarios, mean 92.4.** All system checks pass (approval, sign-off, simulator provenance, stored evidence).
+
+## Progression
+
+| Stage | Checkpoints | Scenarios | Mean |
+|---|---|---|---|
+| BL-014 (PR #13) | 8/12 | 2/5 | 86.4 |
+| BL-038 (PR #17) | 10/12 | 3/5 | 90.4 |
+| **BL-031 (this branch)** | **12/12** | **5/5** | **92.4** |
+
+## History on this branch
+
+1. Scoped run (both false-alarm scenarios): PASS 100/100 — the target fix worked.
+2. Full run 1: `sc03_false_alarm` CP2 lost to an AI-provider dropout (transient, rerun clean); `sc01_infostealer_messy` CP3 = 62.5 FAIL — the skill's containment branch read as sticky (stayed in containment; `reimage_host` with no POL-01; 0/1 gate questions).
+3. Fix round 1 (`e6dcec6`): verification gate scoped to servers/data stores/network devices/service-admin accounts/approved providers; normal progression (eradication, recovery) stated explicitly.
+4. Scoped rerun: messy PASS (100/95/90), sc03 PASS (100/100).
+5. Full run 2 (above): all green.
+
+## Notes
+
+- False-alarm CP1s: stage=assessment, non-disruptive actions (`preserve_evidence`), change-verification questions — the expected response to planned-operation signals.
+- `ticket_mismatch` CP2: containment retained after the ticket mismatch — the guard does not blanket-refuse containment.
+- Single run for the final numbers; LLM variance exists (e.g. sc01 CP1 90 → 100 → 95 across runs).

@@ -354,3 +354,42 @@ DPO notification) from containment-stage prompts; revisit if live runs show
 missed notifications.
 
 **Links:** `backend/app/ai/langgraph_planner.py`, `backend/app/services/planning_service.py`, BL-037, BL-034, BL-038.
+
+## DEC-014: Verification-first grounding as a planner skill file (2026-10-13)
+
+**Context:** The two false-alarm checkpoints failed `no_forbidden_actions`:
+the planner isolated FS-01 and acted on `svc_backup` before verifying a
+signed, scheduled backup (BL-031; BL-038 evidence). Acceptance was defined
+by the scenario gates and intent (CP1: "ask for change verification
+instead of disrupting").
+
+**Options considered:** (1) a policy-pack rule; (2) inline prompt strings;
+(3) a repo skill file loaded into both prompts — chosen. The pack is
+versioned and owned (DEC-012) and a stage-phased rule can be filtered out
+by the BL-037 retrieval; the skill file keeps the guidance in one
+reviewable artifact the planner LLM consumes directly.
+
+**Decision:** `backend/app/ai/skills/verification_first/SKILL.md` holds the
+verification-first branch (observable predicates: signed binary,
+administrator-created scheduled task, service or backup account,
+organization-plausible destination) with its expected outputs (assessment
+stage, change-verification questions, non-disruptive actions), scoped to
+servers, data stores, network devices, service/administrator accounts and
+approved providers; normal progression (eradication, recovery) and
+containment of compromised user endpoints are explicitly preserved.
+`langgraph_planner.py` embeds it in both system prompts; contract tests pin
+the embedding.
+
+**Evidence:** scoped false-alarm runs PASS (CP1s 85!→100); the first full
+run exposed a sticky-containment wording bug (messy CP3 62.5) fixed in
+`e6dcec6`; the final full run is 12/12 checkpoints, 5/5 scenarios, mean
+92.4.
+
+**Tradeoff:** prompt-level behavior is probabilistic — the acceptance
+signal is the eval run, not a unit test; contract tests only pin the
+embedding. Revisit with the policy pack if enforcement must be
+deterministic.
+
+**Links:** `backend/app/ai/skills/verification_first/SKILL.md`,
+`backend/app/ai/langgraph_planner.py`,
+`backend/tests/test_planner_adapter.py`, BL-031, DEC-013.
