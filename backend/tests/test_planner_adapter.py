@@ -531,6 +531,31 @@ def test_analysis_is_kept_when_evidence_is_insufficient():
     assert plan.analysis.incident_type == "infostealer_session_hijack"
 
 
+def test_wrong_target_type_actions_are_dropped():
+    llm = ScriptedLLM(
+        [
+            _analysis(),
+            _proposal(actions=[_action(tool_name="revoke_sessions", target_id="HOST::WS-01")]),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert plan.actions == []
+
+
+def test_correct_target_type_actions_are_kept():
+    llm = ScriptedLLM(
+        [
+            _analysis(),
+            _proposal(actions=[_action(tool_name="revoke_sessions", target_id="ACCOUNT::farah")]),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert [a.tool_name for a in plan.actions] == ["revoke_sessions"]
+    assert plan.actions[0].target_id == "ACCOUNT::farah"
+
+
 def test_non_finite_confidence_is_rejected():
     llm = ScriptedLLM([_analysis(confidence=float("nan")), _proposal()])
     plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)

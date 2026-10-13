@@ -13,8 +13,9 @@ The LLM is an OpenAI-compatible chat-completions call (OpenCode Go gateway,
 model ``deepseek-v4.1-flash``). The call is injectable so tests run without a
 network or an API key. Safety rules are enforced locally, not trusted to the
 model: the stage must be a valid ``Stage``, action targets must exist in the
-incident state, evidence ids must exist, tool names must be in the approved
-allowlist, and ``based_on_state_version`` always comes from the state.
+incident state and match the tool's target type, evidence ids must exist,
+tool names must be in the approved allowlist, and ``based_on_state_version``
+always comes from the state.
 """
 from __future__ import annotations
 
@@ -31,6 +32,7 @@ from app.ai.planner_adapter import FakePlannerAdapter, PlannerAdapter
 from app.config import get_settings
 from app.schemas.incident_state import IncidentState
 from app.schemas.plan import PlanAnalysis, PlanProposal, ProposedAction, ProposedFinding, Stage
+from app.simulator.catalog import CATALOG
 
 LLMCall = Callable[[list[dict[str, Any]], str], str]
 
@@ -322,14 +324,17 @@ def _first_str(raw: dict[str, Any], *keys: str) -> str:
 
 def _validated_action(
     raw: dict[str, Any],
-    entity_ids: set[str],
+    entity_types: dict[str, str],
     evidence_ids: set[str],
     allowlist: set[str],
     allowed_refs: set[str],
 ) -> Optional[ProposedAction]:
     tool = _first_str(raw, "tool_name", "tool", "action", "action_type")
     target = _first_str(raw, "target_id", "target")
-    if tool not in allowlist or target not in entity_ids:
+    if tool not in allowlist or target not in entity_types:
+        return None
+    expected_type = CATALOG.get(tool, {}).get("target_type")
+    if expected_type and entity_types[target] != expected_type:
         return None
     cited = [e for e in _str_list(raw.get("evidence_ids")) if e in evidence_ids]
     return ProposedAction(
@@ -426,7 +431,7 @@ class LangGraphPlannerAdapter:
         guidance = approved_guidance or {}
         final = self._graph.invoke({"incident": incident, "guidance": guidance})
 
-        entity_ids = {entity.id for entity in incident_state.entities}
+        entity_types = {entity.id: entity.type.value for entity in incident_state.entities}
         evidence_ids = _collect_evidence_ids(incident)
         analysis_raw = final.get("analysis") or {}
         analysis = PlanAnalysis(
@@ -442,7 +447,7 @@ class LangGraphPlannerAdapter:
         actions: list[ProposedAction] = []
         for raw_action in final.get("actions", []):
             action = _validated_action(
-                raw_action, entity_ids, evidence_ids, allowlist, allowed_refs
+                raw_action, entity_types, evidence_ids, allowlist, allowed_refs
             )
             if action is not None:
                 actions.append(action)
