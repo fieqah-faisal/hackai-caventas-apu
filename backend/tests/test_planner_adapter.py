@@ -209,9 +209,25 @@ def test_invalid_analysis_stage_falls_back_to_assessment():
 
 
 def test_malformed_llm_output_raises_planner_error():
-    llm = ScriptedLLM(["this is not json at all"])
+    llm = ScriptedLLM(["this is not json at all", "still not json"])
     with pytest.raises(PlannerError):
         LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+
+def test_malformed_analysis_json_is_retried_once():
+    llm = ScriptedLLM(["not json", _analysis(), _proposal()])
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert len(llm.calls) == 3
+    assert plan.actions and plan.actions[0].tool_name == "isolate_host"
+
+
+def test_malformed_proposal_json_is_retried_once():
+    llm = ScriptedLLM([_analysis(), "not json", _proposal()])
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert len(llm.calls) == 3
+    assert plan.actions and plan.actions[0].tool_name == "isolate_host"
 
 
 def _settings(api_key: str | None = "sk-test", **overrides) -> SimpleNamespace:

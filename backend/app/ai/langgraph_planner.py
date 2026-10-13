@@ -348,11 +348,16 @@ class LangGraphPlannerAdapter:
     def _analyze(self, state: PlannerState) -> PlannerState:
         incident = state["incident"]
         raw = self._llm_call(_analysis_messages(incident), incident["case_id"])
-        analysis = _extract_json(raw)
+        try:
+            analysis = _extract_json(raw)
+        except PlannerError:
+            # Models occasionally emit malformed JSON; one retry covers it.
+            raw = self._llm_call(_analysis_messages(incident), incident["case_id"])
+            analysis = _extract_json(raw)
         return {
             "analysis": analysis,
             "sufficient": bool(analysis.get("sufficient", False)),
-            "stage": _coerce_stage(analysis.get("stage", "")).value,
+            "stage": str(analysis.get("stage", Stage.ASSESSMENT.value)),
             "missing_evidence": _str_list(analysis.get("missing_evidence")),
         }
 
@@ -360,7 +365,8 @@ class LangGraphPlannerAdapter:
         return "retrieve" if state.get("sufficient") else "end"
 
     def _retrieve(self, state: PlannerState) -> PlannerState:
-        guidance = select_guidance(state.get("guidance", {}), state.get("stage", ""))
+        stage = _coerce_stage(state.get("stage", "")).value
+        guidance = select_guidance(state.get("guidance", {}), stage)
         return {
             "guidance": guidance,
             "selected_rule_ids": sorted(
@@ -371,17 +377,20 @@ class LangGraphPlannerAdapter:
     def _propose(self, state: PlannerState) -> PlannerState:
         incident = state["incident"]
         entity_ids = {str(e.get("id")) for e in incident.get("entities", [])}
-        raw = self._llm_call(
-            _proposal_messages(
-                incident,
-                state.get("analysis", {}),
-                state.get("guidance", {}),
-                entity_ids,
-                _collect_evidence_ids(incident),
-            ),
-            incident["case_id"],
+        messages = _proposal_messages(
+            incident,
+            state.get("analysis", {}),
+            state.get("guidance", {}),
+            entity_ids,
+            _collect_evidence_ids(incident),
         )
-        proposal = _extract_json(raw)
+        raw = self._llm_call(messages, incident["case_id"])
+        try:
+            proposal = _extract_json(raw)
+        except PlannerError:
+            # Models occasionally emit malformed JSON; one retry covers it.
+            raw = self._llm_call(messages, incident["case_id"])
+            proposal = _extract_json(raw)
         actions = proposal.get("actions") or []
         if not isinstance(actions, list):
             raise PlannerError("planner 'actions' must be a list")
