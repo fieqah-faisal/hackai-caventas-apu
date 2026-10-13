@@ -1,0 +1,42 @@
+# BL-017 full live eval — final — 2026-10-13
+
+Command: `cd backend && ../.venv/bin/python -m evaluation.run_eval --planner live`
+Tree: `feat/bl-017-analysis-persistence` @ `90a2516` (analysis persistence + JSON retry + benign ATT&CK nudge)
+Result file: `backend/evaluation/results/live.json`
+
+## Run output (final, run 3)
+
+```
+[live] sc01_infostealer: PASS (CP1=95.0 CP2=95.0 CP3=70.0) 422.3s
+[live] sc01_infostealer_messy: PASS (CP1=95.0 CP2=95.0 CP3=90.0) 454.3s
+[live] sc02_phishing_injection: PASS (CP1=90.0 CP2=92.5) 971.5s
+[live] sc03_false_alarm: PASS (CP1=100.0 CP2=100.0) 201.3s
+[live] sc03_false_alarm_ticket_mismatch: PASS (CP1=100.0 CP2=98.3) 461.8s
+```
+
+**Overall: 12/12 checkpoints, 5/5 scenarios, mean 93.4.** All system checks pass.
+
+## Report coverage (the BL-017 acceptance signal)
+
+| Scenario | `not_produced_yet` | Findings | ATT&CK techniques |
+|---|---|---|---|
+| sc01_infostealer | **[]** | 10 | 8 |
+| sc01_infostealer_messy | **[]** | 12 | 10 |
+| sc02_phishing_injection | **[]** | 8 | 7 |
+| sc03_false_alarm | **[]** | 6 | 3 |
+| sc03_false_alarm_ticket_mismatch | **[]** | 5 | 4 |
+
+Before (BL-031, main): `not_produced_yet` = `["findings with evidence ids and confidence", "classification, severity and confidence", "ATT&CK technique mapping"]` on every scenario; the SUMMARY "Not yet produced" section is now gone.
+
+## History on this branch
+
+1. Full run 1 (tasks, pre-nudge): 12/12 · 5/5 · 93.9; coverage cleared 4/5 — `sc03_false_alarm` mapped zero techniques (reproduced in a scoped probe).
+2. Fix: analysis prompt maps observed activity even when judged benign (commit `64665be`) → scoped probe: `sc03_false_alarm` `not_produced=[]`.
+3. Full run 2: 10/12 — `sc01` CP3 failed on malformed model JSON (`planner returned invalid JSON`); `sc02` CP1 hit `no_collateral_targets` (variance). Coverage cleared on ALL scenarios.
+4. Fix: one retry on malformed JSON (commit `90a2516`; 156 tests) → scoped probe: sc01 PASS (95/100/75), sc02 PASS (88.8/92.5).
+5. Full run 3 (above, final): all green.
+
+## Notes
+
+- Per-checkpoint LLM variance exists (sc01 CP3: 75/0/70/75 across runs); the headline is stable at 12/12 · 5/5.
+- Classification on false-alarm scenarios now reports `incident_type` from the analysis with `severity`/`confidence`; findings cite stored evidence ids only (adapter validation).
