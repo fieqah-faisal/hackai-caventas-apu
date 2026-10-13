@@ -86,6 +86,8 @@ def run_planning(case_id: str) -> dict[str, Any]:
         "action_ids": [action["action_id"] for action in actions],
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    if proposal.analysis is not None:
+        plan_doc["analysis"] = proposal.analysis.model_dump(mode="json")
     repositories.add_plan(case_id, plan_id, plan_doc)
     audit_service.record(
         case_id,

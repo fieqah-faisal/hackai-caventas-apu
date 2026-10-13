@@ -11,8 +11,9 @@
 > npm-audit item was renumbered BL-024 → BL-030 on that merge because
 > main's BL-024 is the approval-invalidation item.
 > `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039;
-> `feat/bl-031-verify-before-contain` adds DEC-014.
-> Next free IDs: **BL-040** and **DEC-015**.
+> `feat/bl-031-verify-before-contain` adds DEC-014;
+> `feat/bl-017-analysis-persistence` adds DEC-015.
+> Next free IDs: **BL-040** and **DEC-016**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
@@ -21,7 +22,9 @@
 > guidance allowlist, drift pinned by a test); BL-010 payload contract is
 > consumed by the frontend; BL-011 superseded by merged PRs #8 and #11;
 > BL-034 folded into BL-037; both done (retrieval branch). BL-031 done
-> (verification-first skill, DEC-014; live 12/12 · 5/5 · 92.4).
+> (verification-first skill, DEC-014; live 12/12 · 5/5 · 92.4). BL-017 done
+> (analysis persisted in plan docs; report findings/ATT&CK filled, DEC-015;
+> coverage cleared, live 12/12 · 5/5 · 93.4).
 
 ## Open Items
 
@@ -57,9 +60,6 @@
   Raaj + Syafieqah + Aidan
 - BL-016 — Extract DOMAIN/IP entities into the incident state so
   `block_domain` can be proposed. — open / Raaj
-- BL-017 — Persist planner analysis (type, severity, confidence) and fill
-  report findings + ATT&CK (ground truth ready in `scenarios/`). — open /
-  Airil + Raaj
 - BL-018 — Approver roles so POL-02 (IT manager) is enforced. — open /
   Raaj + Syafieqah
 - BL-019 — Refuse execution of actions that cite no evidence. — open / Raaj

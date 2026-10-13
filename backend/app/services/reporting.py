@@ -8,6 +8,7 @@ explicitly "unknown".
 """
 from __future__ import annotations
 
+import math
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,7 +20,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
-from app.ai.langgraph_planner import load_guidance
+from app.ai.langgraph_planner import ATTACK_TECHNIQUE_ID, load_guidance
 from app.config import get_settings
 from app.database import repositories
 from app.services import audit_service, state_manager
@@ -47,6 +48,40 @@ def _created_at_key(doc: dict[str, Any]) -> datetime:
     except ValueError:
         return datetime.min.replace(tzinfo=timezone.utc)
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _float_or_zero(value: Any) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(number):
+        return 0.0
+    return min(max(number, 0.0), 1.0)
+
+
+def _finding_rows(analysis: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    raw_findings = analysis.get("findings")
+    findings = raw_findings if isinstance(raw_findings, list) else []
+    for index, finding in enumerate(findings, start=1):
+        if not isinstance(finding, dict):
+            continue
+        raw_evidence = finding.get("evidence_ids")
+        evidence = (
+            [e for e in raw_evidence if isinstance(e, str)]
+            if isinstance(raw_evidence, list)
+            else []
+        )
+        rows.append(
+            {
+                "finding_id": f"FND-{index:02d}",
+                "summary": str(finding.get("summary", "")),
+                "evidence_ids": evidence,
+                "confidence": _float_or_zero(finding.get("confidence")),
+            }
+        )
+    return rows
 
 
 def _latest_plan(case_id: str) -> dict[str, Any] | None:
@@ -125,14 +160,24 @@ def _render_pdf(report: dict[str, Any]) -> Path:
     story.append(Spacer(1, 0.4 * cm))
 
     classification = report["classification"]
+    techniques = classification.get("attack_techniques") or []
     section(
         "Classification",
         [
             f"Phase: {classification['current_phase']} | Status: {classification['status']} "
-            f"| Severity: {classification['severity']}"
+            f"| Severity: {classification['severity']}",
+            f"Type: {classification['incident_type']} | "
+            f"Confidence: {classification['confidence']}"
+            + (f" | ATT&CK: {', '.join(techniques)}" if techniques else ""),
         ],
     )
     section("Executive summary", [report["executive_summary"]["text"]])
+    finding_lines = [
+        f"{finding['finding_id']}: {finding['summary']}"
+        + (f" (evidence: {', '.join(finding['evidence_ids'])})" if finding["evidence_ids"] else "")
+        for finding in report["findings"]
+    ]
+    section("Findings", finding_lines or ["None recorded"])
     affected = [f"{a['asset_id']} ({a['type']})" for a in report["affected"]]
     section("Affected entities", affected or ["None recorded"])
     timeline = [f"[{t['side']}] {t['event']}" for t in report["timeline"][:40]]
@@ -157,9 +202,23 @@ def generate_report(case_id: str) -> dict[str, Any]:
 
     state = state_manager.get_current_state(case_id)
     evidence = repositories.list_evidence(case_id)
+    stored_evidence_ids = {item.get("evidence_id") for item in evidence}
     plan = _latest_plan(case_id)
     phase = (plan or {}).get("stage", "assessment")
     gaps = list((plan or {}).get("missing_evidence", []))
+    analysis = (plan or {}).get("analysis")
+    if not isinstance(analysis, dict):
+        analysis = {}
+    incident_type = analysis.get("incident_type")
+    incident_type = incident_type if isinstance(incident_type, str) and incident_type else "other"
+    severity = analysis.get("severity")
+    severity = severity if isinstance(severity, str) and severity else "unknown"
+    raw_techniques = analysis.get("attack_techniques")
+    techniques = (
+        [t for t in raw_techniques if isinstance(t, str) and ATTACK_TECHNIQUE_ID.match(t)]
+        if isinstance(raw_techniques, list)
+        else []
+    )
     guidance = load_guidance()
     now = datetime.now(timezone.utc).isoformat()
     report_id = f"RPT-{uuid.uuid4().hex[:12]}"
@@ -188,14 +247,18 @@ def generate_report(case_id: str) -> dict[str, Any]:
         "updated_at": now,
         "executive_summary": {"text": summary, "finding_ids": []},
         "classification": {
-            "incident_type": "other",
+            "incident_type": incident_type,
             "status": "suspected",
             "closure_reason": None,
-            "severity": "unknown",
-            "severity_reason": "Not assessed by the prototype.",
-            "confidence": 0.0,
+            "severity": severity,
+            "severity_reason": (
+                "Assessed by the planner from stored evidence."
+                if analysis
+                else "Not assessed by the prototype."
+            ),
+            "confidence": _float_or_zero(analysis.get("confidence")),
             "current_phase": phase,
-            "attack_techniques": [],
+            "attack_techniques": list(techniques),
             "confirmed_by_analyst": False,
         },
         "affected": [
@@ -213,7 +276,11 @@ def generate_report(case_id: str) -> dict[str, Any]:
         ],
         "exposed_credentials": [],
         "timeline": _timeline_rows(state),
-        "findings": [],
+        "findings": [
+            row
+            for row in _finding_rows(analysis)
+            if stored_evidence_ids.intersection(row["evidence_ids"])
+        ],
         "root_cause": {"text": "", "finding_ids": [], "status": "hypothesis"},
         "impact": {
             "operational": "",

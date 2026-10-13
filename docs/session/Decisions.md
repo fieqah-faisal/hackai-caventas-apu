@@ -393,3 +393,35 @@ deterministic.
 **Links:** `backend/app/ai/skills/verification_first/SKILL.md`,
 `backend/app/ai/langgraph_planner.py`,
 `backend/tests/test_planner_adapter.py`, BL-031, DEC-013.
+
+## DEC-015: Planner analysis persisted in plan documents; report fills findings/ATT&CK (2026-10-13)
+
+**Context:** The analyze step produced incident type, severity and confidence
+but they were dropped; the report hard-coded `"other"` / `"unknown"` and
+empty findings/ATT&CK, and the evaluation listed all three as "not yet
+produced" (BL-017).
+
+**Options considered:** (1) write the analysis into new incident-state
+versions; (2) persist it in the plan document — chosen. State versions stay
+evidence-driven (GAS-lite semantics; Raaj's lane untouched), and the report
+already reads the newest plan.
+
+**Decision:** `PlanProposal` gains a validated `PlanAnalysis` (incident
+type, scope, severity, confidence, findings with stored evidence ids, ATT&CK
+technique ids). Validation: findings without a stored evidence id are
+dropped, technique ids must match `^T\d{4}(\.\d{3})?$`, confidence is
+clamped to `[0,1]` and non-finite values rejected. `planning_service` stores
+the block in the plan document; `reporting.py` fills classification,
+findings and ATT&CK from the newest plan (fallbacks unchanged when absent)
+and the PDF gains a Findings section. The adapter retries each LLM call
+once on malformed JSON.
+
+**Tradeoff:** the report shows planner claims, not analyst-confirmed facts
+(`confirmed_by_analyst` stays false); ATT&CK ids are validated for format
+only, not correctness (ground truth exists in `scenarios/` for future
+scoring).
+
+**Links:** `backend/app/schemas/plan.py`,
+`backend/app/ai/langgraph_planner.py`,
+`backend/app/services/planning_service.py`,
+`backend/app/services/reporting.py`, BL-017.
