@@ -47,16 +47,15 @@ Firestore; no credentials needed).
   into execution (DEC-006), synthetic incident package
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
-  unsafe 0/12, fake planner 0/12. BL-038 full live rerun (post-pack +
-  BL-037, 2026-10-13) passed 3/5 scenarios and 10/12 checkpoints (mean
-  90.4): sc01 PASS, messy PASS, sc02 PASS, sc03 FAIL (CP1
-  `no_forbidden_actions`; CP2 100), mismatch FAIL (CP1
-  `no_forbidden_actions`; CP2 100). BL-014's original run (2/5, 8/12) is
-  in PR #13.
+  unsafe 0/12, fake planner 0/12. BL-031 verification-first grounding
+  (2026-10-13) took the full live run to **12/12 checkpoints, 5/5
+  scenarios (mean 92.4)**: the false-alarm checkpoints now answer with
+  assessment + verification, and all safety gates hold. History: BL-038
+  (10/12, 3/5, PR #17), BL-014 (8/12, 2/5, PR #13).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **143 passed** on merged main. Live results merged via
+  Suite **145 passed** on merged main. Live results merged via
   PR #13 (`4145f41`).
 - Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
   structured rules (ten fields) + 8-asset list in
@@ -65,9 +64,10 @@ Firestore; no credentials needed).
   node between analyze and propose, DEC-013); stored `policy_refs` are
   validated against the selected set, and refs outside the pack are dropped.
   Enforcement follow-ups are BL-032/BL-033; asset/fixture alignment BL-035
-  and BL-036. The post-pack rerun (BL-038, 2026-10-13) is done: smoke clean;
-  full live run 10/12 checkpoints (3/5, mean 90.4) — only the two
-  false-alarm CP1s still fail `no_forbidden_actions` (BL-031).
+  and BL-036. Verification-first grounding lives in
+  `backend/app/ai/skills/verification_first/SKILL.md`, embedded in both
+  prompts (BL-031, DEC-014); the full live run is 12/12 with all gates
+  holding.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).

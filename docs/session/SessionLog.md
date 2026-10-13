@@ -3,6 +3,23 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 BL-031 verification-first grounding: live 12/12, 5/5, mean 92.4 (DONE)
+
+- Adds `backend/app/ai/skills/verification_first/SKILL.md` — repo guidance
+  the planner loads via `load_verification_first_skill()` and embeds in both
+  system prompts: planned-operation signals (signed binary, admin scheduled
+  task, service/backup account, plausible destination) → assessment stage +
+  change-verification questions + non-disruptive actions; verification is
+  scoped to servers/service accounts/approved providers so compromised user
+  endpoints and normal progression (eradication, recovery) are unaffected.
+- Live: scoped false-alarm runs PASS (CP1s 85!→100); the first full run
+  exposed a sticky-containment wording bug (messy CP3 62.5) plus one
+  provider dropout; fix round `e6dcec6` scoped the progression language;
+  the final full run is **12/12 checkpoints, 5/5 scenarios, mean 92.4**
+  (was 10/12, 3/5, 90.4). DEC-014.
+- Contract tests (145 backend) pin the skill embedding; artifacts in
+  `.agents/tasks/bl-031-verify-before-contain/`.
+
 ### 2026-10-13 BL-038 full live rerun: 10/12, 3/5, mean 90.4 (DONE)
 
 - Full 5-scenario live run on the BL-038 branch (= main `73d6691` + evidence):

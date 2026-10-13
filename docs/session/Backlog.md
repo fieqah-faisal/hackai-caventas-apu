@@ -10,8 +10,9 @@
 > and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
 > npm-audit item was renumbered BL-024 → BL-030 on that merge because
 > main's BL-024 is the approval-invalidation item.
-> `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039.
-> Next free IDs: **BL-040** and **DEC-014**.
+> `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039;
+> `feat/bl-031-verify-before-contain` adds DEC-014.
+> Next free IDs: **BL-040** and **DEC-015**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
@@ -19,7 +20,8 @@
 > (PR #5); BL-008 resolved by PR #9's simulator catalogue (tool names = the
 > guidance allowlist, drift pinned by a test); BL-010 payload contract is
 > consumed by the frontend; BL-011 superseded by merged PRs #8 and #11;
-> BL-034 folded into BL-037; both done (retrieval branch).
+> BL-034 folded into BL-037; both done (retrieval branch). BL-031 done
+> (verification-first skill, DEC-014; live 12/12 · 5/5 · 92.4).
 
 ## Open Items
 
@@ -63,12 +65,6 @@
 - BL-019 — Refuse execution of actions that cite no evidence. — open / Raaj
 - BL-020 — Mark evidence as untrusted data in planner prompts (sc02
   prompt-injection test). — open / Airil
-- BL-031 — Review live-planner proposals that fail `no_forbidden_actions` or
-  `no_collateral_targets`, and add target-scope / forbidden-action grounding
-  plus regression coverage. Narrowed by the BL-038 full rerun: only the two
-  false-alarm CP1s fail (`no_forbidden_actions` — isolate FS-01 before
-  verifying the signed backup; revoke/reset `svc_backup`); 10/12 checkpoints
-  pass otherwise. — open / Airil + Aidan
 - BL-032 — Policy check: enforce required_approver in approval_service
   and order rules (POL-01) in execution_service; add approver_role to
   the decision payload. — open / Raaj
