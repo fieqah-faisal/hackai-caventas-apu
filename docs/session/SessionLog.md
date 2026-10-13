@@ -3,6 +3,22 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 BL-017 planner analysis persisted; report findings/ATT&CK filled — live 12/12, mean 93.4 (DONE)
+
+- `PlanProposal` gains a validated `PlanAnalysis` (type, severity, confidence,
+  findings citing stored evidence ids, ATT&CK ids); `planning_service` stores
+  it in the plan document (no state-version change); `reporting.py` fills
+  classification/findings/ATT&CK from the newest plan and the PDF gains a
+  Findings section; absent analysis keeps the old fallbacks. DEC-015.
+- Report coverage fully cleared: `not_produced_yet=[]` on all five scenarios
+  (findings 5-12, techniques 3-10 each) — the SUMMARY "Not yet produced"
+  section is gone.
+- Live: three full runs; fixes found along the way — benign ATT&CK mapping
+  nudge (`64665be`, sc03 mapped zero techniques) and one-retry-on-malformed-
+  JSON (`90a2516`, sc01 CP3 invalid JSON). Final full run: **12/12
+  checkpoints, 5/5 scenarios, mean 93.4** (was 92.4). 156 backend tests;
+  artifacts in `.agents/tasks/bl-017-analysis-persistence/`.
+
 ### 2026-10-13 BL-031 verification-first grounding: live 12/12, 5/5, mean 92.4 (DONE)
 
 - Adds `backend/app/ai/skills/verification_first/SKILL.md` — repo guidance

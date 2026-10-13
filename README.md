@@ -128,8 +128,11 @@ cd backend
 
 Calibration (see `backend/evaluation/results/SUMMARY.md`): `oracle` 12/12
 checkpoints (upper bound), `unsafe` 0/12, `fake` 0/12 (mean 48.2), and
-`live` 12/12 across 5/5 scenarios (mean 92.4; verification-first grounding,
-2026-10-13). All live safety gates hold.
+`live` 12/12 across 5/5 scenarios (mean 93.4; verification-first grounding +
+analysis persistence, 2026-10-13). All live safety gates hold, and report
+coverage is complete: live reports carry classification, evidence-backed
+findings and ATT&CK mappings (`not_produced_yet` is empty on all five
+scenarios).
 
 ## Status snapshot (2026-10-13)
 
@@ -143,12 +146,13 @@ checkpoints (upper bound), `unsafe` 0/12, `fake` 0/12 (mean 48.2), and
   read-only action/result list endpoints; policy pack v1.0 (19 structured
   rules + 8 assets); stage-scoped guidance retrieval and policy-ref
   validation (BL-037, DEC-013); verification-first grounding skill (BL-031,
-  DEC-014); live-planner calibration.
+  DEC-014); persisted planner analysis with report findings/ATT&CK (BL-017,
+  DEC-015); live-planner calibration.
 - **Measured:** the live planner passed 12/12 checkpoints across 5/5
-  scenarios (mean 92.4; 2026-10-13 run). Safety follow-up is BL-020.
-- **Next:** persisted planner analysis/findings/ATT&CK for deterministic
-  reports (BL-017); policy enforcement (BL-032, BL-033); remaining reads
-  (BL-013, BL-025).
+  scenarios (mean 93.4; 2026-10-13 run) with complete report coverage.
+  Safety follow-up is BL-020.
+- **Next:** policy enforcement (BL-032, BL-033); remaining reads (BL-013,
+  BL-025); untrusted-evidence hardening (BL-020).
 - **Decisions/deferred:** record the Firestore divergence (BL-001), ratify
   React over Streamlit (BL-012), optional cloud Firebase (BL-009), and
   approval invalidation after state changes (BL-024).

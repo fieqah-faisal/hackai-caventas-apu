@@ -47,15 +47,16 @@ Firestore; no credentials needed).
   into execution (DEC-006), synthetic incident package
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
-  unsafe 0/12, fake planner 0/12. BL-031 verification-first grounding
-  (2026-10-13) took the full live run to **12/12 checkpoints, 5/5
-  scenarios (mean 92.4)**: the false-alarm checkpoints now answer with
-  assessment + verification, and all safety gates hold. History: BL-038
-  (10/12, 3/5, PR #17), BL-014 (8/12, 2/5, PR #13).
+  unsafe 0/12, fake planner 0/12. BL-017 analysis persistence + report fill
+  (2026-10-13) took the full live run to **12/12 checkpoints, 5/5 scenarios,
+  mean 93.4** and cleared the report coverage (`not_produced_yet=[]` on all
+  scenarios; findings 5-12, techniques 3-10 each). History: BL-031 (12/12,
+  mean 92.4, PR #18), BL-038 (10/12, 3/5, PR #17), BL-014 (8/12, 2/5,
+  PR #13).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **145 passed** on merged main. Live results merged via
+  Suite **156 passed** on merged main. Live results merged via
   PR #13 (`4145f41`).
 - Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
   structured rules (ten fields) + 8-asset list in
