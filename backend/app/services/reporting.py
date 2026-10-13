@@ -8,6 +8,7 @@ explicitly "unknown".
 """
 from __future__ import annotations
 
+import math
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,7 +20,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
-from app.ai.langgraph_planner import load_guidance
+from app.ai.langgraph_planner import ATTACK_TECHNIQUE_ID, load_guidance
 from app.config import get_settings
 from app.database import repositories
 from app.services import audit_service, state_manager
@@ -51,9 +52,12 @@ def _created_at_key(doc: dict[str, Any]) -> datetime:
 
 def _float_or_zero(value: Any) -> float:
     try:
-        return float(value)
+        number = float(value)
     except (TypeError, ValueError):
         return 0.0
+    if not math.isfinite(number):
+        return 0.0
+    return min(max(number, 0.0), 1.0)
 
 
 def _finding_rows(analysis: dict[str, Any]) -> list[dict[str, Any]]:
@@ -198,6 +202,7 @@ def generate_report(case_id: str) -> dict[str, Any]:
 
     state = state_manager.get_current_state(case_id)
     evidence = repositories.list_evidence(case_id)
+    stored_evidence_ids = {item.get("evidence_id") for item in evidence}
     plan = _latest_plan(case_id)
     phase = (plan or {}).get("stage", "assessment")
     gaps = list((plan or {}).get("missing_evidence", []))
@@ -210,7 +215,7 @@ def generate_report(case_id: str) -> dict[str, Any]:
     severity = severity if isinstance(severity, str) and severity else "unknown"
     raw_techniques = analysis.get("attack_techniques")
     techniques = (
-        [t for t in raw_techniques if isinstance(t, str)]
+        [t for t in raw_techniques if isinstance(t, str) and ATTACK_TECHNIQUE_ID.match(t)]
         if isinstance(raw_techniques, list)
         else []
     )
@@ -271,7 +276,11 @@ def generate_report(case_id: str) -> dict[str, Any]:
         ],
         "exposed_credentials": [],
         "timeline": _timeline_rows(state),
-        "findings": _finding_rows(analysis),
+        "findings": [
+            row
+            for row in _finding_rows(analysis)
+            if stored_evidence_ids.intersection(row["evidence_ids"])
+        ],
         "root_cause": {"text": "", "finding_ids": [], "status": "hypothesis"},
         "impact": {
             "operational": "",

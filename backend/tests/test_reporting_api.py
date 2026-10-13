@@ -128,6 +128,15 @@ def test_get_unknown_report_404(client, monkeypatch, tmp_path):
 
 
 def test_report_fills_classification_findings_and_attack(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "analysis report"}).json()["case_id"]
+    resp = client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("batch1.json", FIXTURE.read_bytes(), "application/json")},
+    )
+    assert resp.status_code == 200, resp.text
+    evidence_id = client.get(f"/cases/{case_id}/evidence").json()[0]["evidence_id"]
+
     class AnalysisPlanner:
         def generate_plan(self, incident_state, approved_guidance=None):
             return PlanProposal(
@@ -142,7 +151,7 @@ def test_report_fills_classification_findings_and_attack(client, monkeypatch, tm
                     findings=[
                         ProposedFinding(
                             summary="Unsigned installer ran on the endpoint.",
-                            evidence_ids=["EV-1"],
+                            evidence_ids=[evidence_id],
                             confidence=0.8,
                         )
                     ],
@@ -150,14 +159,7 @@ def test_report_fills_classification_findings_and_attack(client, monkeypatch, tm
                 ),
             )
 
-    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
     monkeypatch.setattr(PLANNER_PATH, lambda: AnalysisPlanner())
-    case_id = client.post("/cases", json={"title": "analysis report"}).json()["case_id"]
-    resp = client.post(
-        f"/cases/{case_id}/evidence",
-        files={"file": ("batch1.json", FIXTURE.read_bytes(), "application/json")},
-    )
-    assert resp.status_code == 200, resp.text
     assert client.post(f"/cases/{case_id}/runs").status_code == 200
 
     report = client.post(f"/cases/{case_id}/reports").json()
@@ -171,7 +173,7 @@ def test_report_fills_classification_findings_and_attack(client, monkeypatch, tm
     )
     assert report["findings"][0]["finding_id"] == "FND-01"
     assert report["findings"][0]["summary"] == "Unsigned installer ran on the endpoint."
-    assert report["findings"][0]["evidence_ids"] == ["EV-1"]
+    assert report["findings"][0]["evidence_ids"] == [evidence_id]
     assert report["findings"][0]["confidence"] == 0.8
     assert Path(report["pdf_path"]).exists()
 
@@ -191,9 +193,12 @@ def test_report_survives_malformed_analysis(client, monkeypatch, tmp_path):
             "action_ids": [],
             "created_at": "2026-10-13T10:00:00+00:00",
             "analysis": {
-                "findings": [None, {"summary": "Kept.", "evidence_ids": [123, "EV-1"], "confidence": "bad"}],
-                "confidence": "not-a-number",
-                "attack_techniques": [7, "T1204.002"],
+                "findings": [
+                    None,
+                    {"summary": "Kept.", "evidence_ids": [123, "EV-1"], "confidence": "bad"},
+                ],
+                "confidence": float("nan"),
+                "attack_techniques": [7, "T1204.002", "TXXXX"],
             },
         },
     )
@@ -206,9 +211,7 @@ def test_report_survives_malformed_analysis(client, monkeypatch, tmp_path):
     assert report["classification"]["severity"] == "unknown"
     assert report["classification"]["confidence"] == 0.0
     assert report["classification"]["attack_techniques"] == ["T1204.002"]
-    assert report["findings"] == [
-        {"finding_id": "FND-02", "summary": "Kept.", "evidence_ids": ["EV-1"], "confidence": 0.0}
-    ]
+    assert report["findings"] == []
 
 
 def test_report_survives_non_iterable_analysis_fields(client, monkeypatch, tmp_path):

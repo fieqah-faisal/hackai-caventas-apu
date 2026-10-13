@@ -212,6 +212,7 @@ def test_malformed_llm_output_raises_planner_error():
     llm = ScriptedLLM(["this is not json at all", "still not json"])
     with pytest.raises(PlannerError):
         LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+    assert len(llm.calls) == 2  # one attempt plus exactly one retry
 
 
 def test_malformed_analysis_json_is_retried_once():
