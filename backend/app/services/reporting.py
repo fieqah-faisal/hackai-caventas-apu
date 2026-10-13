@@ -58,16 +58,22 @@ def _float_or_zero(value: Any) -> float:
 
 def _finding_rows(analysis: dict[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for index, finding in enumerate(analysis.get("findings") or [], start=1):
+    raw_findings = analysis.get("findings")
+    findings = raw_findings if isinstance(raw_findings, list) else []
+    for index, finding in enumerate(findings, start=1):
         if not isinstance(finding, dict):
             continue
+        raw_evidence = finding.get("evidence_ids")
+        evidence = (
+            [e for e in raw_evidence if isinstance(e, str)]
+            if isinstance(raw_evidence, list)
+            else []
+        )
         rows.append(
             {
                 "finding_id": f"FND-{index:02d}",
                 "summary": str(finding.get("summary", "")),
-                "evidence_ids": [
-                    e for e in finding.get("evidence_ids") or [] if isinstance(e, str)
-                ],
+                "evidence_ids": evidence,
                 "confidence": _float_or_zero(finding.get("confidence")),
             }
         )
@@ -202,7 +208,12 @@ def generate_report(case_id: str) -> dict[str, Any]:
     incident_type = incident_type if isinstance(incident_type, str) and incident_type else "other"
     severity = analysis.get("severity")
     severity = severity if isinstance(severity, str) and severity else "unknown"
-    techniques = [t for t in (analysis.get("attack_techniques") or []) if isinstance(t, str)]
+    raw_techniques = analysis.get("attack_techniques")
+    techniques = (
+        [t for t in raw_techniques if isinstance(t, str)]
+        if isinstance(raw_techniques, list)
+        else []
+    )
     guidance = load_guidance()
     now = datetime.now(timezone.utc).isoformat()
     report_id = f"RPT-{uuid.uuid4().hex[:12]}"

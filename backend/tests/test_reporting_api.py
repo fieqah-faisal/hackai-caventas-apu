@@ -209,3 +209,30 @@ def test_report_survives_malformed_analysis(client, monkeypatch, tmp_path):
     assert report["findings"] == [
         {"finding_id": "FND-02", "summary": "Kept.", "evidence_ids": ["EV-1"], "confidence": 0.0}
     ]
+
+
+def test_report_survives_non_iterable_analysis_fields(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "non-iterable analysis"}).json()["case_id"]
+    repositories.add_plan(
+        case_id,
+        "PLAN-non-iterable",
+        {
+            "plan_id": "PLAN-non-iterable",
+            "case_id": case_id,
+            "based_on_state_version": 1,
+            "stage": "assessment",
+            "missing_evidence": [],
+            "action_ids": [],
+            "created_at": "2026-10-13T11:00:00+00:00",
+            "analysis": {"findings": 5, "attack_techniques": "T1204.002", "confidence": 0.5},
+        },
+    )
+
+    resp = client.post(f"/cases/{case_id}/reports")
+    assert resp.status_code == 200, resp.text
+    report = resp.json()
+
+    assert report["findings"] == []
+    assert report["classification"]["attack_techniques"] == []
+    assert report["classification"]["confidence"] == 0.5
