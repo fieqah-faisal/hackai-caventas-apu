@@ -125,14 +125,24 @@ def _render_pdf(report: dict[str, Any]) -> Path:
     story.append(Spacer(1, 0.4 * cm))
 
     classification = report["classification"]
+    techniques = classification.get("attack_techniques") or []
     section(
         "Classification",
         [
             f"Phase: {classification['current_phase']} | Status: {classification['status']} "
-            f"| Severity: {classification['severity']}"
+            f"| Severity: {classification['severity']}",
+            f"Type: {classification['incident_type']} | "
+            f"Confidence: {classification['confidence']}"
+            + (f" | ATT&CK: {', '.join(techniques)}" if techniques else ""),
         ],
     )
     section("Executive summary", [report["executive_summary"]["text"]])
+    finding_lines = [
+        f"{finding['finding_id']}: {finding['summary']}"
+        + (f" (evidence: {', '.join(finding['evidence_ids'])})" if finding["evidence_ids"] else "")
+        for finding in report["findings"]
+    ]
+    section("Findings", finding_lines or ["None recorded"])
     affected = [f"{a['asset_id']} ({a['type']})" for a in report["affected"]]
     section("Affected entities", affected or ["None recorded"])
     timeline = [f"[{t['side']}] {t['event']}" for t in report["timeline"][:40]]
@@ -160,6 +170,7 @@ def generate_report(case_id: str) -> dict[str, Any]:
     plan = _latest_plan(case_id)
     phase = (plan or {}).get("stage", "assessment")
     gaps = list((plan or {}).get("missing_evidence", []))
+    analysis = (plan or {}).get("analysis") or {}
     guidance = load_guidance()
     now = datetime.now(timezone.utc).isoformat()
     report_id = f"RPT-{uuid.uuid4().hex[:12]}"
@@ -188,14 +199,18 @@ def generate_report(case_id: str) -> dict[str, Any]:
         "updated_at": now,
         "executive_summary": {"text": summary, "finding_ids": []},
         "classification": {
-            "incident_type": "other",
+            "incident_type": analysis.get("incident_type") or "other",
             "status": "suspected",
             "closure_reason": None,
-            "severity": "unknown",
-            "severity_reason": "Not assessed by the prototype.",
-            "confidence": 0.0,
+            "severity": analysis.get("severity") or "unknown",
+            "severity_reason": (
+                "Assessed by the planner from stored evidence."
+                if analysis
+                else "Not assessed by the prototype."
+            ),
+            "confidence": float(analysis.get("confidence") or 0.0),
             "current_phase": phase,
-            "attack_techniques": [],
+            "attack_techniques": list(analysis.get("attack_techniques") or []),
             "confirmed_by_analyst": False,
         },
         "affected": [
@@ -213,7 +228,15 @@ def generate_report(case_id: str) -> dict[str, Any]:
         ],
         "exposed_credentials": [],
         "timeline": _timeline_rows(state),
-        "findings": [],
+        "findings": [
+            {
+                "finding_id": f"FND-{index:02d}",
+                "summary": finding.get("summary", ""),
+                "evidence_ids": list(finding.get("evidence_ids") or []),
+                "confidence": float(finding.get("confidence") or 0.0),
+            }
+            for index, finding in enumerate(analysis.get("findings") or [], start=1)
+        ],
         "root_cause": {"text": "", "finding_ids": [], "status": "hypothesis"},
         "impact": {
             "operational": "",

@@ -10,6 +10,7 @@ from types import SimpleNamespace
 
 from app.ai.planner_adapter import FakePlannerAdapter
 from app.database import repositories
+from app.schemas.plan import PlanAnalysis, PlanProposal, ProposedFinding, Stage
 from app.simulator.simulator_adapter import FakeSimulatorAdapter
 
 FIXTURE = (
@@ -124,3 +125,52 @@ def test_get_unknown_report_404(client, monkeypatch, tmp_path):
     monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
     case_id = client.post("/cases", json={"title": "empty"}).json()["case_id"]
     assert client.get(f"/cases/{case_id}/reports/RPT-NOPE").status_code == 404
+
+
+def test_report_fills_classification_findings_and_attack(client, monkeypatch, tmp_path):
+    class AnalysisPlanner:
+        def generate_plan(self, incident_state, approved_guidance=None):
+            return PlanProposal(
+                based_on_state_version=incident_state.version,
+                stage=Stage.CONTAINMENT,
+                actions=[],
+                analysis=PlanAnalysis(
+                    incident_type="infostealer_session_hijack",
+                    scope="one laptop",
+                    severity="high",
+                    confidence=0.7,
+                    findings=[
+                        ProposedFinding(
+                            summary="Unsigned installer ran on the endpoint.",
+                            evidence_ids=["EV-1"],
+                            confidence=0.8,
+                        )
+                    ],
+                    attack_techniques=["T1204.002", "T1555.003"],
+                ),
+            )
+
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    monkeypatch.setattr(PLANNER_PATH, lambda: AnalysisPlanner())
+    case_id = client.post("/cases", json={"title": "analysis report"}).json()["case_id"]
+    resp = client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("batch1.json", FIXTURE.read_bytes(), "application/json")},
+    )
+    assert resp.status_code == 200, resp.text
+    assert client.post(f"/cases/{case_id}/runs").status_code == 200
+
+    report = client.post(f"/cases/{case_id}/reports").json()
+
+    assert report["classification"]["incident_type"] == "infostealer_session_hijack"
+    assert report["classification"]["severity"] == "high"
+    assert report["classification"]["confidence"] == 0.7
+    assert report["classification"]["attack_techniques"] == ["T1204.002", "T1555.003"]
+    assert report["classification"]["severity_reason"] == (
+        "Assessed by the planner from stored evidence."
+    )
+    assert report["findings"][0]["finding_id"] == "FND-01"
+    assert report["findings"][0]["summary"] == "Unsigned installer ran on the endpoint."
+    assert report["findings"][0]["evidence_ids"] == ["EV-1"]
+    assert report["findings"][0]["confidence"] == 0.8
+    assert Path(report["pdf_path"]).exists()
