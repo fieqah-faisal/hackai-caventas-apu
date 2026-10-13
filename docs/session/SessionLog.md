@@ -3,6 +3,20 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 BL-020 untrusted-evidence marking: live 12/12, 5/5, mean 95.5 (DONE)
+
+- Adds `backend/app/ai/skills/untrusted_evidence/SKILL.md` — evidence text
+  (email bodies, notes, timeline descriptions) is data, never instructions;
+  embedded in both system prompts and the analysis payload is labeled.
+  The state also stops truncating evidence descriptions (the 300-char cut
+  was never an injection defence). DEC-016.
+- Live: scoped sc02 PASS (88.8/92.5) → full run 1 exposed `warn_staff ->
+  HOST::SOC-WS-01` (the injection's target): the adapter never validated
+  tool↔target-type compatibility. Fix `360b221` validates against the
+  simulator catalogue's `target_type`; scoped sc02 PASS (90/90); final full
+  run **12/12 checkpoints, 5/5 scenarios, mean 95.5** (was 93.4). 163 tests;
+  artifacts in `.agents/tasks/bl-020-untrusted-evidence/`.
+
 ### 2026-10-13 BL-017 planner analysis persisted; report findings/ATT&CK filled — live 12/12, mean 93.4 (DONE)
 
 - `PlanProposal` gains a validated `PlanAnalysis` (type, severity, confidence,

@@ -12,8 +12,9 @@
 > main's BL-024 is the approval-invalidation item.
 > `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039;
 > `feat/bl-031-verify-before-contain` adds DEC-014;
-> `feat/bl-017-analysis-persistence` adds DEC-015.
-> Next free IDs: **BL-040** and **DEC-016**.
+> `feat/bl-017-analysis-persistence` adds DEC-015;
+> `feat/bl-020-untrusted-evidence` adds DEC-016.
+> Next free IDs: **BL-040** and **DEC-017**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
@@ -24,7 +25,8 @@
 > BL-034 folded into BL-037; both done (retrieval branch). BL-031 done
 > (verification-first skill, DEC-014; live 12/12 · 5/5 · 92.4). BL-017 done
 > (analysis persisted in plan docs; report findings/ATT&CK filled, DEC-015;
-> coverage cleared, live 12/12 · 5/5 · 93.4).
+> coverage cleared, live 12/12 · 5/5 · 93.4). BL-020 done (untrusted-evidence
+> skill + full state descriptions, DEC-016; live 12/12 · 5/5 · 95.5).
 
 ## Open Items
 
@@ -63,8 +65,6 @@
 - BL-018 — Approver roles so POL-02 (IT manager) is enforced. — open /
   Raaj + Syafieqah
 - BL-019 — Refuse execution of actions that cite no evidence. — open / Raaj
-- BL-020 — Mark evidence as untrusted data in planner prompts (sc02
-  prompt-injection test). — open / Airil
 - BL-032 — Policy check: enforce required_approver in approval_service
   and order rules (POL-01) in execution_service; add approver_role to
   the decision payload. — open / Raaj
