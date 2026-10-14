@@ -103,6 +103,26 @@ npm run test && npm run build
 default, or `api`); the UI never talks to Firestore directly and never
 mixes modes. Details in [`frontend/README.md`](frontend/README.md).
 
+### Docker (frontend + backend)
+
+Start the Firestore emulator on the Windows host first; the backend container
+connects to it at `host.docker.internal:8080`. Docker packages only the
+frontend and backend and uses the deterministic planner when no key is supplied.
+
+```bash
+docker compose build
+docker compose up -d
+# UI: http://localhost:8088  (nginx proxies /api to the backend container)
+docker compose ps
+docker compose down
+```
+
+Troubleshooting: confirm `localhost:8080` is listening before startup, use
+`docker compose logs backend frontend` for service errors, and use
+`docker compose down -v` only when you intentionally want to delete container
+uploads/reports. `.dockerignore` excludes `.env`, credentials, service-account
+files and local runtime data from both image build contexts.
+
 ### Demo (main scenario)
 
 The demo is the infostealer case: stolen browser sessions on Farah's laptop

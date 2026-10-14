@@ -59,11 +59,22 @@ ir-planner/
 │
 ├── firestore.indexes.json
 ├── firebase.json
+├── compose.yaml               # production frontend + backend only
+├── backend/Dockerfile         # non-root FastAPI image
+├── frontend/Dockerfile        # Vite build -> nginx
+├── frontend/nginx.conf        # SPA fallback + /api backend proxy
 │
 ├── .kiro/
 │   ├── steering/
 │   └── specs/
 │
+├── frontend/
+│   └── src/
+│       ├── features/         # React analyst workspace and case tabs
+│       └── lib/
+│           ├── api/          # fixture|api providers; FastAPI only
+│           ├── fixtures/     # deterministic synthetic demo data
+│           └── mapping/      # backend DTO -> stable view models
 └── README.md
 ```
 
@@ -110,5 +121,7 @@ policies/{policy_id}
 - Incident state is versioned and never overwritten in place.
 - Do not store large raw files inside Firestore documents (1 MiB limit).
   Store originals on the local filesystem; keep path + SHA-256 in Firestore.
-- The UI never accesses Firestore directly. Flow is:
-  Streamlit → FastAPI → Firebase Admin SDK → Firestore.
+- The React UI never accesses Firestore directly. Flow is:
+  React/Vite → FastAPI → Firebase Admin SDK → Firestore.
+- API mode resolves stored plan actions through the read-only `/actions`
+  endpoint and reads persistent simulator outcomes from `/action-results`.

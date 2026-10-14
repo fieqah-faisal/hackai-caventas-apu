@@ -256,7 +256,11 @@ describe("RealProvider contract (real backend bodies)", () => {
   }
 
   it("getPlans numbers versions by created_at, not by the backend list order", async () => {
-    globalThis.fetch = mockFetch(200, PLANS_IN_DOC_ID_ORDER);
+    globalThis.fetch = routeFetch({
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: PLANS_IN_DOC_ID_ORDER },
+      "GET /api/cases/CASE-TEST0001/actions": { status: 200, body: STORED_ACTIONS },
+      "GET /api/cases/CASE-TEST0001/state": { status: 404, body: { detail: "no incident state" } },
+    });
     const out = await new RealProvider().getPlans("CASE-TEST0001");
     expect(out.kind).toBe("ok");
     if (out.kind !== "ok") return;
@@ -267,19 +271,36 @@ describe("RealProvider contract (real backend bodies)", () => {
     ]);
   });
 
-  it("getPlans marks action detail unavailable (with the real count) and carries no re-plan copy", async () => {
+  it("getPlans resolves stored actions and marks only missing references unavailable", async () => {
     const withEmpty = [...PLANS_IN_DOC_ID_ORDER, { ...PLANS_IN_DOC_ID_ORDER[0], plan_id: "PLAN-ee0000000004", action_ids: [], created_at: "2026-10-12T02:50:00.000000+00:00" }];
-    globalThis.fetch = mockFetch(200, withEmpty);
+    globalThis.fetch = routeFetch({
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: withEmpty },
+      "GET /api/cases/CASE-TEST0001/actions": { status: 200, body: STORED_ACTIONS },
+      "GET /api/cases/CASE-TEST0001/state": { status: 404, body: { detail: "no incident state" } },
+    });
     const out = await new RealProvider().getPlans("CASE-TEST0001");
     expect(out.kind).toBe("ok");
     if (out.kind !== "ok") return;
     const [v1, , , v4] = out.value.data;
-    expect(v1.actions).toEqual([]);
-    expect(v1.actionsUnavailable).toEqual({ count: 1, reason: PLAN_ACTIONS_UNAVAILABLE });
-    // A plan with no action IDs really has no actions: nothing is "unavailable".
+    expect(v1.actions.map((action) => action.actionId)).toEqual(["ACT-000000000001"]);
+    expect(v1.actionsUnavailable).toBeUndefined();
     expect(v4.planId).toBe("PLAN-ee0000000004");
     expect(v4.actionsUnavailable).toBeUndefined();
     for (const p of out.value.data) expect(p.replanExplanation).toBeUndefined();
+  });
+
+  it("getPlans reports an unresolved stored action reference without hiding resolved actions", async () => {
+    const plans = [{ ...PLANS_IN_DOC_ID_ORDER[0], action_ids: ["ACT-000000000003", "ACT-MISSING"] }];
+    globalThis.fetch = routeFetch({
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: plans },
+      "GET /api/cases/CASE-TEST0001/actions": { status: 200, body: STORED_ACTIONS },
+      "GET /api/cases/CASE-TEST0001/state": { status: 404, body: { detail: "no incident state" } },
+    });
+    const out = await new RealProvider().getPlans("CASE-TEST0001");
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data[0].actions.map((action) => action.actionId)).toEqual(["ACT-000000000003"]);
+    expect(out.value.data[0].actionsUnavailable).toEqual({ count: 1, reason: PLAN_ACTIONS_UNAVAILABLE });
   });
 
   it("getEvidence returns upload order with event_type titles, whatever the backend list order", async () => {

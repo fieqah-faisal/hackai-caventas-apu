@@ -88,12 +88,12 @@ Firestore; no credentials needed).
   (BL-027, DEC-011); follow-ups are BL-025, BL-026 and BL-027 (a)–(c).
   Backend suite **137**, frontend **75** on `main`. Product record +
   palette in root `PRODUCT.md`.
-- Frontend↔backend link (`link`, merged via PR #11 `5e53c66`): API mode verified
-  end to end on the Firestore emulator (2026-10-09 S6). All 7 case tabs
-  load real data; approve/reject/execute/report run from the UI with
-  execution and validation shown apart; audit maps the real shape (no UI
-  surface yet). Dashboard is honestly "unsupported" (BL-013). Open:
-  BL-013, BL-025..BL-029.
+- Frontend↔backend integration: API mode loads all 7 case tabs; stored actions
+  populate Response Plan and Approvals, and stored execution/validation results
+  remain visible after execution. `not_applicable` is explicit, the analyst-note
+  label is honest, and the infostealer fixture matches policy/scenario ids,
+  roles, assets and approved tools. Dashboard and report reload reads remain
+  unsupported (BL-013, BL-025); other UI follow-ups remain in BL-026/028/029.
 - GAS-lite incident-state (BL-030, **Core complete**): STAIR-inspired
   (not a STAIR reproduction) enrichment of the versioned incident state.
   All Core Tasks 1-8 implemented on `feat/gas-lite-state-fieqah`; merged with
@@ -117,6 +117,18 @@ Firestore; no credentials needed).
   planner-populated routing/assessment, report-section invalidation,
   non-material version suppression, frontend graph visualisation.
 - Deterministic policy enforcement (BL-032/018/019, merged into `feat/gas-lite-state-fieqah`): `app/services/policy_service.py` derives the required approver role, target asset type, evidence validity and POL-01 preserve-before-reimage from `guidance.json` + stored records — never the planner's `policy_refs`. `approver_role` (soc_analyst|it_manager|dpo) is on the decision request, approval record and audit; approval returns 403 on an insufficient role, execution re-checks role/evidence/sequencing (409 + audit, no result), unknown assets fail closed. Declared-role prototype (no auth yet). Backend 205 passed, frontend 75 passed, build green.
+- Planner prompts explicitly delimit incident-state/evidence content as
+  untrusted data and reject embedded instructions; backend enforcement remains
+  the authorization boundary. Final-integration focused checks: backend 42,
+  frontend 79 plus clean typecheck (2026-10-14).
+- Production packaging is a two-container Compose stack: non-root FastAPI
+  backend plus nginx-served API-mode frontend (`:8088`), with `/api` proxying,
+  health checks and Windows-host emulator access through
+  `host.docker.internal:8080`. Build contexts exclude credentials and `.env`.
+- Final verification (2026-10-14): backend **206 passed**; frontend strict
+  typecheck, **80 tests** and production build passed; Compose config, both
+  image builds/health checks, full and abbreviated emulator-backed API-mode
+  workflows through nginx, diff check and changed-file secret scan passed.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

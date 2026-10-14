@@ -74,6 +74,7 @@ export type PlanActionState =
   | "simulated"
   | "validated_effective"
   | "validated_ineffective"
+  | "not_applicable"
   | "superseded";
 
 /**
@@ -220,8 +221,7 @@ export interface PlanVM {
   missingEvidence: string[];
   actions: ResponsePlanActionVM[];
   /**
-   * Set when the plan HAS actions the provider cannot load (API mode: GET
-   * /plans returns action IDs only; getPlans does not join GET /actions).
+   * Set when a plan references actions the provider could not resolve.
    * `actions` is then [] and must never be shown as "no actions".
    */
   actionsUnavailable?: { count: number; reason: string };

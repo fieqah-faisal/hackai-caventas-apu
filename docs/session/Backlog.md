@@ -30,10 +30,6 @@
 
 ### P1
 
-- BL-015 — Review Aidan's branch changes to backend services (PR #9):
-  simulator wiring (default profile `clean`), naive-timestamp crash fix,
-  `not_applicable` action status (frontend DTO mapping at integration). —
-  open / Raaj + Syafieqah
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
 
@@ -57,22 +53,15 @@
   per plan runs; the next needs a fresh plan). Re-approval prototype kept
   out of PR #9 (commit `abab1c4`, reverted). See DEC-007. — deferred /
   Raaj + Syafieqah + Aidan
-- BL-020 — Mark evidence as untrusted data in planner prompts (sc02
-  prompt-injection test). — open / Airil
 - BL-033 — Fill report notifications, policy_conformance and asset
   criticality from guidance.json. — open / Raaj
 - BL-035 — Confirm asset host names match the synthetic logs
   (SALES-LT-07, FS-01, …). — open / Aida + Aidan
-- BL-036 — Align frontend demo fixture (infostealer.ts) with policy pack
-  v1.0: rule IDs, roles, tool names, asset IDs. — open / Syafieqah
 - BL-039 — Align the simulator catalogue with policy pack v1.0: trigger
   event types and tool gaps (`purge_email`, `restore_host`). — open / Aidan
 
 ### P3
 
-- BL-021 — Align frontend fixtures with the scenario package
-  (SALES-LT-07, `.example` domains, no T1566.002 for the infostealer). —
-  open / Syafieqah
 - BL-022 — Re-check ATT&CK technique IDs on attack.mitre.org (blocked in
   the build environment), esp. T1213.004. — open / Aidan
 - BL-023 — Decide whether POL-03 gets a record-only `notify_dpo` action
@@ -91,8 +80,6 @@
 - BL-026 — API-mode UI follow-ups from the `link` emulator run, deferred
   because each changes what the analyst sees. Do (a) first, because its
   label is untrue:
-  - (a) Create case: "Analyst note (captured as evidence)" is held in form
-    state only and never sent. Send it as evidence, or change the label.
   - (b) The Start step shows the file count as "Accepted records".
   - (c) The dashboard summary cards show a generic "Could not load …"
     instead of the unsupported reason.
@@ -102,27 +89,9 @@
     because every row has a `host` field.
   - (f) API mode shows no synthetic flag (`RealProvider.synthetic = false`)
     although all data is synthetic by rule. This is a product call.
-  - (g) `mapActionState` shows unknown statuses as "proposed"; the
-    security-lead branch's `not_applicable` would be mislabelled after
-    merge. Evidence detail shows a placeholder "State version v0".
+  - (g) Evidence detail shows a placeholder "State version v0".
 
   — open / frontend
-- BL-027 — Read-only `GET /cases/{id}/actions` and
-  `GET /cases/{id}/action-results` (DEC-011) for the API-mode Approvals
-  queue. Implemented on `link`, closes on merge to `main`. Follow-ups left
-  open, all UI changes:
-  - (a) after "Run bounded simulation" the workspace refresh remounts the
-    tab and the executed action leaves the queue, so the result card is
-    replaced at once; only the toast shows execution / validation. No
-    component calls `getExecutionResults` yet.
-  - (b) Response Plan still shows "N actions unavailable"; `getPlans` could
-    join `GET /actions`.
-  - (c) by code reading only, not run: fixture mode lists only `proposed`
-    actions, so the same refresh may hide an approved card before it is
-    simulated.
-
-  (a) and (b) were seen again in the S6 live re-walk.
-  — implemented on `link` / Raaj; (a)–(c) open / frontend
 - BL-028 — The Approvals card shows a "Senior approval" badge next to
   "Approver: Any analyst (no approver role in backend)". The badge comes
   from a frontend tool-name regex in `toApprovalItemVM`

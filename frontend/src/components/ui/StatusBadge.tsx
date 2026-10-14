@@ -53,6 +53,7 @@ const STATE_VISUAL: Record<PlanActionState, { tone: Tone; icon: IconName }> = {
   simulated: { tone: "info", icon: "running" },
   validated_effective: { tone: "accent", icon: "success" },
   validated_ineffective: { tone: "danger", icon: "blocked" },
+  not_applicable: { tone: "neutral", icon: "blocked" },
   superseded: { tone: "neutral", icon: "reload" },
 };
 

@@ -66,8 +66,10 @@ export function mapActionState(status: ActionStatusDTO): PlanActionState {
       return "validated_effective";
     case "failed":
       return "validated_ineffective";
+    case "not_applicable":
+      return "not_applicable";
     default:
-      return "proposed";
+      return "superseded";
   }
 }
 
@@ -403,6 +405,8 @@ export function reportActionStage(status: string): string {
     case "failed":
       // Not "simulated": the row cannot show whether the simulation completed.
       return "Approved, sent to simulator, not validated effective";
+    case "not_applicable":
+      return "Approved, simulated, not applicable";
     default:
       return `Status ${status}`;
   }
@@ -415,6 +419,8 @@ export function reportValidationVerdict(status: string): string {
       return "Validated effective";
     case "failed":
       return "Not validated effective";
+    case "not_applicable":
+      return "Validation not applicable";
     default:
       return `Status ${status}`;
   }

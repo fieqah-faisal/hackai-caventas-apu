@@ -47,7 +47,7 @@ export type EvidenceKindDTO = "csv" | "json" | "txt";
  * Real backend action lifecycle string (StoredAction.status). This is NOT the
  * intended six-state product model — the mapping layer reconciles it.
  * Observed values: awaiting_approval (default), recommended, approved,
- * rejected, verified, failed.
+ * rejected, verified, failed, not_applicable.
  */
 export type ActionStatusDTO =
   | "awaiting_approval"
@@ -55,7 +55,8 @@ export type ActionStatusDTO =
   | "approved"
   | "rejected"
   | "verified"
-  | "failed";
+  | "failed"
+  | "not_applicable";
 
 /** Backend decision enum — approve/reject ONLY (no request_more_investigation). */
 export type DecisionDTO = "approve" | "reject";

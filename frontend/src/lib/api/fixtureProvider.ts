@@ -78,7 +78,7 @@ const demo: DemoState = {
   audit: [
     { eventId: "EV-A1", kind: "case_created", caseId: INFOSTEALER_CASE_ID, summary: "Case opened — Infostealer to session hijack", at: minsAgo(220) },
     { eventId: "EV-A2", kind: "evidence_ingested", caseId: INFOSTEALER_CASE_ID, summary: "4 endpoint/network records ingested (batch 1)", at: minsAgo(200) },
-    { eventId: "EV-A3", kind: "plan_created", caseId: INFOSTEALER_CASE_ID, summary: "Plan v1 created (4 actions)", at: minsAgo(198) },
+    { eventId: "EV-A3", kind: "plan_created", caseId: INFOSTEALER_CASE_ID, summary: "Plan v1 created (5 actions)", at: minsAgo(198) },
   ],
 };
 
@@ -280,7 +280,10 @@ export class FixtureProvider implements DataProvider {
     if (caseId !== INFOSTEALER_CASE_ID) return ok([], "synthetic");
     const c = this.caseById(caseId);
     const items: ApprovalItemVM[] = activeActions()
-      .filter((a) => (demo.actionState[a.actionId] ?? a.state) === "proposed")
+      .filter((a) => {
+        const state = demo.actionState[a.actionId] ?? a.state;
+        return state === "proposed" || state === "approved";
+      })
       .map((a) => ({
         actionId: a.actionId,
         actionVersion: a.version,
@@ -331,9 +334,9 @@ export class FixtureProvider implements DataProvider {
       { key: "executive_summary", title: "Executive summary", present: true, lines: ["Infostealer compromise escalated to session hijack and CRM data export; containment and eradication actions proposed across two plan versions."] },
       { key: "classification", title: "Incident classification", present: true, lines: ["Type: credential theft / session hijack", "Severity: high", "Phase: containment"] },
       { key: "timeline", title: "Timeline", present: true, lines: [...infostealerTimelineBatch1, ...infostealerTimelineBatch2].map((t) => t.label) },
-      { key: "affected", title: "Affected assets and identities", present: true, lines: ["LAP-FARAH (host)", "farah@demo.example (account)", "CRM (application)"] },
+      { key: "affected", title: "Affected assets and identities", present: true, lines: ["SALES-LT-07 (host)", "farah (account)", "CRM (data store)"] },
       { key: "evidence_index", title: "Evidence", present: true, lines: [...infostealerEvidenceBatch1, ...infostealerEvidenceBatch2].map((e) => `${e.evidenceId} — ${e.sourceFile}`) },
-      { key: "attack", title: "ATT&CK mappings", present: true, lines: ["T1566.002", "T1204.002", "T1555.003", "T1041", "T1550.004", "T1213"] },
+      { key: "attack", title: "ATT&CK mappings", present: true, lines: ["T1204.002", "T1555.003", "T1041", "T1550.004", "T1213"] },
       { key: "decisions", title: "Decisions and approvals", present: decided.length > 0, lines: decided.map(([id, d]) => `${id}: ${d.decision}${d.reason ? ` — ${d.reason}` : ""}`) },
       { key: "actions", title: "Recommended / simulated actions", present: true, lines: actions.map((a) => `${demo.actionState[a.actionId] ?? a.state}: ${a.tool} on ${a.target}`) },
       { key: "validation", title: "Validation results", present: executed.length > 0, lines: executed.map((r) => `${r.tool} → ${r.executionStatus}/${r.validationStatus}`) },
@@ -382,9 +385,9 @@ export class FixtureProvider implements DataProvider {
     if ((demo.actionState[actionId] ?? a.state) !== "approved") {
       return { kind: "http_error", status: 409, detail: "action is not approved" };
     }
-    // Deterministic demo outcome: containment actions validate effective,
-    // the lone re-image action on its own validates ineffective (needs session revoke).
-    const effective = a.tool !== "reimage_host";
+    // The first CRM revocation attempt hits the explicit demo fault; its
+    // replacement on Plan v2 succeeds after the analyst re-plans.
+    const effective = actionId !== "ACT-IS-1E";
     const result: ExecutionResultVM = {
       executionId: `EXE-${actionId}`,
       actionId,
@@ -392,7 +395,7 @@ export class FixtureProvider implements DataProvider {
       target: a.target,
       executionStatus: "completed",
       validationStatus: effective ? "effective" : "ineffective",
-      observedEffect: effective ? "Expected effect observed in the simulator." : "Re-image did not invalidate the active stolen session.",
+      observedEffect: effective ? "Expected effect observed in the simulator." : "CRM session revocation did not complete; the stolen session remained valid.",
       resultSource: "simulator",
       createdAt: new Date().toISOString(),
     };

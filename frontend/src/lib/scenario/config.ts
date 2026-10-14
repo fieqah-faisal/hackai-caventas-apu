@@ -7,7 +7,7 @@ export const DEMO_ORGANISATION = "Caventas Demo Organisation";
 /** Exact UI copy required by the spec for the Infostealer re-plan. */
 export const NEW_EVIDENCE_ANNOUNCEMENT = "New evidence received";
 export const INFOSTEALER_REPLAN_EXPLANATION =
-  "Re-imaging the laptop was necessary but not sufficient: the stolen session is still valid.";
+  "The first CRM session-revocation attempt did not complete; observed replay confirms the stolen session is still valid.";
 
 /** False-alarm scenario gate (follow-on, but the config lives with scenarios). */
 export const FALSE_ALARM_EVIDENCE_REQUEST =

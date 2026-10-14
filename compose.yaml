@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      FIREBASE_PROJECT_ID: ir-planner-dev
+      FIRESTORE_EMULATOR_HOST: host.docker.internal:8080
+      OPENCODE_GO_API_KEY: ""
+      SIMULATOR_PROFILE: clean
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_reports:/app/reports
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_DATA_MODE: api
+    ports:
+      - "127.0.0.1:8088:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  backend_uploads:
+  backend_reports:

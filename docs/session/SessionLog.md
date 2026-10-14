@@ -3,6 +3,81 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-14 Final integration and production-stack verification (DONE)
+
+- Real emulator/API check through the user-managed Vite proxy passed case,
+  six-record evidence upload and GAS-lite v1, then stopped at `POST /runs`
+  after the required 15-second timeout because that backend selected the live
+  planner; no plan was persisted. The deterministic Docker stack subsequently
+  completed the full workflow through nginx: plan, explicit `it_manager`
+  approval, completed/effective simulation, state v2/history, stored result,
+  re-plan on v2 and structured report (`CASE-86FD3FF0`).
+- Final review fixes bound nginx to host loopback, restored the backend's 10 MiB
+  upload allowance, kept resolved actions visible beside missing references,
+  aligned the fixture's CRM revocation outcome/count and made
+  `not_applicable` neutral. The post-fix abbreviated Docker workflow also
+  passed (`CASE-8E5ABB4B`); Compose containers were then shut down without
+  touching user-managed services.
+- Final checks: backend `..\.venv\Scripts\python.exe -m pytest -q` **206
+  passed in 47.42s**; frontend typecheck passed, Vitest **80 passed in 10
+  files**, and production build passed. `docker compose config --quiet`, both
+  image builds, both container health checks and `git diff --check` passed.
+- Changed-file credential-pattern scans found no API key, private key, service-
+  account private key or common cloud-key signature. No `.env`, credential or
+  authentication file was read/copied; no evaluation result was regenerated.
+  Nothing was committed, merged or pushed. Stop for maintainer review.
+
+### 2026-10-14 Minimal production Docker packaging (DONE)
+
+- Added a non-root Python 3.12 FastAPI image with a production-only dependency
+  list and health check, plus a multi-stage Node 22 -> nginx frontend image
+  built in API mode. Nginx serves the SPA and proxies `/api` to `backend:8000`.
+- `compose.yaml` contains frontend + backend only, maps the UI to `:8088`,
+  persists uploads/reports in named volumes, and points the backend at the
+  Windows-hosted emulator via `host.docker.internal:8080`. No secret is baked
+  or passed; the deterministic planner and clean simulator are explicit.
+- Backend/frontend `.dockerignore` files exclude `.env`, credential/service-
+  account patterns, runtime data and build outputs. Root/frontend READMEs and
+  steering structure now document build, startup, shutdown and troubleshooting.
+- `docker compose config` passed. Frontend and backend images both built; the
+  first backend attempt hit a Python package-download timeout, then the cached
+  retry completed successfully. Next: start the two-container stack and run
+  final verification through nginx.
+
+### 2026-10-14 Demo-visible final-integration gaps fixed (DONE)
+
+- API mode now maps `not_applicable` explicitly (unknown states fail closed as
+  superseded), joins `GET /plans` to `GET /actions` for Response Plan/detail,
+  and renders stored execution + validation history after queue refreshes.
+  Fixture mode keeps approved actions available for bounded simulation.
+- Create-case now labels the analyst note honestly as a draft that must be
+  added as TXT evidence. The infostealer fixture now uses policy-pack tools,
+  rule ids, role names, `SALES-LT-07`, `.example` domains and the scenario's
+  CRM session-revocation failure; `T1566.002` and unsupported tools were removed.
+- Both planner system prompts mark incident/evidence content as untrusted data,
+  delimit it in user messages and instruct the model to ignore embedded role,
+  policy, target, tool and output-contract instructions. Contract tests cover
+  the boundary; deterministic approval/execution policy checks remain intact.
+- Checks: backend focused planner/policy suite **42 passed**; frontend
+  `npm run typecheck` passed; `npm run test` **79 passed in 10 files**. No
+  generated evaluation artifact changed. Next: minimal Docker packaging.
+
+### 2026-10-14 Final-integration baseline verified (DONE)
+
+- Branch `chore/final-integration-fieqah` at `70b6c56`; fetched
+  `origin/main`, which is the same commit. Worktree was clean; nothing merged,
+  pushed or committed.
+- Backend `..\.venv\Scripts\python.exe -m pytest -q`: **205 passed in
+  47.67s**. Frontend `npm run typecheck`: passed; `npm run test`: **75 passed
+  in 9 files**; `npm run build`: passed (Vite production build).
+- Static audit confirmed GAS-lite current/history reads, deterministic policy
+  enforcement, planning, role-aware approvals, bounded execution with separate
+  validation, and structured JSON/PDF reports are present. No generated
+  evaluation artifact was changed.
+- Phase C read-only audit confirmed the demo-visible gaps already tracked in
+  BL-015, BL-020, BL-021, BL-026, BL-027 and BL-036. Next: real API-mode
+  Firestore-emulator workflow, then minimal fixes only.
+
 ### 2026-10-13 Deterministic policy enforcement + main merge into GAS-lite (DONE)
 
 - Merged `origin/main` (`cced814`: PR #10 policy pack, #11 API wiring, #15

@@ -18,6 +18,7 @@ import {
   auditSummary,
   compareIsoInstants,
   inApprovalQueue,
+  mapActionState,
   toApprovalItemVM,
   toExecutionResultVM,
   mapAuditKind,
@@ -236,14 +237,14 @@ describe("report action wording keeps proposed / approved / executed / effective
     ]);
   });
 
-  it("shows an unknown status verbatim instead of guessing a decision or outcome", () => {
+  it("shows not_applicable explicitly instead of treating it as proposed", () => {
     const odd: ReportActionRowDTO = { ...REPORT_ACTION_ROWS[2], status: "not_applicable" };
     expect(lines("decisions", [odd])).toEqual([
       "Decided by Analyst A (status not_applicable): Host shows suspicious activity in current state.",
     ]);
-    expect(lines("actions", [odd])).toEqual(["Status not_applicable: Host shows suspicious activity in current state."]);
+    expect(lines("actions", [odd])).toEqual(["Approved, simulated, not applicable: Host shows suspicious activity in current state."]);
     expect(lines("validation", [odd])).toEqual([
-      "Status not_applicable: Host shows suspicious activity in current state. → Suspicious outbound communication continued.",
+      "Validation not applicable: Host shows suspicious activity in current state. → Suspicious outbound communication continued.",
     ]);
   });
 
@@ -253,6 +254,10 @@ describe("report action wording keeps proposed / approved / executed / effective
 });
 
 describe("approvals queue mapping (GET /cases/{id}/actions, BL-027)", () => {
+  it("never maps not_applicable or an unknown status to proposed", () => {
+    expect(mapActionState("not_applicable")).toBe("not_applicable");
+    expect(mapActionState("future_status" as never)).toBe("superseded");
+  });
   it("queues only actions awaiting a decision or approved and not yet simulated", () => {
     expect(STORED_ACTIONS.map((a) => [a.status, inApprovalQueue(a.status)])).toEqual([
       ["awaiting_approval", true],

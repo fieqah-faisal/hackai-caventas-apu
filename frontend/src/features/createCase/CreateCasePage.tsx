@@ -261,7 +261,7 @@ function StepBody({
           />
         </label>
         <label className="block">
-          <span className="text-meta text-text-muted">Analyst note (captured as evidence)</span>
+          <span className="text-meta text-text-muted">Analyst note (draft only; add as TXT evidence to store it)</span>
           <textarea
             value={s.analystNote}
             onChange={(e) => setS((prev) => ({ ...prev, analystNote: e.target.value }))}

@@ -97,7 +97,7 @@ const UNSUPPORTED_DASHBOARD =
   "No global dashboard endpoint exists in the backend. Switch to fixture mode for the demo dashboard.";
 
 export const PLAN_ACTIONS_UNAVAILABLE =
-  "Action detail is not loaded for stored plans in API mode: GET /plans lists only action IDs. Actions awaiting a decision or simulation are listed under Approvals.";
+  "One or more stored action references could not be resolved by GET /actions.";
 
 export class RealProvider implements DataProvider {
   readonly mode = "api" as const;
@@ -207,25 +207,33 @@ export class RealProvider implements DataProvider {
   }
 
   async getPlans(caseId: string): Promise<Outcome<PlanVM[]>> {
-    // GET /plans returns action_ids only; the just-run plan (POST /runs) is the
-    // only source of full actions. Historical full plans need a plan-detail
-    // endpoint that does not exist, so plan ACTIONS are unavailable here.
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
     if (r.kind !== "ok") return fromApi<PlanVM[]>(r as ApiResult<never>, "real");
+    const actionsR = await apiGet<StoredActionDTO[]>(`/cases/${caseId}/actions`);
+    if (actionsR.kind !== "ok") return fromApi<PlanVM[]>(actionsR as ApiResult<never>, "real");
+    const state = await this.loadState(caseId);
+    const actionsById = new Map(actionsR.data.map((action) => [action.action_id, action]));
     // Version numbers are ordinals by created_at (the backend list is unordered).
     // No replanExplanation: the backend records no reason for a re-plan.
-    const vms: PlanVM[] = sortPlansOldestFirst(r.data).map((p, idx) => ({
-      planId: p.plan_id,
-      version: idx + 1,
-      basedOnStateVersion: p.based_on_state_version,
-      stage: p.stage,
-      createdAt: p.created_at,
-      missingEvidence: p.missing_evidence,
-      actions: [], // historical action detail is not retrievable (no endpoint)
-      ...(p.action_ids.length > 0
-        ? { actionsUnavailable: { count: p.action_ids.length, reason: PLAN_ACTIONS_UNAVAILABLE } }
-        : {}),
-    }));
+    const vms: PlanVM[] = sortPlansOldestFirst(r.data).map((p, idx) => {
+      const actions = p.action_ids.flatMap((id) => {
+        const action = actionsById.get(id);
+        return action ? [toResponsePlanActionVM(action, p.stage, state)] : [];
+      });
+      const unresolved = p.action_ids.length - actions.length;
+      return {
+        planId: p.plan_id,
+        version: idx + 1,
+        basedOnStateVersion: p.based_on_state_version,
+        stage: p.stage,
+        createdAt: p.created_at,
+        missingEvidence: p.missing_evidence,
+        actions,
+        ...(unresolved > 0
+          ? { actionsUnavailable: { count: unresolved, reason: PLAN_ACTIONS_UNAVAILABLE } }
+          : {}),
+      };
+    });
     return ok(vms, "real");
   }
 
@@ -238,11 +246,13 @@ export class RealProvider implements DataProvider {
     );
   }
 
-  async getPlanDetail(_caseId: string, _planId: string): Promise<Outcome<PlanVM>> {
-    return {
-      kind: "unsupported",
-      reason: "The backend has no plan-detail endpoint; historical action detail cannot be reloaded in API mode.",
-    };
+  async getPlanDetail(caseId: string, planId: string): Promise<Outcome<PlanVM>> {
+    const plans = await this.getPlans(caseId);
+    if (plans.kind !== "ok") return plans;
+    const plan = plans.value.data.find((item) => item.planId === planId);
+    return plan
+      ? ok(plan, "real")
+      : { kind: "http_error", status: 404, detail: `plan not found: ${planId}` };
   }
 
   async getApprovals(caseId: string): Promise<Outcome<ApprovalItemVM[]>> {

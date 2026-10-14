@@ -76,6 +76,7 @@ export const actionStateLabel: Record<PlanActionState, string> = {
   simulated: "Simulated",
   validated_effective: "Validated effective",
   validated_ineffective: "Validated ineffective",
+  not_applicable: "Not applicable",
   superseded: "Superseded",
 };
 

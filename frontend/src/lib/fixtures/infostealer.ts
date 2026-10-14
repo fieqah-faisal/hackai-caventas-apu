@@ -131,17 +131,17 @@ export const infostealerEvidenceBatch1: EvidenceItemVM[] = [
   {
     evidenceId: "EV-IS-001",
     category: "network",
-    title: "Download from fake PDF-editor domain pdf-editor-pro[.]app",
+    title: "Download from fake PDF-editor domain pdf-editor-free[.]example",
     eventTime: minsAgo(240),
     kind: "json",
     relationshipStatus: "observed",
     sha256: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
     sourceFile: "proxy_logs.json",
     sourceLocation: "row 142",
-    relatedEntities: ["host-lap-farah", "domain-pdf-editor-pro"],
-    attackMapping: ["T1566.002"],
+    relatedEntities: ["HOST::SALES-LT-07", "DOMAIN::pdf-editor-free.example"],
+    attackMapping: [],
     stateVersion: 1,
-    fields: { domain: "pdf-editor-pro.app", action: "download" },
+    fields: { domain: "pdf-editor-free.example", action: "download" },
   },
   {
     evidenceId: "EV-IS-002",
@@ -153,7 +153,7 @@ export const infostealerEvidenceBatch1: EvidenceItemVM[] = [
     sha256: "b2c3d4e5f6a7b2c3d4e5f6a7b2c3d4e5f6a7b2c3d4e5f6a7b2c3d4e5f6a7b2c3",
     sourceFile: "edr_process.csv",
     sourceLocation: "row 58",
-    relatedEntities: ["host-lap-farah", "proc-pdfsetup"],
+    relatedEntities: ["HOST::SALES-LT-07", "PROCESS::SALES-LT-07::pdfeditorsetup.exe"],
     attackMapping: ["T1204.002"],
     stateVersion: 1,
     fields: { process: "PDFEditorSetup.exe", signed: "false" },
@@ -168,7 +168,7 @@ export const infostealerEvidenceBatch1: EvidenceItemVM[] = [
     sha256: "c3d4e5f6a7b8c3d4e5f6a7b8c3d4e5f6a7b8c3d4e5f6a7b8c3d4e5f6a7b8c3d4",
     sourceFile: "edr_process.csv",
     sourceLocation: "row 61",
-    relatedEntities: ["host-lap-farah", "acct-farah"],
+    relatedEntities: ["HOST::SALES-LT-07", "ACCOUNT::farah"],
     attackMapping: ["T1555.003"],
     stateVersion: 1,
     fields: { target: "Login Data", process: "PDFEditorSetup.exe" },
@@ -183,7 +183,7 @@ export const infostealerEvidenceBatch1: EvidenceItemVM[] = [
     sha256: "d4e5f6a7b8c9d4e5f6a7b8c9d4e5f6a7b8c9d4e5f6a7b8c9d4e5f6a7b8c9d4e5",
     sourceFile: "proxy_logs.json",
     sourceLocation: "row 190",
-    relatedEntities: ["host-lap-farah", "ip-203-0-113-45"],
+    relatedEntities: ["HOST::SALES-LT-07", "IP::203.0.113.45"],
     attackMapping: ["T1041"],
     stateVersion: 1,
     fields: { dest_ip: "203.0.113.45", bytes: 48213 },
@@ -201,7 +201,7 @@ export const infostealerEvidenceBatch2: EvidenceItemVM[] = [
     sha256: "e5f6a7b8c9d0e5f6a7b8c9d0e5f6a7b8c9d0e5f6a7b8c9d0e5f6a7b8c9d0e5f6",
     sourceFile: "idp_signins.json",
     sourceLocation: "row 77",
-    relatedEntities: ["acct-farah", "ip-198-51-100-23"],
+    relatedEntities: ["ACCOUNT::farah", "IP::198.51.100.23"],
     attackMapping: ["T1550.004"],
     stateVersion: 2,
     fields: { src_ip: "198.51.100.23", mfa: "not_prompted" },
@@ -216,7 +216,7 @@ export const infostealerEvidenceBatch2: EvidenceItemVM[] = [
     sha256: "f6a7b8c9d0e1f6a7b8c9d0e1f6a7b8c9d0e1f6a7b8c9d0e1f6a7b8c9d0e1f6a7",
     sourceFile: "crm_audit.csv",
     sourceLocation: "row 2041",
-    relatedEntities: ["acct-farah", "app-crm"],
+    relatedEntities: ["ACCOUNT::farah", "HOST::CRM"],
     attackMapping: ["T1213"],
     stateVersion: 2,
     fields: { records: 1200, object: "customer" },
@@ -245,10 +245,10 @@ export const infostealerAnalysisBatch1: AnalysisVM = {
   classification: "Credential theft via infostealer",
   confidence: { value: 0.72, basis: "4 observed endpoint/network events", advisory: true },
   affectedEntities: [
-    { id: "host-lap-farah", type: "host", name: "LAP-FARAH" },
-    { id: "acct-farah", type: "account", name: "farah@demo.example" },
+    { id: "HOST::SALES-LT-07", type: "host", name: "SALES-LT-07" },
+    { id: "ACCOUNT::farah", type: "account", name: "farah" },
   ],
-  attackTechniques: ["T1566.002", "T1204.002", "T1555.003", "T1041"],
+  attackTechniques: ["T1204.002", "T1555.003", "T1041"],
   missingEvidence: ["Identity sign-in logs for the affected account"],
   hypotheses: ["Stolen browser credentials may enable session replay"],
 };
@@ -257,11 +257,11 @@ export const infostealerAnalysisBatch2: AnalysisVM = {
   classification: "Credential theft escalating to session hijack + data exfiltration",
   confidence: { value: 0.9, basis: "Session replay + CRM export confirm reuse", advisory: true },
   affectedEntities: [
-    { id: "host-lap-farah", type: "host", name: "LAP-FARAH" },
-    { id: "acct-farah", type: "account", name: "farah@demo.example" },
-    { id: "app-crm", type: "process", name: "CRM" },
+    { id: "HOST::SALES-LT-07", type: "host", name: "SALES-LT-07" },
+    { id: "ACCOUNT::farah", type: "account", name: "farah" },
+    { id: "HOST::CRM", type: "host", name: "CRM" },
   ],
-  attackTechniques: ["T1566.002", "T1204.002", "T1555.003", "T1041", "T1550.004", "T1213"],
+  attackTechniques: ["T1204.002", "T1555.003", "T1041", "T1550.004", "T1213"],
   missingEvidence: [],
   hypotheses: ["Exported customer records may trigger a data-protection notification duty"],
 };
@@ -280,16 +280,17 @@ function act(partial: Partial<FxAction> & Pick<FxAction, "actionId" | "tool" | "
     expectedEffect: "",
     validationChecks: [],
     state: "proposed",
-    requiredApprover: "Tier 1 analyst",
+    requiredApprover: "soc_analyst",
     ...partial,
   } as FxAction;
 }
 
 export const infostealerPlanV1Actions: FxAction[] = [
-  act({ actionId: "ACT-IS-1A", tool: "isolate_host", target: "host-lap-farah", targetType: "host", risk: "high", escalationRequired: true, requiredApprover: "Tier 2 analyst", rationale: "Isolate Farah's laptop to stop further infostealer activity.", policyRefs: ["POL-02"], evidenceIds: ["EV-IS-002", "EV-IS-004"], expectedEffect: "Host removed from the network.", validationChecks: ["Host unreachable from corp network"], basedOnStateVersion: 1, stage: "containment" }),
-  act({ actionId: "ACT-IS-1B", tool: "preserve_evidence", target: "host-lap-farah", targetType: "host", risk: "low", rationale: "Preserve memory and disk before re-imaging.", policyRefs: ["POL-01"], evidenceIds: ["EV-IS-003"], expectedEffect: "Forensic images captured.", validationChecks: ["Image hash recorded"], stage: "preservation" }),
-  act({ actionId: "ACT-IS-1C", tool: "block_domain", target: "domain-pdf-editor-pro", targetType: "domain", risk: "low", rationale: "Block the malicious PDF-editor domain at the proxy.", policyRefs: ["POL-03"], evidenceIds: ["EV-IS-001"], expectedEffect: "Domain resolution blocked.", validationChecks: ["Proxy denies the domain"], stage: "containment" }),
-  act({ actionId: "ACT-IS-1D", tool: "reimage_host", target: "host-lap-farah", targetType: "host", risk: "moderate", rationale: "Re-image the laptop after preservation completes.", policyRefs: ["POL-04"], evidenceIds: ["EV-IS-002"], expectedEffect: "Clean OS restored.", validationChecks: ["Host rebuilt from gold image"], stage: "eradication" }),
+  act({ actionId: "ACT-IS-1A", tool: "isolate_host", target: "HOST::SALES-LT-07", targetType: "host", risk: "high", rationale: "Isolate Farah's laptop to stop further infostealer activity.", policyRefs: ["POL-04"], evidenceIds: ["EV-IS-002", "EV-IS-004"], expectedEffect: "Host removed from the network.", validationChecks: ["Host unreachable from corp network"], basedOnStateVersion: 1, stage: "containment" }),
+  act({ actionId: "ACT-IS-1B", tool: "preserve_evidence", target: "HOST::SALES-LT-07", targetType: "host", risk: "low", rationale: "Preserve memory and disk before re-imaging.", policyRefs: ["POL-05"], evidenceIds: ["EV-IS-003"], expectedEffect: "Forensic images captured.", validationChecks: ["Image hash recorded"], stage: "preservation" }),
+  act({ actionId: "ACT-IS-1C", tool: "block_domain", target: "DOMAIN::pdf-editor-free.example", targetType: "domain", risk: "low", rationale: "Block the malicious PDF-editor domain at the proxy.", policyRefs: ["POL-09"], evidenceIds: ["EV-IS-001"], expectedEffect: "Domain resolution blocked.", validationChecks: ["Proxy denies the domain"], stage: "containment" }),
+  act({ actionId: "ACT-IS-1D", tool: "reimage_host", target: "HOST::SALES-LT-07", targetType: "host", risk: "moderate", escalationRequired: true, requiredApprover: "it_manager", rationale: "Re-image the laptop after preservation completes.", policyRefs: ["POL-01", "POL-06"], evidenceIds: ["EV-IS-002"], expectedEffect: "Clean OS restored.", validationChecks: ["Host rebuilt from gold image"], stage: "eradication" }),
+  act({ actionId: "ACT-IS-1E", tool: "revoke_sessions", target: "ACCOUNT::farah", targetType: "account", risk: "moderate", rationale: "Revoke Farah's browser sessions because browser credentials were accessed.", policyRefs: ["POL-07"], evidenceIds: ["EV-IS-003"], expectedEffect: "Existing sessions invalidated.", validationChecks: ["No active sessions remain"], stage: "containment" }),
 ];
 
 export const infostealerPlanV2Actions: FxAction[] = [
@@ -299,11 +300,10 @@ export const infostealerPlanV2Actions: FxAction[] = [
   // replaced-or-insufficient: re-image alone is now insufficient
   { ...infostealerPlanV1Actions[3], version: 2, basedOnStateVersion: 2 },
   // added
-  act({ actionId: "ACT-IS-2E", tool: "revoke_sessions", target: "acct-farah", targetType: "account", risk: "moderate", rationale: "Revoke all of Farah's active sessions; the stolen session is still valid.", policyRefs: ["POL-02"], evidenceIds: ["EV-IS-010"], expectedEffect: "All sessions invalidated.", validationChecks: ["No active sessions remain"], version: 2, basedOnStateVersion: 2, stage: "containment" }),
-  act({ actionId: "ACT-IS-2F", tool: "reset_credentials", target: "acct-farah", targetType: "account", risk: "moderate", rationale: "Reset saved passwords exposed by the infostealer.", policyRefs: ["POL-02"], evidenceIds: ["EV-IS-003"], expectedEffect: "Credentials rotated.", validationChecks: ["Old credentials rejected"], version: 2, basedOnStateVersion: 2, stage: "eradication" }),
+  act({ actionId: "ACT-IS-2E", tool: "revoke_sessions", target: "ACCOUNT::farah", targetType: "account", risk: "moderate", rationale: "Retry session revocation after the CRM-side revocation fault; replay confirms the stolen session remained valid.", policyRefs: ["POL-07"], evidenceIds: ["EV-IS-010"], expectedEffect: "All sessions invalidated.", validationChecks: ["No active sessions remain"], version: 2, basedOnStateVersion: 2, stage: "containment" }),
+  act({ actionId: "ACT-IS-2F", tool: "reset_password", target: "ACCOUNT::farah", targetType: "account", risk: "moderate", rationale: "Reset the password exposed by the infostealer.", policyRefs: ["POL-07"], evidenceIds: ["EV-IS-003"], expectedEffect: "Password rotated.", validationChecks: ["Old password rejected"], version: 2, basedOnStateVersion: 2, stage: "eradication" }),
   // policy-triggered
-  act({ actionId: "ACT-IS-2G", tool: "disable_account", target: "acct-farah", targetType: "account", risk: "high", escalationRequired: true, requiredApprover: "IT manager", rationale: "Request IT-manager approval before disabling the account (high-impact).", policyRefs: ["POL-02"], evidenceIds: ["EV-IS-010"], expectedEffect: "Account disabled pending review.", validationChecks: ["Account cannot authenticate"], version: 2, basedOnStateVersion: 2, stage: "containment" }),
-  act({ actionId: "ACT-IS-2H", tool: "assess_data_exposure", target: "app-crm", targetType: "process", risk: "low", rationale: "Assess the 1,200 exported customer records and notify the DPO under org policy.", policyRefs: ["POL-05"], evidenceIds: ["EV-IS-011"], expectedEffect: "Exposure scoped; DPO notified.", validationChecks: ["Exposure report filed"], version: 2, basedOnStateVersion: 2, stage: "hardening" }),
+  act({ actionId: "ACT-IS-2G", tool: "disable_account", target: "ACCOUNT::farah", targetType: "account", risk: "high", escalationRequired: true, requiredApprover: "it_manager", rationale: "Request IT-manager approval before disabling the account (high-impact).", policyRefs: ["POL-02"], evidenceIds: ["EV-IS-010"], expectedEffect: "Account disabled pending review.", validationChecks: ["Account cannot authenticate"], version: 2, basedOnStateVersion: 2, stage: "containment" }),
 ];
 
 export const infostealerPlanV1: FxPlan = {
