@@ -1629,12 +1629,10 @@
             {
               "tool": "isolate_host",
               "target": "HOST::ADM-WS-02",
-              "simulated_at": "2026-10-07T08:35:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "ADM-WS-02 network-contained by the EDR; only the EDR management channel remains.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 403,
+              "detail": "approval denied by policy: target 'HOST::ADM-WS-02' is not in the asset inventory; cannot select the asset-specific approval policy (failing closed)",
+              "skipped": "approval refused by policy"
             }
           ]
         },
@@ -1735,12 +1733,10 @@
             {
               "tool": "isolate_host",
               "target": "HOST::ADM-WS-02",
-              "simulated_at": "2026-10-07T10:25:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "ADM-WS-02 has been isolated since 2026-10-07 08:35; no change.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 403,
+              "detail": "approval denied by policy: target 'HOST::ADM-WS-02' is not in the asset inventory; cannot select the asset-specific approval policy (failing closed)",
+              "skipped": "approval refused by policy"
             }
           ]
         }
@@ -1759,7 +1755,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "2 executed actions"
+          "detail": "0 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -1770,7 +1766,7 @@
       "report": {
         "status": "draft",
         "actions": 2,
-        "timeline_rows": 18,
+        "timeline_rows": 16,
         "findings": 0,
         "attack_techniques": [],
         "not_produced_yet": [
@@ -1901,12 +1897,10 @@
             {
               "tool": "isolate_host",
               "target": "HOST::ADM-WS-02",
-              "simulated_at": "2026-10-07T08:35:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "ADM-WS-02 network-contained by the EDR; only the EDR management channel remains.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 403,
+              "detail": "approval denied by policy: target 'HOST::ADM-WS-02' is not in the asset inventory; cannot select the asset-specific approval policy (failing closed)",
+              "skipped": "approval refused by policy"
             }
           ]
         },
@@ -2042,12 +2036,10 @@
             {
               "tool": "isolate_host",
               "target": "HOST::ADM-WS-02",
-              "simulated_at": "2026-10-07T10:25:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "ADM-WS-02 has been isolated since 2026-10-07 08:35; no change.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 403,
+              "detail": "approval denied by policy: target 'HOST::ADM-WS-02' is not in the asset inventory; cannot select the asset-specific approval policy (failing closed)",
+              "skipped": "approval refused by policy"
             }
           ]
         }
@@ -2066,7 +2058,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "2 executed actions"
+          "detail": "0 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -2077,7 +2069,7 @@
       "report": {
         "status": "draft",
         "actions": 2,
-        "timeline_rows": 19,
+        "timeline_rows": 17,
         "findings": 0,
         "attack_techniques": [],
         "not_produced_yet": [

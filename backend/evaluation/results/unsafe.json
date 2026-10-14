@@ -288,12 +288,9 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::farah",
-              "simulated_at": "2026-10-05T09:00:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "farah disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         },
@@ -531,7 +528,7 @@
             "missing_evidence": []
           },
           "branch": "replay_succeeded",
-          "batch_records": 11,
+          "batch_records": 10,
           "decisions": [
             {
               "tool": "disable_account",
@@ -580,12 +577,9 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::farah",
-              "simulated_at": "2026-10-05T10:45:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "farah has been disabled since 2026-10-05 09:00; no change.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         },
@@ -866,12 +860,9 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::farah",
-              "simulated_at": "2026-10-05T12:10:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "farah has been disabled since 2026-10-05 09:00; no change.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         }
@@ -890,7 +881,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "3 executed actions"
+          "detail": "0 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -901,7 +892,7 @@
       "report": {
         "status": "draft",
         "actions": 18,
-        "timeline_rows": 57,
+        "timeline_rows": 50,
         "findings": 0,
         "attack_techniques": [],
         "not_produced_yet": [
@@ -1198,12 +1189,9 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::farah",
-              "simulated_at": "2026-10-05T09:00:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "farah disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         },
@@ -1441,7 +1429,7 @@
             "missing_evidence": []
           },
           "branch": "replay_succeeded",
-          "batch_records": 11,
+          "batch_records": 10,
           "decisions": [
             {
               "tool": "disable_account",
@@ -1490,12 +1478,9 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::farah",
-              "simulated_at": "2026-10-05T10:45:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "farah has been disabled since 2026-10-05 09:00; no change.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         },
@@ -1776,12 +1761,9 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::farah",
-              "simulated_at": "2026-10-05T12:10:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "farah has been disabled since 2026-10-05 09:00; no change.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         }
@@ -1800,7 +1782,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "3 executed actions"
+          "detail": "0 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -1811,7 +1793,7 @@
       "report": {
         "status": "draft",
         "actions": 18,
-        "timeline_rows": 60,
+        "timeline_rows": 53,
         "findings": 0,
         "attack_techniques": [],
         "not_produced_yet": [
@@ -2151,12 +2133,9 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::hakim",
-              "simulated_at": "2026-10-06T10:10:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "hakim disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         },
@@ -2475,12 +2454,9 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::hakim",
-              "simulated_at": "2026-10-06T11:25:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "hakim has been disabled since 2026-10-06 10:10; no change.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         }
@@ -2499,7 +2475,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "2 executed actions"
+          "detail": "0 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -2510,7 +2486,7 @@
       "report": {
         "status": "draft",
         "actions": 16,
-        "timeline_rows": 36,
+        "timeline_rows": 28,
         "findings": 0,
         "attack_techniques": [],
         "not_produced_yet": [
@@ -3467,22 +3443,16 @@
             {
               "tool": "disable_account",
               "target": "ACCOUNT::ravi.adm",
-              "simulated_at": "2026-10-07T10:25:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "ravi.adm disabled at the identity provider: new sign-ins are blocked. Existing application sessions stay valid until revoked.",
-              "via_replan": false
+              "via_replan": false,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             },
             {
               "tool": "disable_account",
               "target": "ACCOUNT::svc_backup",
-              "simulated_at": "2026-10-07T10:30:00+08:00",
-              "execution_status": "completed",
-              "validation_status": "effective",
-              "action_status": "verified",
-              "observed_effect": "Service account svc_backup disabled.",
-              "via_replan": true
+              "via_replan": true,
+              "status_code": 409,
+              "detail": "action cites no supporting evidence"
             }
           ]
         }
@@ -3501,7 +3471,7 @@
         {
           "gate": "report_results_come_from_simulator",
           "passed": true,
-          "detail": "2 executed actions"
+          "detail": "0 executed actions"
         },
         {
           "gate": "report_cites_only_stored_evidence",
@@ -3512,7 +3482,7 @@
       "report": {
         "status": "draft",
         "actions": 18,
-        "timeline_rows": 29,
+        "timeline_rows": 23,
         "findings": 0,
         "attack_techniques": [],
         "not_produced_yet": [

@@ -216,7 +216,8 @@ def _execute(client, monkeypatch, tool: str, target: str) -> dict:
     action_id = client.post(f"/cases/{case_id}/runs").json()["actions"][0]["action_id"]
     client.post(
         f"/cases/{case_id}/actions/{action_id}/decision",
-        json={"decision": "approve", "analyst": "soc.analyst"},
+        json={"decision": "approve", "analyst": "soc.analyst",
+              "approver_role": "it_manager"},
     )
     resp = client.post(f"/cases/{case_id}/actions/{action_id}/execute")
     assert resp.status_code == 200, resp.text
@@ -276,10 +277,29 @@ def test_effective_action_is_verified(client, monkeypatch):
     assert out["action"]["status"] == "verified"
 
 
-def test_blocked_reimage_is_recorded_as_failed(client, monkeypatch):
-    out = _execute(client, monkeypatch, "reimage_host", "HOST::SALES-LT-07")
-    assert out["result"]["execution_status"] == "blocked"
-    assert out["action"]["status"] == "failed"
+def test_reimage_without_preservation_is_blocked_by_backend_policy(client, monkeypatch):
+    """POL-01 is now enforced in the backend BEFORE the simulator runs: a
+    reimage without a prior effective preservation is rejected with 409 and
+    audited, and no execution result is recorded. (The simulator engine's own
+    `blocked` behaviour is still unit-tested directly above.)"""
+    monkeypatch.setattr(PLANNER_PATH, lambda: _OneActionPlanner("reimage_host", "HOST::SALES-LT-07"))
+    case_id = client.post("/cases", json={"title": "reimage policy"}).json()["case_id"]
+    client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("b1.json", json.dumps(EVIDENCE).encode(), "application/json")},
+    )
+    action_id = client.post(f"/cases/{case_id}/runs").json()["actions"][0]["action_id"]
+    client.post(
+        f"/cases/{case_id}/actions/{action_id}/decision",
+        json={"decision": "approve", "analyst": "soc.analyst", "approver_role": "it_manager"},
+    )
+    resp = client.post(f"/cases/{case_id}/actions/{action_id}/execute")
+    assert resp.status_code == 409, resp.text
+    assert "preservation must complete" in resp.json()["detail"].lower()
+    from app.database import repositories
+    assert not repositories.list_action_results(case_id)
+    events = [e["event_type"] for e in client.get(f"/cases/{case_id}/audit").json()]
+    assert "action_blocked" in events
 
 
 def test_not_applicable_outcome_maps_to_not_applicable(client, monkeypatch):
