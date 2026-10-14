@@ -32,6 +32,12 @@ def create_case(body: CaseCreate) -> Case:
     return case
 
 
+@router.get("", response_model=list[Case])
+def list_cases() -> list[Case]:
+    cases = [Case(**data) for data in repositories.list_cases()]
+    return sorted(cases, key=lambda case: (case.updated_at, case.case_id), reverse=True)
+
+
 @router.get("/{case_id}", response_model=Case)
 def get_case(case_id: str) -> Case:
     data = repositories.get_case(case_id)

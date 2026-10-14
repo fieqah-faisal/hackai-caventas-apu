@@ -308,8 +308,8 @@ export interface ReportVM {
   generatedAt: string;
   sections: ReportSectionVM[];
   completeness: { present: number; total: number };
-  /** PDF is produced server-side at a local path and is NOT downloadable. */
-  pdfAvailable: false;
+  /** True when the backend exposes the generated PDF through its download API. */
+  pdfAvailable: boolean;
 }
 
 // ---- Audit / activity view models -----------------------------------------
@@ -352,9 +352,10 @@ export interface CaseActivityVM {
 }
 
 export interface AgentPlanningVM {
-  activeRuns: number;
+  /** Null when the provider has no persisted run-status contract. */
+  activeRuns: number | null;
   blockedRuns: number;
-  /** Run counts are synthetic until a run-status endpoint exists. */
+  /** Provenance of the available planning counts. */
   runCountsSource: DataSource;
   stageDistribution: { stage: Stage; count: number }[];
 }

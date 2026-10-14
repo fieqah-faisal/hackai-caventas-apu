@@ -48,6 +48,8 @@ export function CreateCasePage() {
   const [caseId, setCaseId] = useState<string | null>(null);
   const [sources, setSources] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [runPending, setRunPending] = useState(false);
+  const runPendingRef = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const statuses = stepStatuses(s);
@@ -94,10 +96,14 @@ export function CreateCasePage() {
 
   async function start() {
     if (!caseId) return;
-    if (s.runStarted) return; // duplicate-run guard
+    if (s.runStarted || runPendingRef.current) return;
+    runPendingRef.current = true;
+    setRunPending(true);
     setBusy(true);
     const out = await p.startRun(caseId);
     setBusy(false);
+    setRunPending(false);
+    runPendingRef.current = false;
     if (out.kind === "ok") {
       setS((prev) => markRunStarted(prev));
       notify({ tone: "success", title: "Analysis started", detail: "Opening the case workspace." });
@@ -175,6 +181,7 @@ export function CreateCasePage() {
                   s={s}
                   setS={setS}
                   busy={busy}
+                  runPending={runPending}
                   sources={sources}
                   caseId={caseId}
                   onCreate={createThenAdvance}
@@ -230,10 +237,10 @@ function StepRow({
 }
 
 function StepBody({
-  step, s, setS, busy, sources, caseId, onCreate, onPickFiles, onConfirmReview, onStart,
+  step, s, setS, busy, runPending, sources, caseId, onCreate, onPickFiles, onConfirmReview, onStart,
 }: {
   step: StepId; s: SetupState; setS: React.Dispatch<React.SetStateAction<SetupState>>;
-  busy: boolean; sources: string[]; caseId: string | null;
+  busy: boolean; runPending: boolean; sources: string[]; caseId: string | null;
   onCreate: () => void; onPickFiles: () => void; onConfirmReview: () => void; onStart: () => void;
 }) {
   if (step === "details") {
@@ -315,9 +322,10 @@ function StepBody({
         <div className="flex justify-between"><dt className="text-text-muted">Evidence sources</dt><dd className="tnum">{sources.length}</dd></div>
         <div className="flex justify-between"><dt className="text-text-muted">Accepted records</dt><dd className="tnum">{s.acceptedFileCount}</dd></div>
       </dl>
-      <Button variant="primary" size="sm" disabled={busy || s.runStarted} onClick={onStart} leadingIcon={<Icon name="running" size={18} />}>
-        {s.runStarted ? "Analysis started" : "Start analysis"}
+      <Button variant="primary" size="sm" disabled={busy || runPending || s.runStarted} onClick={onStart} leadingIcon={<Icon name="running" size={18} />}>
+        {s.runStarted ? "Analysis started" : runPending ? "Analyzing evidence…" : "Start analysis"}
       </Button>
+      {runPending && <p role="status" className="text-meta text-text-muted">Planning is in progress and can take up to 120 seconds. Keep this page open.</p>}
     </div>
   );
 }
@@ -343,15 +351,17 @@ function ReviewBody({ caseId, clientRejected, onConfirm }: { caseId: string | nu
         <div className="flex justify-between"><dt className="text-text-muted">Detected sources</dt><dd className="tnum">{data?.sources.length ?? "…"}</dd></div>
         <div className="flex justify-between"><dt className="text-text-muted">Client-rejected</dt><dd className="tnum">{clientRejected}</dd></div>
       </dl>
-      <button onClick={() => setShowTech((v) => !v)} className="text-meta text-status-info hover:underline">
-        {showTech ? "Hide" : "Show"} hash & ingestion detail
-      </button>
+      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <button onClick={() => setShowTech((v) => !v)} className="text-left text-meta text-status-info hover:underline">
+          {showTech ? "Hide" : "Show"} hash & ingestion detail
+        </button>
+        <Button variant="primary" size="sm" onClick={onConfirm}>Confirm review & continue</Button>
+      </div>
       {showTech && (
         <p className="text-meta text-text-muted">
           SHA-256 and ingestion status are available per record on the case Evidence tab.
         </p>
       )}
-      <Button variant="primary" size="sm" onClick={onConfirm}>Confirm review & continue</Button>
     </div>
   );
 }

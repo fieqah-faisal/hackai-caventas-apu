@@ -51,7 +51,7 @@ function ReportPanel({ caseId }: { caseId: string }) {
               <EmptyState
                 icon={<Icon name="report" size={24} />}
                 title="No report generated yet"
-                hint="Generating builds a draft from the stored case records and stores it as a new report version with an audit event. Reports generated before this page was loaded are not listed here; the backend has no endpoint to list them."
+                hint="Generating builds a draft from the stored case records and stores it as a new report version with an audit event."
                 action={
                   <Button variant="primary" size="sm" disabled={busy} onClick={generate} leadingIcon={<Icon name="report" size={18} />}>
                     {busy ? "Generating…" : "Generate report"}
@@ -93,15 +93,15 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
           >
             {busy ? "Generating…" : "Regenerate"}
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled
-            title="PDF export is produced server-side and is not available for download in this prototype."
-            leadingIcon={<Icon name="download" size={18} />}
-          >
-            PDF (unavailable)
-          </Button>
+          {report.pdfAvailable && (
+            <a
+              href={`/api/cases/${encodeURIComponent(report.caseId)}/reports/${encodeURIComponent(report.reportId)}/pdf`}
+              download={`${report.reportId}.pdf`}
+              className="inline-flex h-7 items-center justify-center gap-2 rounded border border-border-strong bg-surface-raised px-2.5 text-btn font-semibold text-text-primary transition-colors duration-180 hover:bg-surface-hover focus-visible:outline-none"
+            >
+              <Icon name="download" size={18} /> Download PDF
+            </a>
+          )}
         </div>
       </section>
 
@@ -112,7 +112,7 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
       </div>
 
       <p className="text-meta text-text-muted">
-        The completeness indicator counts record-backed sections present versus total; it is not an accuracy percentage. PDF rendering runs server-side and is not exposed as a download.
+        The completeness indicator counts record-backed sections present versus total; it is not an accuracy percentage.
       </p>
     </div>
   );

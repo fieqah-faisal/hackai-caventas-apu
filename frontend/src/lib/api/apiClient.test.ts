@@ -255,6 +255,41 @@ describe("RealProvider contract (real backend bodies)", () => {
     });
   }
 
+  it("getCases maps persisted cases with stages from their latest plans", async () => {
+    const older = { ...CASE_AT_STATE_3, case_id: "CASE-OLDER", title: "Older case", updated_at: "2026-10-11T02:00:00Z" };
+    globalThis.fetch = routeFetch({
+      "GET /api/cases": { status: 200, body: [CASE_AT_STATE_3, older] },
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: PLANS_IN_DOC_ID_ORDER },
+      "GET /api/cases/CASE-OLDER/plans": { status: 200, body: [] },
+    });
+
+    const out = await new RealProvider().getCases();
+
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data.map((item) => [item.caseId, item.stage, item.stateVersion])).toEqual([
+      ["CASE-TEST0001", "eradication", 3],
+      ["CASE-OLDER", null, 3],
+    ]);
+  });
+
+  it("case activity is derived from the persisted case list", async () => {
+    const closed = { ...CASE_AT_STATE_3, case_id: "CASE-CLOSED", status: "closed" as const };
+    const fetchMock = routeFetch({
+      "GET /api/cases": { status: 200, body: [CASE_AT_STATE_3, closed] },
+    });
+    globalThis.fetch = fetchMock;
+
+    const out = await new RealProvider().getCaseActivity();
+
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data.openCases).toBe(1);
+    expect(out.value.data.attentionCases).toBe(1);
+    expect(out.value.data.buckets).toHaveLength(7);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("getPlans numbers versions by created_at, not by the backend list order", async () => {
     globalThis.fetch = routeFetch({
       "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: PLANS_IN_DOC_ID_ORDER },
@@ -454,16 +489,20 @@ describe("RealProvider contract (real backend bodies)", () => {
 
   // ---- Report: POST /reports only on an explicit generate ----
 
-  it("getReport never calls the backend and is null before any generation", async () => {
-    const fetchMock = mockFetch(200, reportBody("RPT-000000000001"));
+  it("getReport reads the persisted latest report and treats 404 as empty", async () => {
+    const fetchMock = mockFetch(404, { detail: "no reports found" });
     globalThis.fetch = fetchMock;
     const out = await new RealProvider().getReport("CASE-TEST0001");
     expect(out).toEqual({ kind: "ok", value: { data: null, source: "real" } });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith("/api/cases/CASE-TEST0001/reports/latest", expect.anything());
   });
 
-  it("generateReport POSTs once; getReport then returns that report from memory", async () => {
-    const fetchMock = mockFetch(200, reportBody("RPT-000000000001"));
+  it("generateReport POSTs once; getReport then reads the persisted report", async () => {
+    const fetchMock = routeFetch({
+      "POST /api/cases/CASE-TEST0001/reports": { status: 200, body: reportBody("RPT-000000000001") },
+      "GET /api/cases/CASE-TEST0001/reports/latest": { status: 200, body: reportBody("RPT-000000000001") },
+      "GET /api/cases/CASE-OTHER/reports/latest": { status: 404, body: { detail: "no reports found" } },
+    });
     globalThis.fetch = fetchMock;
     const provider = new RealProvider();
 
@@ -474,7 +513,7 @@ describe("RealProvider contract (real backend bodies)", () => {
     expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("POST");
 
     const again = await provider.getReport("CASE-TEST0001");
-    expect(fetchMock).toHaveBeenCalledTimes(1); // no second POST
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(again.kind).toBe("ok");
     if (again.kind === "ok") expect(again.value.data?.reportId).toBe("RPT-000000000001");
     // Cached per case only.
@@ -482,8 +521,11 @@ describe("RealProvider contract (real backend bodies)", () => {
     if (other.kind === "ok") expect(other.value.data).toBeNull();
   });
 
-  it("a failed generation is reported as an error and nothing is cached", async () => {
-    globalThis.fetch = mockFetch(500, { detail: "Internal Server Error" });
+  it("a failed generation is reported as an error and the persisted read stays empty", async () => {
+    globalThis.fetch = routeFetch({
+      "POST /api/cases/CASE-TEST0001/reports": { status: 500, body: { detail: "Internal Server Error" } },
+      "GET /api/cases/CASE-TEST0001/reports/latest": { status: 404, body: { detail: "no reports found" } },
+    });
     const provider = new RealProvider();
     const gen = await provider.generateReport("CASE-TEST0001");
     expect(gen).toEqual({ kind: "http_error", status: 500, detail: "Internal Server Error" });

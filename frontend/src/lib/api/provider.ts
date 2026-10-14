@@ -19,6 +19,7 @@ import type {
   CaseActivityVM,
   CaseFacts,
   CaseHeaderVM,
+  CaseSummary,
   DataSource,
   DecisionKind,
   EvidenceItemVM,
@@ -85,6 +86,7 @@ export interface DataProvider {
   getHumanDecisions(): Promise<Outcome<HumanDecisionsVM>>;
   getAttentionItems(): Promise<Outcome<AttentionItem[]>>;
   getRecentCases(): Promise<Outcome<RecentCaseRow[]>>;
+  getCases(): Promise<Outcome<CaseSummary[]>>;
 
   // Case workspace
   getCaseHeader(caseId: string): Promise<Outcome<CaseHeaderVM>>;

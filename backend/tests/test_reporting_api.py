@@ -83,6 +83,37 @@ def test_get_report_roundtrip(client, monkeypatch, tmp_path):
     assert fetched.json()["report_id"] == generated["report_id"]
 
 
+def test_latest_report_and_pdf_survive_a_later_read(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = _case_with_history(client, monkeypatch)
+    first = client.post(f"/cases/{case_id}/reports").json()
+    second = client.post(f"/cases/{case_id}/reports").json()
+
+    latest = client.get(f"/cases/{case_id}/reports/latest")
+    assert latest.status_code == 200
+    assert latest.json()["report_id"] == second["report_id"]
+    assert latest.json()["report_id"] != first["report_id"]
+
+    pdf = client.get(f"/cases/{case_id}/reports/{second['report_id']}/pdf")
+    assert pdf.status_code == 200
+    assert pdf.headers["content-type"] == "application/pdf"
+    assert second["report_id"] in pdf.headers["content-disposition"]
+    assert pdf.content.startswith(b"%PDF-")
+    assert len(pdf.content) > 100
+
+
+def test_latest_report_and_pdf_missing_404(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "empty"}).json()["case_id"]
+    assert client.get(f"/cases/{case_id}/reports/latest").status_code == 404
+
+    generated = client.post(f"/cases/{case_id}/reports").json()
+    Path(generated["pdf_path"]).unlink()
+    assert client.get(
+        f"/cases/{case_id}/reports/{generated['report_id']}/pdf"
+    ).status_code == 404
+
+
 def test_report_uses_newest_plan_not_stream_order(client, monkeypatch, tmp_path):
     """Real Firestore streams plans in document-ID order, not creation order.
 

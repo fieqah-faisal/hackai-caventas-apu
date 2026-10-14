@@ -36,6 +36,7 @@ import type {
   CaseActivityVM,
   CaseFacts,
   CaseHeaderVM,
+  CaseSummary,
   DecisionKind,
   EvidenceItemVM,
   ExecutionResultVM,
@@ -181,6 +182,24 @@ export class FixtureProvider implements DataProvider {
         updatedAt: c.updatedAt,
       }));
     return ok(rows, "synthetic");
+  }
+
+  async getCases(): Promise<Outcome<CaseSummary[]>> {
+    return ok(
+      [...fxCases]
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .map((c) => ({
+          caseId: c.caseId,
+          title: c.title,
+          status: c.status,
+          stage: c.stage,
+          classification: c.classification,
+          severity: c.severity,
+          stateVersion: c.stateVersion,
+          updatedAt: c.updatedAt,
+        })),
+      "synthetic",
+    );
   }
 
   private caseById(caseId: string) {

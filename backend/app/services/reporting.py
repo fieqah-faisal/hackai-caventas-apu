@@ -341,3 +341,24 @@ def get_report(case_id: str, report_id: str) -> dict[str, Any]:
     if report is None:
         raise ReportingError(f"report not found: {report_id}", "not_found")
     return report
+
+
+def get_latest_report(case_id: str) -> dict[str, Any]:
+    if not repositories.case_exists(case_id):
+        raise ReportingError(f"case not found: {case_id}", "not_found")
+    reports = sorted(
+        repositories.list_reports(case_id),
+        key=lambda report: (_created_at_key(report), str(report.get("report_id", ""))),
+    )
+    if not reports:
+        raise ReportingError(f"no reports found for case: {case_id}", "not_found")
+    return reports[-1]
+
+
+def get_report_pdf_path(case_id: str, report_id: str) -> Path:
+    get_report(case_id, report_id)
+    report_dir = Path(get_settings().report_path).resolve()
+    pdf_path = (report_dir / f"{report_id}.pdf").resolve()
+    if pdf_path.parent != report_dir or not pdf_path.is_file():
+        raise ReportingError(f"report PDF not found: {report_id}", "not_found")
+    return pdf_path

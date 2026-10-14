@@ -48,6 +48,11 @@ def get_case(case_id: str) -> dict[str, Any] | None:
     return snap.to_dict() if snap.exists else None
 
 
+def list_cases() -> list[dict[str, Any]]:
+    docs = get_db().collection(CASES).stream()
+    return [d.to_dict() for d in docs]
+
+
 def update_case(case_id: str, data: dict[str, Any]) -> None:
     _case_ref(case_id).update(data)
 
@@ -165,6 +170,11 @@ def add_report(case_id: str, report_id: str, data: dict[str, Any]) -> None:
 def get_report(case_id: str, report_id: str) -> dict[str, Any] | None:
     snap = _case_ref(case_id).collection(REPORTS).document(report_id).get()
     return snap.to_dict() if snap.exists else None
+
+
+def list_reports(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(REPORTS).stream()
+    return [d.to_dict() for d in docs]
 
 
 # --- Audit events --------------------------------------------------------

@@ -3,6 +3,7 @@ import { AppShell } from "@/components/shell/AppShell";
 import { ToastProvider } from "@/components/ui/Toast";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { CreateCasePage } from "@/features/createCase/CreateCasePage";
+import { CasesPage } from "@/features/cases/CasesPage";
 import { CaseWorkspace } from "@/features/caseWorkspace/CaseWorkspace";
 import { OverviewTab } from "@/features/caseWorkspace/tabs/OverviewTab";
 import { EvidenceTab } from "@/features/caseWorkspace/tabs/EvidenceTab";
@@ -35,7 +36,7 @@ const router = createBrowserRouter([
           { path: "report", element: <ReportTab /> },
         ],
       },
-      { path: "cases", element: <PlaceholderPage title="Cases" /> },
+      { path: "cases", element: <CasesPage /> },
       { path: "approvals", element: <PlaceholderPage title="Approvals" /> },
       { path: "guidance", element: <PlaceholderPage title="Guidance Library" /> },
       { path: "reports", element: <PlaceholderPage title="Reports" /> },

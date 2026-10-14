@@ -513,7 +513,7 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
       present: sections.filter((s) => s.present).length,
       total: sections.length,
     },
-    pdfAvailable: false,
+    pdfAvailable: true,
   };
 }
 

@@ -248,8 +248,8 @@ describe("report action wording keeps proposed / approved / executed / effective
     ]);
   });
 
-  it("keeps the PDF unavailable (pdf_path is a server path)", () => {
-    expect(toReportVM(reportBody("RPT-000000000001")).pdfAvailable).toBe(false);
+  it("marks the PDF downloadable through the report API", () => {
+    expect(toReportVM(reportBody("RPT-000000000001")).pdfAvailable).toBe(true);
   });
 });
 

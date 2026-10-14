@@ -13,8 +13,7 @@
 > `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039;
 > `feat/bl-031-verify-before-contain` adds DEC-014;
 > `feat/bl-017-analysis-persistence` adds DEC-015.
-> Next free IDs: **BL-040** and **DEC-016**.
-> API-mode frontend↔backend gaps are tracked in BL-013.
+> Next free IDs: **BL-041** and **DEC-016**.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
 > (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done
@@ -32,6 +31,12 @@
 
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
+- BL-040 — Investigate the intermittent live planner HTTP 502 seen in the
+  single post-repair browser smoke on 2026-10-14. The request stayed singular,
+  pending UX behaved correctly, no plan/action was persisted, deterministic
+  planner/API tests pass, and an earlier same-day live plan is persisted and
+  renders correctly. Do not infer an application fix or spend another live call
+  without a separately approved diagnostic run. — open / backend
 
 ### P2
 - BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
@@ -42,11 +47,6 @@
 - BL-012 — Ratify or veto DEC-005 (React + Vite + Tailwind vs the
   steering's Streamlit note); if ratified, update `.kiro/steering/tech.md`
   + `structure.md` and the proposal §9 row. — open / team
-- BL-013 — API-mode read endpoints the frontend needs: global `GET /cases`
-  (dashboard) and plan-detail. Stored actions and execution results are
-  split out to BL-027 (on `link`); the audit DTO is aligned on `link`
-  (DEC-008). — open / Airil + Syafieqah
-
 - BL-024 — Decide which state changes invalidate an approval once
   GAS-lite adds `parent_version`, `change_reason` and `created_from`.
   Today one execution strands the plan's other approvals (only one action
@@ -73,16 +73,10 @@
   SSR hydration, which should not apply to this client-rendered SPA). Fix
   needs react-router-dom 7.x (breaking); not fixed on `link`. The other 13
   `npm audit` findings are dev-only tooling. — open / frontend
-- BL-025 — Report read endpoint: `GET /cases/{id}/reports` (list or
-  latest). Without it, the Report tab shows only reports generated in the
-  current page session, and after a reload the analyst must regenerate,
-  which stores a new version (DEC-009). — open / Raaj
 - BL-026 — API-mode UI follow-ups from the `link` emulator run, deferred
   because each changes what the analyst sees. Do (a) first, because its
   label is untrue:
   - (b) The Start step shows the file count as "Accepted records".
-  - (c) The dashboard summary cards show a generic "Could not load …"
-    instead of the unsupported reason.
   - (d) Overview says "start a planning run" when a run exists but wrote
     no findings.
   - (e) Evidence categorisation puts nearly every row under Endpoint,

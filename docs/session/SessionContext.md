@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-13 (GAS-lite merged; deterministic policy enforcement).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (API-mode demo-blocker repair verified).
 
 ## Project
 
@@ -92,8 +92,12 @@ Firestore; no credentials needed).
   populate Response Plan and Approvals, and stored execution/validation results
   remain visible after execution. `not_applicable` is explicit, the analyst-note
   label is honest, and the infostealer fixture matches policy/scenario ids,
-  roles, assets and approved tools. Dashboard and report reload reads remain
-  unsupported (BL-013, BL-025); other UI follow-ups remain in BL-026/028/029.
+  roles, assets and approved tools. Persisted `GET /cases` now backs the real
+  Dashboard and Cases page; latest reports survive reload and exact generated
+  PDFs download through the API. Direct case/evidence refresh, all workspace
+  tabs, long-running planning status/duplicate prevention and responsive review
+  actions passed real browser acceptance. Other UI follow-ups remain in
+  BL-026/028/029.
 - GAS-lite incident-state (BL-030, **Core complete**): STAIR-inspired
   (not a STAIR reproduction) enrichment of the versioned incident state.
   All Core Tasks 1-8 implemented on `feat/gas-lite-state-fieqah`; merged with
@@ -129,6 +133,12 @@ Firestore; no credentials needed).
   typecheck, **80 tests** and production build passed; Compose config, both
   image builds/health checks, full and abbreviated emulator-backed API-mode
   workflows through nginx, diff check and changed-file secret scan passed.
+- Post-repair verification (2026-10-14): backend **211 passed**; frontend
+  strict typecheck, **83 tests**, production build, Compose config and both
+  Docker image builds passed. Real API-mode acceptance produced a persisted,
+  reloadable report and valid PDF. The one permitted post-acceptance live
+  planner request returned HTTP 502 without persisting a plan (BL-040); the UI
+  kept the request singular and surfaced failure without false navigation.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

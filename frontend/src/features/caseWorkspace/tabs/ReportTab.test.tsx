@@ -73,7 +73,10 @@ describe("ReportTab (H4: generate only on explicit action)", () => {
 
     expect(await screen.findByRole("heading", { name: "Synthetic login anomaly" })).toBeInTheDocument();
     expect(provider.generateReport).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: /pdf \(unavailable\)/i })).toBeDisabled();
+    expect(screen.getByRole("link", { name: /download pdf/i })).toHaveAttribute(
+      "href",
+      "/api/cases/CASE-TEST0001/reports/RPT-000000000001/pdf",
+    );
   });
 
   it("a failed generation shows an error and no report", async () => {

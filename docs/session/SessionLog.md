@@ -3,6 +3,35 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-14 API-mode demo-blocker repair (DONE; live provider blocker recorded)
+
+- Added persisted `GET /cases`, replaced the `/cases` placeholder, and derived
+  API-mode dashboard/case-list surfaces from Firestore-backed case, plan and
+  action reads. Direct case/evidence routes continue to hydrate after refresh;
+  failed cached reads are discarded so an analyst retry can recover.
+- Added persisted latest-report retrieval and an exact report-PDF download
+  endpoint. The Report tab now survives reload and downloads through the API
+  instead of exposing a server path. Evidence Review actions are spaced and
+  stack at mobile width; planning shows an explicit up-to-120-second pending
+  state with a synchronous duplicate-request lock.
+- Real API-mode browser acceptance passed: the newly created case appeared on
+  Dashboard and Cases, direct refresh retained all 20 uploaded records, all
+  seven tabs loaded for persisted `CASE-41DAFD4C`, the report survived reload,
+  and `RPT-ef2eaf9d0f8f` downloaded as HTTP 200 `application/pdf` (11,299
+  bytes, `%PDF-`). The deterministic pending check made one request; responsive
+  controls had separation at laptop width and stacked to 280 px on mobile.
+- The single permitted post-acceptance live planner request made exactly one
+  `POST /runs`, displayed the pending status, and failed honestly with HTTP
+  502; no plan/action was persisted and the UI did not navigate falsely.
+  An earlier persisted live plan still renders across the complete workspace.
+  The provider failure is tracked as BL-040; no retry or evaluation run was
+  performed.
+- Checks: backend **211 passed**; frontend strict typecheck, **83 tests in 11
+  files**, production build, Compose config and both Docker image builds
+  passed. User-managed services were not restarted or stopped. No credential,
+  `.env`, authentication or service-account file was read. Changes remain
+  uncommitted; nothing was pushed or merged.
+
 ### 2026-10-14 Final integration and production-stack verification (DONE)
 
 - Real emulator/API check through the user-managed Vite proxy passed case,
