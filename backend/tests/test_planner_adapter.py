@@ -16,7 +16,11 @@ import pytest
 from app.ai.langgraph_planner import (
     LangGraphPlannerAdapter,
     PlannerError,
+    _analysis_messages,
+    _proposal_messages,
     load_guidance,
+    load_verification_first_skill,
+    select_guidance,
 )
 from app.schemas.incident_state import (
     Entity,
@@ -175,17 +179,56 @@ def test_unknown_tool_and_unknown_target_actions_are_dropped():
     assert plan.actions == []
 
 
-def test_invalid_stage_falls_back_to_assessment():
-    llm = ScriptedLLM([_analysis(), _proposal(stage="combat")])
+def test_proposal_stage_does_not_override_the_analyzed_stage():
+    llm = ScriptedLLM([_analysis(stage="containment"), _proposal(stage="combat")])
     plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
 
+    assert plan.stage is Stage.CONTAINMENT
+
+
+def test_invalid_analysis_stage_falls_back_to_assessment():
+    guidance = {
+        "policy_rules": [
+            {"rule_id": "POL-ASSESS", "phase": ["assessment"]},
+            {"rule_id": "POL-CONTAIN", "phase": ["containment"]},
+        ],
+        "approved_tools": ["isolate_host"],
+    }
+    llm = ScriptedLLM(
+        [
+            _analysis(stage="combat"),
+            _proposal(policy_refs=["POL-ASSESS"]),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), guidance)
+
     assert plan.stage is Stage.ASSESSMENT
+    proposal_payload = json.dumps(llm.calls[1][0])
+    assert "POL-ASSESS" in proposal_payload
+    assert "POL-CONTAIN" not in proposal_payload
 
 
 def test_malformed_llm_output_raises_planner_error():
-    llm = ScriptedLLM(["this is not json at all"])
+    llm = ScriptedLLM(["this is not json at all", "still not json"])
     with pytest.raises(PlannerError):
         LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+    assert len(llm.calls) == 2  # one attempt plus exactly one retry
+
+
+def test_malformed_analysis_json_is_retried_once():
+    llm = ScriptedLLM(["not json", _analysis(), _proposal()])
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert len(llm.calls) == 3
+    assert plan.actions and plan.actions[0].tool_name == "isolate_host"
+
+
+def test_malformed_proposal_json_is_retried_once():
+    llm = ScriptedLLM([_analysis(), "not json", _proposal()])
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert len(llm.calls) == 3
+    assert plan.actions and plan.actions[0].tool_name == "isolate_host"
 
 
 def _settings(api_key: str | None = "sk-test", **overrides) -> SimpleNamespace:
@@ -253,6 +296,41 @@ def test_load_guidance_reads_repo_fixture():
     assert "isolate_host" in guidance["approved_tools"]
 
 
+def test_verification_first_skill_grounds_analysis_prompt():
+    system = _analysis_messages({"case_id": "CASE-001"})[0]["content"]
+
+    assert "Verification-first grounding" in system
+    assert "The analysis stage is assessment." in system
+    assert "change verification" in system
+
+
+def test_verification_first_skill_grounds_proposal_prompt():
+    system = _proposal_messages({}, {}, {}, set(), set())[0]["content"]
+
+    assert "Verification-first grounding" in system
+    assert "Keep the proposed actions non-disruptive" in system
+    assert "contained as usual" in system
+
+
+def test_verification_first_skill_loader_rejects_missing_file(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "app.ai.langgraph_planner.VERIFICATION_FIRST_SKILL_PATH",
+        tmp_path / "nope" / "SKILL.md",
+    )
+    with pytest.raises(PlannerError, match="not readable"):
+        load_verification_first_skill()
+
+
+def test_verification_first_skill_loader_rejects_empty_file(monkeypatch, tmp_path):
+    empty = tmp_path / "SKILL.md"
+    empty.write_text("   \n", encoding="utf-8")
+    monkeypatch.setattr(
+        "app.ai.langgraph_planner.VERIFICATION_FIRST_SKILL_PATH", empty
+    )
+    with pytest.raises(PlannerError, match="empty"):
+        load_verification_first_skill()
+
+
 def test_alternate_tool_and_target_keys_are_normalized():
     llm = ScriptedLLM(
         [
@@ -297,3 +375,126 @@ def test_empty_llm_content_raises_with_finish_reason(monkeypatch):
     adapter = LangGraphPlannerAdapter()
     with pytest.raises(PlannerError, match="empty content"):
         adapter.generate_plan(_state(), GUIDANCE)
+
+
+def test_select_guidance_keeps_stage_rules_and_always_on_rules():
+    guidance = {
+        "policy_rules": [
+            {"rule_id": "POL-01", "phase": ["preservation", "eradication"]},
+            {"rule_id": "POL-02", "phase": ["containment"]},
+            {"rule_id": "POL-15", "phase": []},
+        ],
+        "stage_guidance": {"assessment": ["assess"], "containment": ["contain"]},
+        "approved_tools": ["isolate_host"],
+        "assets": [{"asset_id": "CRM"}],
+    }
+    selected = select_guidance(guidance, "containment")
+
+    assert [r["rule_id"] for r in selected["policy_rules"]] == ["POL-02", "POL-15"]
+    assert selected["stage_guidance"] == {"containment": ["contain"]}
+    assert selected["approved_tools"] == ["isolate_host"]
+    assert selected["assets"] == [{"asset_id": "CRM"}]
+
+
+def test_off_stage_policy_refs_are_dropped_and_not_shown():
+    guidance = {
+        "policy_pack_version": "test",
+        "policy_rules": [
+            {"rule_id": "POL-01", "phase": ["containment"]},
+            {"rule_id": "POL-03", "phase": ["assessment"]},
+        ],
+        "approved_tools": ["isolate_host"],
+    }
+    llm = ScriptedLLM(
+        [
+            _analysis(),
+            _proposal(actions=[_action(policy_refs=["POL-01", "POL-03", "POL-99"])]),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), guidance)
+
+    assert plan.actions[0].policy_refs == ["POL-01"]
+    proposal_payload = json.dumps(llm.calls[1][0])
+    assert "POL-03" not in proposal_payload
+    assert "POL-99" not in proposal_payload
+
+
+def test_rules_without_rule_id_are_dropped():
+    guidance = {
+        "policy_rules": [
+            {
+                "statement": "Malformed rule must not be retrieved.",
+                "phase": ["containment"],
+            },
+            {"rule_id": "POL-VALID", "statement": "Valid rule.", "phase": ["containment"]},
+        ]
+    }
+
+    selected = select_guidance(guidance, "containment")
+
+    assert selected["policy_rules"] == [guidance["policy_rules"][1]]
+
+
+def test_empty_selection_yields_no_refs():
+    guidance = {
+        "policy_rules": [{"rule_id": "POL-01", "phase": ["containment"]}],
+        "approved_tools": ["isolate_host"],
+    }
+    llm = ScriptedLLM(
+        [
+            _analysis(stage="restoration"),
+            _proposal(policy_refs=["POL-01"]),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), guidance)
+
+    assert plan.actions[0].policy_refs == []
+    proposal_payload = json.dumps(llm.calls[1][0])
+    assert "POL-01" not in proposal_payload
+
+
+def test_analysis_findings_and_techniques_are_captured_and_validated():
+    llm = ScriptedLLM(
+        [
+            _analysis(
+                findings=[
+                    {
+                        "summary": "Installer read the browser credential store.",
+                        "evidence_ids": ["EV-1", "EV-999"],
+                        "confidence": 0.8,
+                    },
+                    {"summary": "Unsupported claim.", "evidence_ids": ["EV-999"], "confidence": 0.4},
+                ],
+                attack_techniques=["T1555.003", "bogus", "T1204.002"],
+            ),
+            _proposal(),
+        ]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert plan.analysis is not None
+    assert plan.analysis.incident_type == "infostealer_session_hijack"
+    assert plan.analysis.severity == "high"
+    assert plan.analysis.confidence == 0.7
+    assert [f.summary for f in plan.analysis.findings] == [
+        "Installer read the browser credential store."
+    ]
+    assert plan.analysis.findings[0].evidence_ids == ["EV-1"]
+    assert plan.analysis.findings[0].confidence == 0.8
+    assert plan.analysis.attack_techniques == ["T1555.003", "T1204.002"]
+
+
+def test_analysis_is_kept_when_evidence_is_insufficient():
+    llm = ScriptedLLM([_analysis(sufficient=False, stage="assessment")])
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert plan.actions == []
+    assert plan.analysis is not None
+    assert plan.analysis.incident_type == "infostealer_session_hijack"
+
+
+def test_non_finite_confidence_is_rejected():
+    llm = ScriptedLLM([_analysis(confidence=float("nan")), _proposal()])
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert plan.analysis.confidence == 0.0

@@ -41,8 +41,9 @@ def run_planning(case_id: str) -> dict[str, Any]:
         raise PlanningError("incident state not available", "no_state")
 
     adapter = get_planner_adapter()
+    guidance = load_guidance()
     try:
-        proposal = adapter.generate_plan(state, load_guidance())
+        proposal = adapter.generate_plan(state, guidance)
     except PlannerError as exc:
         raise PlanningError(f"planner failed: {exc}", "planner") from exc
 
@@ -53,10 +54,16 @@ def run_planning(case_id: str) -> dict[str, Any]:
 
     plan_id = f"PLAN-{uuid.uuid4().hex[:12]}"
     entity_ids = {entity.id for entity in state.entities}
+    pack_rule_ids = {
+        str(rule.get("rule_id")) for rule in guidance.get("policy_rules", [])
+    }
     actions: list[dict[str, Any]] = []
     for proposed in proposal.actions:
         if proposed.target_id not in entity_ids:
             continue
+        proposed.policy_refs = [
+            ref for ref in proposed.policy_refs if ref in pack_rule_ids
+        ]
         action_id = f"ACT-{uuid.uuid4().hex[:12]}"
         stored = StoredAction(
             action_id=action_id,
@@ -79,6 +86,8 @@ def run_planning(case_id: str) -> dict[str, Any]:
         "action_ids": [action["action_id"] for action in actions],
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    if proposal.analysis is not None:
+        plan_doc["analysis"] = proposal.analysis.model_dump(mode="json")
     repositories.add_plan(case_id, plan_id, plan_doc)
     audit_service.record(
         case_id,

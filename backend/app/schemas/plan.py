@@ -42,6 +42,25 @@ class ProposedAction(BaseModel):
     validation_checks: list[str] = Field(default_factory=list)
 
 
+class ProposedFinding(BaseModel):
+    """One analysis finding; summary + the stored evidence ids that support it."""
+
+    summary: str
+    evidence_ids: list[str] = Field(default_factory=list)
+    confidence: float = 0.0
+
+
+class PlanAnalysis(BaseModel):
+    """The planner's persisted analysis (BL-017); the report reads this."""
+
+    incident_type: str = ""
+    scope: str = ""
+    severity: str = ""
+    confidence: float = 0.0
+    findings: list[ProposedFinding] = Field(default_factory=list)
+    attack_techniques: list[str] = Field(default_factory=list)
+
+
 class PlanProposal(BaseModel):
     """Returned by the PlannerAdapter. Validated by the backend before store."""
 
@@ -49,6 +68,7 @@ class PlanProposal(BaseModel):
     stage: Stage
     actions: list[ProposedAction] = Field(default_factory=list)
     missing_evidence: list[str] = Field(default_factory=list)
+    analysis: PlanAnalysis | None = None
 
 
 class StoredAction(BaseModel):

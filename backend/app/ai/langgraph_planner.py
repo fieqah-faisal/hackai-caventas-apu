@@ -19,6 +19,8 @@ allowlist, and ``based_on_state_version`` always comes from the state.
 from __future__ import annotations
 
 import json
+import math
+import re
 from pathlib import Path
 from typing import Any, Callable, Optional, TypedDict
 
@@ -28,7 +30,7 @@ from langgraph.graph import END, START, StateGraph
 from app.ai.planner_adapter import FakePlannerAdapter, PlannerAdapter
 from app.config import get_settings
 from app.schemas.incident_state import IncidentState
-from app.schemas.plan import PlanProposal, ProposedAction, Stage
+from app.schemas.plan import PlanAnalysis, PlanProposal, ProposedAction, ProposedFinding, Stage
 
 LLMCall = Callable[[list[dict[str, Any]], str], str]
 
@@ -50,6 +52,25 @@ DEFAULT_GUIDANCE_PATH = (
     Path(__file__).resolve().parents[2] / "fixtures" / "guidance.json"
 )
 
+VERIFICATION_FIRST_SKILL_PATH = (
+    Path(__file__).resolve().parent / "skills" / "verification_first" / "SKILL.md"
+)
+
+
+def load_verification_first_skill() -> str:
+    """Load the verification-first grounding skill the planner prompts embed."""
+    try:
+        content = VERIFICATION_FIRST_SKILL_PATH.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise PlannerError(
+            f"verification-first skill not readable: {exc}"
+        ) from exc
+    if not content:
+        raise PlannerError(
+            f"verification-first skill is empty: {VERIFICATION_FIRST_SKILL_PATH}"
+        )
+    return content
+
 
 class PlannerError(RuntimeError):
     """Raised when the planner cannot produce a valid proposal."""
@@ -58,6 +79,7 @@ class PlannerError(RuntimeError):
 class PlannerState(TypedDict, total=False):
     incident: dict[str, Any]
     guidance: dict[str, Any]
+    selected_rule_ids: list[str]
     analysis: dict[str, Any]
     sufficient: bool
     stage: str
@@ -144,11 +166,22 @@ def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
         "warrant an initial plan: set sufficient=true and still list any "
         "remaining gaps in missing_evidence. Set sufficient=false only when "
         "no defensible action can be recommended yet, e.g. events look "
-        "ambiguous or benign without corroboration. Never invent entity ids "
-        "or evidence ids. Return ONLY a JSON object with keys: "
-        "incident_type, scope, severity (low|medium|high|critical), "
-        "confidence, sufficient, missing_evidence, stage (assessment|"
-        "preservation|containment|eradication|hardening|restoration)."
+        "ambiguous or benign without corroboration. "
+        + "\n\n"
+        + load_verification_first_skill()
+        + "\n\nList concrete findings, each citing the supporting evidence "
+        "ids. Map the observed activity to MITRE ATT&CK techniques even when "
+        "you judge it benign or a false positive (for example, an "
+        "administrator-created scheduled task is still T1053.005); never "
+        "invent techniques the evidence does not support, and never invent "
+        "entity ids, evidence ids or ATT&CK technique ids. "
+        "Return ONLY a JSON object with keys: incident_type, scope, severity "
+        "(low|medium|high|critical), confidence, sufficient, missing_evidence, "
+        "stage (assessment|preservation|containment|eradication|hardening|"
+        "restoration), findings (list of {\"summary\": <string>, "
+        "\"evidence_ids\": [<string>], \"confidence\": 0-1}), "
+        "attack_techniques (list of MITRE ATT&CK technique ids, e.g. "
+        "T1204.002, that the evidence directly supports)."
     )
     return [
         {"role": "system", "content": system},
@@ -169,7 +202,10 @@ def _proposal_messages(
         "approved tool list in the guidance; target_id must be one of the "
         "valid entity ids; evidence_ids must come only from the valid "
         "evidence ids; reference policy rule ids in policy_refs when "
-        "relevant. Every action needs rationale, risk, expected_effect and "
+        "relevant. "
+        + "\n\n"
+        + load_verification_first_skill()
+        + "\n\nEvery action needs rationale, risk, expected_effect and "
         "validation_checks. Never invent ids. Return ONLY a JSON object "
         "with exactly these keys: {\"stage\": <assessment|preservation|"
         "containment|eradication|hardening|restoration>, \"actions\": "
@@ -203,6 +239,44 @@ def _collect_evidence_ids(incident: dict[str, Any]) -> set[str]:
     return ids
 
 
+ATTACK_TECHNIQUE_ID = re.compile(r"^T\d{4}(\.\d{3})?$")
+
+
+def _confidence(raw: Any) -> float:
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(value):
+        return 0.0
+    return min(max(value, 0.0), 1.0)
+
+
+def _validated_findings(raw: Any, evidence_ids: set[str]) -> list[ProposedFinding]:
+    if not isinstance(raw, list):
+        return []
+    findings: list[ProposedFinding] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        summary = str(item.get("summary", "")).strip()
+        cited = [e for e in _str_list(item.get("evidence_ids")) if e in evidence_ids]
+        if not summary or not cited:
+            continue
+        findings.append(
+            ProposedFinding(
+                summary=summary,
+                evidence_ids=cited,
+                confidence=_confidence(item.get("confidence")),
+            )
+        )
+    return findings
+
+
+def _validated_techniques(raw: Any) -> list[str]:
+    return [t for t in _str_list(raw) if ATTACK_TECHNIQUE_ID.match(t)]
+
+
 def _allowed_tools(guidance: dict[str, Any]) -> set[str]:
     tools = guidance.get("approved_tools")
     if isinstance(tools, list) and tools:
@@ -230,6 +304,7 @@ def _validated_action(
     entity_ids: set[str],
     evidence_ids: set[str],
     allowlist: set[str],
+    allowed_refs: set[str],
 ) -> Optional[ProposedAction]:
     tool = _first_str(raw, "tool_name", "tool", "action", "action_type")
     target = _first_str(raw, "target_id", "target")
@@ -240,7 +315,9 @@ def _validated_action(
         tool_name=tool,
         target_id=target,
         evidence_ids=cited,
-        policy_refs=_str_list(raw.get("policy_refs")),
+        policy_refs=[
+            ref for ref in _str_list(raw.get("policy_refs")) if ref in allowed_refs
+        ],
         rationale=str(raw.get("rationale", "")),
         prerequisites=_str_list(raw.get("prerequisites")),
         risk=str(raw.get("risk", "")),
@@ -256,20 +333,27 @@ class LangGraphPlannerAdapter:
         self._llm_call = llm_call or _default_llm_call
         graph = StateGraph(PlannerState)
         graph.add_node("analyze", self._analyze)
+        graph.add_node("retrieve", self._retrieve)
         graph.add_node("propose", self._propose)
         graph.add_edge(START, "analyze")
         graph.add_conditional_edges(
             "analyze",
             self._route_after_analyze,
-            {"propose": "propose", "end": END},
+            {"retrieve": "retrieve", "end": END},
         )
+        graph.add_edge("retrieve", "propose")
         graph.add_edge("propose", END)
         self._graph = graph.compile()
 
     def _analyze(self, state: PlannerState) -> PlannerState:
         incident = state["incident"]
         raw = self._llm_call(_analysis_messages(incident), incident["case_id"])
-        analysis = _extract_json(raw)
+        try:
+            analysis = _extract_json(raw)
+        except PlannerError:
+            # Models occasionally emit malformed JSON; one retry covers it.
+            raw = self._llm_call(_analysis_messages(incident), incident["case_id"])
+            analysis = _extract_json(raw)
         return {
             "analysis": analysis,
             "sufficient": bool(analysis.get("sufficient", False)),
@@ -278,27 +362,39 @@ class LangGraphPlannerAdapter:
         }
 
     def _route_after_analyze(self, state: PlannerState) -> str:
-        return "propose" if state.get("sufficient") else "end"
+        return "retrieve" if state.get("sufficient") else "end"
+
+    def _retrieve(self, state: PlannerState) -> PlannerState:
+        stage = _coerce_stage(state.get("stage", "")).value
+        guidance = select_guidance(state.get("guidance", {}), stage)
+        return {
+            "guidance": guidance,
+            "selected_rule_ids": sorted(
+                str(rule.get("rule_id")) for rule in guidance.get("policy_rules", [])
+            ),
+        }
 
     def _propose(self, state: PlannerState) -> PlannerState:
         incident = state["incident"]
         entity_ids = {str(e.get("id")) for e in incident.get("entities", [])}
-        raw = self._llm_call(
-            _proposal_messages(
-                incident,
-                state.get("analysis", {}),
-                state.get("guidance", {}),
-                entity_ids,
-                _collect_evidence_ids(incident),
-            ),
-            incident["case_id"],
+        messages = _proposal_messages(
+            incident,
+            state.get("analysis", {}),
+            state.get("guidance", {}),
+            entity_ids,
+            _collect_evidence_ids(incident),
         )
-        proposal = _extract_json(raw)
+        raw = self._llm_call(messages, incident["case_id"])
+        try:
+            proposal = _extract_json(raw)
+        except PlannerError:
+            # Models occasionally emit malformed JSON; one retry covers it.
+            raw = self._llm_call(messages, incident["case_id"])
+            proposal = _extract_json(raw)
         actions = proposal.get("actions") or []
         if not isinstance(actions, list):
             raise PlannerError("planner 'actions' must be a list")
         return {
-            "stage": str(proposal.get("stage", state.get("stage", ""))),
             "actions": [a for a in actions if isinstance(a, dict)],
         }
 
@@ -311,10 +407,22 @@ class LangGraphPlannerAdapter:
 
         entity_ids = {entity.id for entity in incident_state.entities}
         evidence_ids = _collect_evidence_ids(incident)
+        analysis_raw = final.get("analysis") or {}
+        analysis = PlanAnalysis(
+            incident_type=str(analysis_raw.get("incident_type", "")),
+            scope=str(analysis_raw.get("scope", "")),
+            severity=str(analysis_raw.get("severity", "")),
+            confidence=_confidence(analysis_raw.get("confidence")),
+            findings=_validated_findings(analysis_raw.get("findings"), evidence_ids),
+            attack_techniques=_validated_techniques(analysis_raw.get("attack_techniques")),
+        )
         allowlist = _allowed_tools(guidance)
+        allowed_refs = set(final.get("selected_rule_ids", []))
         actions: list[ProposedAction] = []
         for raw_action in final.get("actions", []):
-            action = _validated_action(raw_action, entity_ids, evidence_ids, allowlist)
+            action = _validated_action(
+                raw_action, entity_ids, evidence_ids, allowlist, allowed_refs
+            )
             if action is not None:
                 actions.append(action)
 
@@ -323,7 +431,30 @@ class LangGraphPlannerAdapter:
             stage=_coerce_stage(final.get("stage")),
             actions=actions,
             missing_evidence=_str_list(final.get("missing_evidence")),
+            analysis=analysis,
         )
+
+
+def select_guidance(guidance: dict[str, Any], stage: str) -> dict[str, Any]:
+    """Retrieve the guidance relevant to the selected response stage.
+
+    Keeps policy rules whose ``phase`` matches the stage (an empty ``phase``
+    applies to every stage) and narrows ``stage_guidance`` to that stage.
+    ``approved_tools`` and ``assets`` stay complete: the tool allowlist is a
+    safety boundary and the asset list is reference data.
+    """
+    rules = [
+        rule
+        for rule in guidance.get("policy_rules", [])
+        if isinstance(rule.get("rule_id"), str)
+        and rule["rule_id"]
+        and (not rule.get("phase") or stage in rule["phase"])
+    ]
+    return {
+        **guidance,
+        "policy_rules": rules,
+        "stage_guidance": {stage: guidance.get("stage_guidance", {}).get(stage, [])},
+    }
 
 
 def load_guidance(path: Optional[Path] = None) -> dict[str, Any]:

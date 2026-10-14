@@ -9,6 +9,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from app.ai.planner_adapter import FakePlannerAdapter
+from app.database import repositories
+from app.schemas.plan import PlanAnalysis, PlanProposal, ProposedFinding, Stage
 from app.simulator.simulator_adapter import FakeSimulatorAdapter
 
 FIXTURE = (
@@ -81,6 +83,40 @@ def test_get_report_roundtrip(client, monkeypatch, tmp_path):
     assert fetched.json()["report_id"] == generated["report_id"]
 
 
+def test_report_uses_newest_plan_not_stream_order(client, monkeypatch, tmp_path):
+    """Real Firestore streams plans in document-ID order, not creation order.
+
+    The fake keeps insertion order, so the newest plan is written FIRST here:
+    picking ``list_plans()[-1]`` would report the older plan's phase and gaps.
+    """
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "plan order"}).json()["case_id"]
+    plans = [
+        ("PLAN-newest", "eradication", ["newest gap"], "2026-10-12T02:45:53.467460+00:00"),
+        ("PLAN-oldest", "containment", ["oldest gap"], "2026-10-12T02:43:38.195695+00:00"),
+        ("PLAN-middle", "preservation", ["middle gap"], "2026-10-12T02:45:53.460138Z"),
+    ]
+    for plan_id, stage, gaps, created_at in plans:
+        repositories.add_plan(
+            case_id,
+            plan_id,
+            {
+                "plan_id": plan_id,
+                "case_id": case_id,
+                "based_on_state_version": 1,
+                "stage": stage,
+                "missing_evidence": gaps,
+                "action_ids": [],
+                "created_at": created_at,
+            },
+        )
+
+    report = client.post(f"/cases/{case_id}/reports").json()
+
+    assert report["classification"]["current_phase"] == "eradication"
+    assert [q["question"] for q in report["open_questions"]] == ["newest gap"]
+
+
 def test_generate_report_unknown_case_404(client):
     assert client.post("/cases/CASE-NOPE/reports").status_code == 404
 
@@ -89,3 +125,117 @@ def test_get_unknown_report_404(client, monkeypatch, tmp_path):
     monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
     case_id = client.post("/cases", json={"title": "empty"}).json()["case_id"]
     assert client.get(f"/cases/{case_id}/reports/RPT-NOPE").status_code == 404
+
+
+def test_report_fills_classification_findings_and_attack(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "analysis report"}).json()["case_id"]
+    resp = client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("batch1.json", FIXTURE.read_bytes(), "application/json")},
+    )
+    assert resp.status_code == 200, resp.text
+    evidence_id = client.get(f"/cases/{case_id}/evidence").json()[0]["evidence_id"]
+
+    class AnalysisPlanner:
+        def generate_plan(self, incident_state, approved_guidance=None):
+            return PlanProposal(
+                based_on_state_version=incident_state.version,
+                stage=Stage.CONTAINMENT,
+                actions=[],
+                analysis=PlanAnalysis(
+                    incident_type="infostealer_session_hijack",
+                    scope="one laptop",
+                    severity="high",
+                    confidence=0.7,
+                    findings=[
+                        ProposedFinding(
+                            summary="Unsigned installer ran on the endpoint.",
+                            evidence_ids=[evidence_id],
+                            confidence=0.8,
+                        )
+                    ],
+                    attack_techniques=["T1204.002", "T1555.003"],
+                ),
+            )
+
+    monkeypatch.setattr(PLANNER_PATH, lambda: AnalysisPlanner())
+    assert client.post(f"/cases/{case_id}/runs").status_code == 200
+
+    report = client.post(f"/cases/{case_id}/reports").json()
+
+    assert report["classification"]["incident_type"] == "infostealer_session_hijack"
+    assert report["classification"]["severity"] == "high"
+    assert report["classification"]["confidence"] == 0.7
+    assert report["classification"]["attack_techniques"] == ["T1204.002", "T1555.003"]
+    assert report["classification"]["severity_reason"] == (
+        "Assessed by the planner from stored evidence."
+    )
+    assert report["findings"][0]["finding_id"] == "FND-01"
+    assert report["findings"][0]["summary"] == "Unsigned installer ran on the endpoint."
+    assert report["findings"][0]["evidence_ids"] == [evidence_id]
+    assert report["findings"][0]["confidence"] == 0.8
+    assert Path(report["pdf_path"]).exists()
+
+
+def test_report_survives_malformed_analysis(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "malformed analysis"}).json()["case_id"]
+    repositories.add_plan(
+        case_id,
+        "PLAN-malformed",
+        {
+            "plan_id": "PLAN-malformed",
+            "case_id": case_id,
+            "based_on_state_version": 1,
+            "stage": "assessment",
+            "missing_evidence": [],
+            "action_ids": [],
+            "created_at": "2026-10-13T10:00:00+00:00",
+            "analysis": {
+                "findings": [
+                    None,
+                    {"summary": "Kept.", "evidence_ids": [123, "EV-1"], "confidence": "bad"},
+                ],
+                "confidence": float("nan"),
+                "attack_techniques": [7, "T1204.002", "TXXXX"],
+            },
+        },
+    )
+
+    resp = client.post(f"/cases/{case_id}/reports")
+    assert resp.status_code == 200, resp.text
+    report = resp.json()
+
+    assert report["classification"]["incident_type"] == "other"
+    assert report["classification"]["severity"] == "unknown"
+    assert report["classification"]["confidence"] == 0.0
+    assert report["classification"]["attack_techniques"] == ["T1204.002"]
+    assert report["findings"] == []
+
+
+def test_report_survives_non_iterable_analysis_fields(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "non-iterable analysis"}).json()["case_id"]
+    repositories.add_plan(
+        case_id,
+        "PLAN-non-iterable",
+        {
+            "plan_id": "PLAN-non-iterable",
+            "case_id": case_id,
+            "based_on_state_version": 1,
+            "stage": "assessment",
+            "missing_evidence": [],
+            "action_ids": [],
+            "created_at": "2026-10-13T11:00:00+00:00",
+            "analysis": {"findings": 5, "attack_techniques": "T1204.002", "confidence": 0.5},
+        },
+    )
+
+    resp = client.post(f"/cases/{case_id}/reports")
+    assert resp.status_code == 200, resp.text
+    report = resp.json()
+
+    assert report["findings"] == []
+    assert report["classification"]["attack_techniques"] == []
+    assert report["classification"]["confidence"] == 0.5

@@ -1,0 +1,23 @@
+# BL-038 planner smoke rerun — 2026-10-13
+
+Command: `cd backend && ../.venv/bin/python scripts/planner_smoke.py`
+Tree: merged main `73d6691` (includes policy pack v1.0 PR #10 and BL-037 PR #15)
+Environment: live OpenCode Go API (`OPENCODE_GO_API_KEY` in `backend/.env`), in-memory fake Firestore.
+
+```
+evidence: 6 items -> state v1
+plan PLAN-c7f140becfa1: stage=containment actions=4 missing_evidence=9 (65.2s)
+  - isolate_host -> HOST::SALES-LT-07 evidence=['EV-71ef777a9167', 'EV-624b1bd22678', 'EV-640f1576c418', 'EV-591c8036b303']
+    rationale: Evidence shows an unsigned installer.exe on SALES-LT-07 accessed the browser credential store and uploaded 2.4 MB to 203.0.113.45. Isolating the host stops further credential access, exfiltration, and potential lateral movement. POL-04 allows a SOC analyst to approve isolating a user laptop alone.
+  - revoke_sessions -> ACCOUNT::farah evidence=['EV-624b1bd22678', 'EV-640f1576c418', 'EV-591c8036b303']
+    rationale: The infostealer accessed the browser credential store on SALES-LT-07, placing account farah's credentials and potentially active session tokens at risk. Revoking active sessions invalidates any stolen tokens and forces re-authentication. POL-07 permits a SOC analyst to approve revoking sessions for a compromised account alone.
+  - reset_password -> ACCOUNT::farah evidence=['EV-624b1bd22678', 'EV-640f1576c418', 'EV-591c8036b303']
+    rationale: Stolen browser credentials require a password reset to prevent account takeover and downstream access to mail, SSO, and other services. POL-07 permits a SOC analyst to approve resetting the password of a compromised account alone.
+  - preserve_evidence -> HOST::SALES-LT-07 evidence=['EV-591c8036b303', 'EV-624b1bd22678', 'EV-640f1576c418', 'EV-71ef777a9167', 'EV-80feda06b5b3', 'EV-b112aceb1b9a']
+    rationale: Capture volatile and stored artifacts from SALES-LT-07 before any remediation or reimage to support investigation, confirm scope, and preserve potential legal/HR evidence. Include process tree, memory, browser artifacts, network connections, and dropped files.
+  (9 missing-evidence gaps printed; see SessionLog)
+```
+
+Exit code 0. Rationales cite POL-04 and POL-07 — containment-phase rules selected by the BL-037 retrieve node.
+
+Previous smoke (BL-007, 2026-10-06, pre-pack full-fixture): 42.5s. This run: 65.2s.

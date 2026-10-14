@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { getProvider } from "@/lib/api";
-import { useOutcome } from "@/lib/useOutcome";
+import { outcomeMessage, useOutcome } from "@/lib/useOutcome";
 import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/Region";
 import { Icon } from "@/components/icons/Icon";
+import { relativeTime } from "@/lib/format";
 import { cx } from "@/lib/types";
 import type { ReportVM, ReportSectionVM } from "@/lib/types";
 import { useWorkspace } from "../context";
@@ -12,23 +14,66 @@ const p = getProvider();
 
 export function ReportTab() {
   const { caseId } = useWorkspace();
-  const report = useOutcome<ReportVM>(() => p.getReport(caseId), [caseId]);
+  // Keyed by case so generation state never carries over between cases.
+  return <ReportPanel key={caseId} caseId={caseId} />;
+}
+
+function ReportPanel({ caseId }: { caseId: string }) {
+  // Loading the tab only READS. Generating is an explicit analyst action:
+  // each generation stores a new report version, a PDF and an audit event.
+  const report = useOutcome<ReportVM | null>(() => p.getReport(caseId), [caseId]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function generate() {
+    setBusy(true);
+    setError(null);
+    const out = await p.generateReport(caseId);
+    setBusy(false);
+    // Show a report only once the backend has confirmed it.
+    if (out.kind === "ok") report.retry();
+    else setError(outcomeMessage(out));
+  }
 
   return (
-    <AsyncBoundary outcome={report}>
-      {(r) => <ReportView report={r} />}
-    </AsyncBoundary>
+    <div className="space-y-3">
+      {error && (
+        <p role="alert" className="rounded-md border border-status-danger/45 bg-surface px-4 py-2 text-meta text-status-danger">
+          Report not generated: {error}
+        </p>
+      )}
+      <AsyncBoundary outcome={report}>
+        {(r) =>
+          r ? (
+            <ReportView report={r} busy={busy} onGenerate={generate} />
+          ) : (
+            <section className="rounded-md border border-border-subtle bg-surface">
+              <EmptyState
+                icon={<Icon name="report" size={24} />}
+                title="No report generated yet"
+                hint="Generating builds a draft from the stored case records and stores it as a new report version with an audit event. Reports generated before this page was loaded are not listed here; the backend has no endpoint to list them."
+                action={
+                  <Button variant="primary" size="sm" disabled={busy} onClick={generate} leadingIcon={<Icon name="report" size={18} />}>
+                    {busy ? "Generating…" : "Generate report"}
+                  </Button>
+                }
+              />
+            </section>
+          )
+        }
+      </AsyncBoundary>
+    </div>
   );
 }
 
-function ReportView({ report }: { report: ReportVM }) {
+function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: boolean; onGenerate: () => void }) {
   return (
     <div className="space-y-4">
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle bg-surface p-5">
         <div>
           <h2 className="text-lg font-semibold text-text-primary">{report.title}</h2>
           <p className="mt-0.5 text-meta text-text-muted">
-            {report.organisation} · status {report.status}
+            {report.organisation} · status {report.status} · generated {relativeTime(report.generatedAt)}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -38,6 +83,16 @@ function ReportView({ report }: { report: ReportVM }) {
             </div>
             <div className="text-meta text-text-muted">sections populated</div>
           </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            onClick={onGenerate}
+            title="Builds a new report version from the current case records."
+            leadingIcon={<Icon name="reload" size={18} />}
+          >
+            {busy ? "Generating…" : "Regenerate"}
+          </Button>
           <Button
             variant="secondary"
             size="sm"

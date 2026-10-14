@@ -6,7 +6,7 @@ audit trail and reports.
 
 Owner: Raaj (Backend, Incident State, Data & Integration).
 
-## Status: Milestone 1 + AI planning working
+## Status: Milestone 1, planning, approval, execution and reporting working
 
 **Functional now:**
 
@@ -48,24 +48,44 @@ the backend validates every id before persisting. With no
 `OPENCODE_GO_API_KEY` configured it falls back to `FakePlannerAdapter`, so
 the backend works without a key.
 
+The planner also returns a validated analysis block — incident type, severity,
+confidence, findings (each citing stored evidence ids) and ATT&CK technique
+ids. It is persisted with the plan and rendered into the report (BL-017,
+DEC-015); findings without stored evidence and malformed technique ids are
+dropped, so the report only carries evidence-backed claims.
+
 Approvals, bounded simulated execution and reporting (BL-003):
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| POST | `/cases/{case_id}/actions/{action_id}/decision` | Analyst approve / reject |
+| POST | `/cases/{case_id}/actions/{action_id}/decision` | Analyst decision (`approve` / `reject`, with approver role) |
 | POST | `/cases/{case_id}/actions/{action_id}/execute` | Run an approved action in the bounded simulator |
-| POST | `/cases/{case_id}/reports` | Generate a report from stored records |
+| POST | `/cases/{case_id}/reports` | Generate and store a new report version (JSON + PDF) |
 | GET | `/cases/{case_id}/reports/{report_id}` | Retrieve a stored report |
 
-Approval is created by the backend, never by AI output. Execution and
-effectiveness are distinct: a `completed` execution with an `ineffective`
-validation does NOT improve a target entity's condition — only a validated
-`effective` outcome applies its allowlisted condition change. A stale approval
-(one bound to a superseded state version) requires a new planning run and a
-replacement action rather than silent re-use. The proposal, approval,
+Read-only lists for the API-mode approvals queue (BL-027, DEC-011), sorted
+by `created_at`, 404 for an unknown case:
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/cases/{case_id}/actions` | Stored actions (status, version, bound state version) |
+| GET | `/cases/{case_id}/action-results` | Recorded simulator results (execution and validation status kept separate) |
+
+Approval is created by the backend, never by AI output, and the backend
+enforces policy independently of the planner's cited `policy_refs`: the
+declared approver role, target asset type, evidence presence and sequencing
+prerequisites are all checked against `guidance.json` and stored records.
+Execution and effectiveness are distinct: a `completed` execution with an
+`ineffective` validation does NOT improve a target entity's condition — only a
+validated `effective` outcome applies its allowlisted condition change. A stale
+approval (one bound to a superseded state version) requires a new planning run
+and a replacement action rather than silent re-use. The proposal, approval,
 execution and validation records are each stored and immutable; GAS-lite adds
 an `action_attempted_on` response edge referencing the stored `action_id` and
-`execution_id` without replacing those records.
+`execution_id` without replacing those records. Execution goes through
+`simulator_adapter` (currently `FakeSimulatorAdapter`; the real simulator drops
+in behind the same interface). There is no report list endpoint yet (see BL-025
+in `docs/session/Backlog.md`).
 
 ## Architecture
 
@@ -85,7 +105,7 @@ data model):
 app/
   api/        FastAPI routers
   schemas/    Pydantic models (case, evidence, incident_state, plan, report)
-  services/   ingestion, state_manager, audit, planning (+ stubbed approval/execution/reporting)
+  services/   ingestion, state_manager, audit, planning, approval, execution, reporting
   database/   firebase.py (client), repositories.py (all Firestore access)
   ai/         planner_adapter.py (Protocol + fake), langgraph_planner.py (real adapter)
   simulator/  bounded action simulator: catalog.py, engine.py, environment.json,
@@ -123,8 +143,9 @@ cd backend
 Tests use an in-memory fake Firestore (`tests/fake_firestore.py`), so they
 run without the emulator or any credentials. The suite covers the Milestone 1
 endpoints, persistence, state versioning, malformed/unsupported uploads,
-404s, the audit trail, the planner adapter (scripted LLM) and the planning
-endpoints.
+404s, the audit trail, the planner adapter (scripted LLM, analysis
+validation, malformed-JSON retry), the planning endpoints, the approval,
+execution and reporting endpoints, and the read-only action/result lists.
 
 ## Action simulator, scenarios and evaluation (Aidan)
 
@@ -159,7 +180,9 @@ Never upload or index `scenarios/*/evaluator_only/`: those are the answer keys.
 ## Next steps (handoff)
 
 1. Smoke-test against the Firestore emulator (tests use a fake only).
-2. Follow-on GAS-lite work (not in this slice): planner-populated routing /
-   assessment fields, report-section invalidation, non-material version
-   suppression, frontend graph visualisation of the state history, and
-   policy-pack integration.
+2. Add the read endpoints the UI still lacks (BL-025 report list; BL-013
+   global case list).
+3. Follow-on GAS-lite work: planner-populated routing / assessment fields,
+   report-section invalidation, non-material version suppression, and frontend
+   graph visualisation of the state history. (Policy-aware retrieval and
+   deterministic backend policy enforcement are implemented — see above.)
