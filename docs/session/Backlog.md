@@ -6,8 +6,9 @@
 >
 > **ID registry (2026-10-12):** PR #9 (security-lead) is merged: BL-014..024
 > and DEC-006/DEC-007 are on `main`; PR #10 adds BL-032..BL-036 and DEC-012.
-> `feat/gas-lite-state-fieqah` claims BL-020 (collides with merged BL-020)
-> and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
+> `feat/gas-lite-state-fieqah` (PR #22) adds DEC-010 (GAS-lite) and the
+> deterministic policy guard; it closed BL-016/018/019/032. `link` adds
+> BL-025..BL-030 and DEC-008/009/011; its
 > npm-audit item was renumbered BL-024 → BL-030 on that merge because
 > main's BL-024 is the approval-invalidation item.
 > `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039;
@@ -27,6 +28,8 @@
 > (analysis persisted in plan docs; report findings/ATT&CK filled, DEC-015;
 > coverage cleared, live 12/12 · 5/5 · 93.4). BL-020 done (untrusted-evidence
 > skill + full state descriptions, DEC-016; live 12/12 · 5/5 · 95.5).
+> BL-016/018/019/032 closed by PR #22 (GAS-lite entity extraction; the
+> deterministic policy guard, DEC-010).
 
 ## Open Items
 
@@ -40,7 +43,6 @@
   and record the change. — open / team
 
 ### P2
-
 - BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
   created; if so, obtain the project ID and have the service-account key
   placed at `backend/secrets/serviceAccount.json` (gitignored) to enable an
@@ -60,14 +62,6 @@
   per plan runs; the next needs a fresh plan). Re-approval prototype kept
   out of PR #9 (commit `abab1c4`, reverted). See DEC-007. — deferred /
   Raaj + Syafieqah + Aidan
-- BL-016 — Extract DOMAIN/IP entities into the incident state so
-  `block_domain` can be proposed. — open / Raaj
-- BL-018 — Approver roles so POL-02 (IT manager) is enforced. — open /
-  Raaj + Syafieqah
-- BL-019 — Refuse execution of actions that cite no evidence. — open / Raaj
-- BL-032 — Policy check: enforce required_approver in approval_service
-  and order rules (POL-01) in execution_service; add approver_role to
-  the decision payload. — open / Raaj
 - BL-033 — Fill report notifications, policy_conformance and asset
   criticality from guidance.json. — open / Raaj
 - BL-035 — Confirm asset host names match the synthetic logs
@@ -145,7 +139,6 @@
   report tests redirect `report_path`. — open / Raaj
 
 ## Deferred
-
 - BL-006 (P3) — Add a thin `SKILL.md` wrapper pointing to
   `docs/session/README.md` only if a teammate's agent supports project
   skills and is not covered by `AGENTS.md` / steering. — deferred until a

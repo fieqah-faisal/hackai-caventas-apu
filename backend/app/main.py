@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from app.api import approvals, cases, evidence, execution, planning, reports
+from app.api import approvals, cases, evidence, execution, planning, reports, state
 
 app = FastAPI(
     title="IR Planner Backend",
@@ -26,6 +26,8 @@ app = FastAPI(
 # Cases, evidence upload/list and the current incident state.
 app.include_router(cases.router)
 app.include_router(evidence.router)
+# GAS-lite state-history (additive, read-only)
+app.include_router(state.router)
 
 # Planning runs (BL-002); approvals, simulated execution + the audit read,
 # and reports (BL-003).

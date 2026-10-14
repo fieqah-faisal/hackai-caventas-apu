@@ -19,13 +19,21 @@ Milestone 1 (cases, evidence, incident state, audit):
 | POST | `/cases/{case_id}/evidence` | Upload CSV / JSON / TXT evidence |
 | GET | `/cases/{case_id}/evidence` | List normalized evidence |
 | GET | `/cases/{case_id}/state` | Current incident-state version |
+| GET | `/cases/{case_id}/states` | List immutable state-version metadata (GAS-lite) |
+| GET | `/cases/{case_id}/states/{version}` | Full immutable snapshot for one version (GAS-lite) |
 | GET | `/cases/{case_id}/audit` | Audit trail |
 | GET | `/health` | Health check |
 
 Uploading evidence computes a SHA-256 of the original file, normalizes each
 record with a unique evidence id and source location, stores the original on
-the local filesystem, and automatically builds a new incident-state version
-(observed entities + relationships + timeline).
+the local filesystem, and automatically builds a new immutable incident-state version. The
+entity/relationship graph (hosts, accounts, IPs, domains, processes,
+files, sessions; typed allowlisted relations; response edges; validated
+effects; ATT&CK ids) is built by the pure `app/services/gas_lite.py`
+service (no Firestore I/O, no LLM); `state_manager` owns persistence and
+the timeline. Each change appends a new version pointed to by
+`current_state_version` — history is never overwritten (GAS-lite,
+STAIR-inspired incident-state).
 
 AI planning (BL-002):
 
@@ -46,11 +54,11 @@ ids. It is persisted with the plan and rendered into the report (BL-017,
 DEC-015); findings without stored evidence and malformed technique ids are
 dropped, so the report only carries evidence-backed claims.
 
-Approvals, simulated execution and reports (BL-003):
+Approvals, bounded simulated execution and reporting (BL-003):
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| POST | `/cases/{case_id}/actions/{action_id}/decision` | Analyst decision (`approve` / `reject`) |
+| POST | `/cases/{case_id}/actions/{action_id}/decision` | Analyst decision (`approve` / `reject`, with approver role) |
 | POST | `/cases/{case_id}/actions/{action_id}/execute` | Run an approved action in the bounded simulator |
 | POST | `/cases/{case_id}/reports` | Generate and store a new report version (JSON + PDF) |
 | GET | `/cases/{case_id}/reports/{report_id}` | Retrieve a stored report |
@@ -63,10 +71,21 @@ by `created_at`, 404 for an unknown case:
 | GET | `/cases/{case_id}/actions` | Stored actions (status, version, bound state version) |
 | GET | `/cases/{case_id}/action-results` | Recorded simulator results (execution and validation status kept separate) |
 
-Execution goes through `simulator_adapter` (currently
-`FakeSimulatorAdapter`; the real simulator drops in behind the same
-interface). There is no report list endpoint yet (see BL-025 in
-`docs/session/Backlog.md`).
+Approval is created by the backend, never by AI output, and the backend
+enforces policy independently of the planner's cited `policy_refs`: the
+declared approver role, target asset type, evidence presence and sequencing
+prerequisites are all checked against `guidance.json` and stored records.
+Execution and effectiveness are distinct: a `completed` execution with an
+`ineffective` validation does NOT improve a target entity's condition — only a
+validated `effective` outcome applies its allowlisted condition change. A stale
+approval (one bound to a superseded state version) requires a new planning run
+and a replacement action rather than silent re-use. The proposal, approval,
+execution and validation records are each stored and immutable; GAS-lite adds
+an `action_attempted_on` response edge referencing the stored `action_id` and
+`execution_id` without replacing those records. Execution goes through
+`simulator_adapter` (currently `FakeSimulatorAdapter`; the real simulator drops
+in behind the same interface). There is no report list endpoint yet (see BL-025
+in `docs/session/Backlog.md`).
 
 ## Architecture
 
@@ -163,3 +182,7 @@ Never upload or index `scenarios/*/evaluator_only/`: those are the answer keys.
 1. Smoke-test against the Firestore emulator (tests use a fake only).
 2. Add the read endpoints the UI still lacks (BL-025 report list; BL-013
    global case list).
+3. Follow-on GAS-lite work: planner-populated routing / assessment fields,
+   report-section invalidation, non-material version suppression, and frontend
+   graph visualisation of the state history. (Policy-aware retrieval and
+   deterministic backend policy enforcement are implemented — see above.)

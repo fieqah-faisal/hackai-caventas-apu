@@ -27,6 +27,7 @@ from typing import Any
 
 from app.config import get_settings
 from app.database import repositories
+from app.schemas.incident_state import CreatedFrom
 from app.schemas.evidence import (
     EvidenceItem,
     EvidenceKind,
@@ -191,7 +192,11 @@ def ingest(case_id: str, filename: str, raw: bytes) -> EvidenceUploadResult:
         },
     )
 
-    new_state = state_manager.rebuild_and_version(case_id)
+    new_state = state_manager.rebuild_and_version(
+        case_id,
+        created_from=CreatedFrom.EVIDENCE_UPLOAD,
+        change_reason=f"evidence upload: {filename} ({len(evidence_ids)} records)",
+    )
 
     return EvidenceUploadResult(
         source_file=filename,

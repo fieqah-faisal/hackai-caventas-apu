@@ -13,6 +13,7 @@ ir-planner/
 │   │   ├── api/
 │   │   │   ├── cases.py
 │   │   │   ├── evidence.py
+│   │   │   ├── state.py           # GET /cases/{id}/states, /states/{version} (GAS-lite)
 │   │   │   ├── planning.py
 │   │   │   ├── approvals.py
 │   │   │   ├── execution.py
@@ -32,6 +33,7 @@ ir-planner/
 │   │   ├── services/
 │   │   │   ├── ingestion.py
 │   │   │   ├── state_manager.py
+│   │   │   ├── gas_lite.py        # pure graph builder (no Firestore I/O, no LLM)
 │   │   │   ├── approval_service.py
 │   │   │   ├── execution_service.py
 │   │   │   ├── audit_service.py

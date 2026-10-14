@@ -99,6 +99,16 @@ def get_state_version(case_id: str, version: int) -> dict[str, Any] | None:
     return snap.to_dict() if snap.exists else None
 
 
+def list_state_versions(case_id: str) -> list[dict[str, Any]]:
+    """Return every stored state-version document for a case.
+
+    Streams the ``state_versions`` subcollection; the caller is responsible for
+    ordering (by ``version``). Returns an empty list when the case has no stored
+    versions. Read-only; the ``STATE-{version:03d}`` doc-id scheme is unchanged.
+    """
+    docs = _case_ref(case_id).collection(STATE_VERSIONS).stream()
+    return [d.to_dict() for d in docs]
+
 # --- Plans and actions ---------------------------------------------------
 
 def add_plan(case_id: str, plan_id: str, data: dict[str, Any]) -> None:
