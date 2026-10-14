@@ -48,15 +48,16 @@ Firestore; no credentials needed).
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
   unsafe 0/12, fake planner 0/12 (fake 1/12 · 42.9 post-policy-guard).
-  BL-020 untrusted-evidence marking merged main (PR #22 policy guard) and
-  reran live: **12/12 checkpoints, 5/5 scenarios, mean 93.4** (pre-merge
-  branch run: 95.5); injection gates hold; report coverage complete.
+  BL-020 untrusted-evidence marking (merged) and BL-041 incident_type enum
+  (branch) reran live: **12/12 checkpoints, 5/5 scenarios, mean 92.7**
+  (branch history: 95.5 pre-merge, 93.4 post-policy-guard); injection gates
+  hold; report coverage complete.
   History: BL-017 (12/12, 93.4, PR #19), BL-031 (92.4, PR #18), BL-038
   (10/12, PR #17), BL-014 (8/12, PR #13).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **212 passed** on merged main. Live results merged via
+  Suite **214 passed** on merged main. Live results merged via
   PR #13 (`4145f41`).
 - Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
   structured rules (ten fields) + 8-asset list in
@@ -73,7 +74,8 @@ Firestore; no credentials needed).
   descriptions and catalogue target-type validation (BL-020, DEC-016); the
   full live run is 12/12 with all gates holding.
 - Report schema v1.3 (Aida, DEC-017) in `docs/report-schema/`: the contract
-  for the report JSON. Code fill-ins: BL-033, BL-040–BL-042.
+  for the report JSON. Code fill-ins: BL-033, BL-040, BL-042; BL-041
+  (incident_type enum) done on `feat/bl-041-incident-type-enum`.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).
