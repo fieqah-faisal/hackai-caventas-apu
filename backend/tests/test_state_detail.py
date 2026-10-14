@@ -54,3 +54,33 @@ def test_mixed_naive_and_aware_times_do_not_break_the_state(client):
     assert resp.status_code == 200, resp.text
     times = [ev["timestamp"] for ev in client.get(f"/cases/{case_id}/state").json()["timeline"]]
     assert times == ["2026-10-04T21:40:00+08:00", "2026-10-04T13:41:00"]
+
+
+def test_long_record_fields_are_not_truncated_in_state(client):
+    """Regression: descriptions were silently cut at 300 chars in the system of record."""
+    case_id = client.post("/cases", json={"title": "long detail"}).json()["case_id"]
+    long_body = "overdue invoice " * 30  # 480 chars
+    record = [
+        {
+            "event_time": "2026-10-06T08:47:00+08:00",
+            "event_type": "email_received",
+            "host": "SALES-LT-07",
+            "account": "hakim",
+            "body_preview": long_body,
+        }
+    ]
+    resp = client.post(
+        f"/cases/{case_id}/evidence",
+        files={
+            "file": (
+                "batch1.json",
+                json.dumps(record).encode(),
+                "application/json",
+            )
+        },
+    )
+    assert resp.status_code == 200, resp.text
+
+    state = client.get(f"/cases/{case_id}/state").json()
+    descriptions = " ".join(event["description"] for event in state["timeline"])
+    assert long_body in descriptions

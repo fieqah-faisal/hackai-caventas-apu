@@ -50,13 +50,19 @@ _DESCRIPTION_SKIP_KEYS = {"host", "account", "event_type"}
 
 
 def _describe_fields(fields: dict[str, Any]) -> str:
-    """Compact, planner-readable summary of a record's non-entity fields."""
+    """Full summary of a record's non-entity fields.
+
+    The state is the system of record, so evidence text is kept complete
+    here; truncation is not an injection defence (untrusted evidence is
+    handled by prompt marking), and any future prompt-size control belongs
+    at the prompt boundary with an explicit marker.
+    """
     parts = [
         f"{key}={value}"
         for key, value in fields.items()
         if key not in _DESCRIPTION_SKIP_KEYS and value not in (None, "")
     ]
-    return ", ".join(parts)[:300]
+    return ", ".join(parts)
 
 
 def _build_timeline(

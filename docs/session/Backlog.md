@@ -6,14 +6,16 @@
 >
 > **ID registry (2026-10-12):** PR #9 (security-lead) is merged: BL-014..024
 > and DEC-006/DEC-007 are on `main`; PR #10 adds BL-032..BL-036 and DEC-012.
-> `feat/gas-lite-state-fieqah` claims BL-020 (collides with merged BL-020)
-> and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
+> `feat/gas-lite-state-fieqah` (PR #22) adds DEC-010 (GAS-lite) and the
+> deterministic policy guard; it closed BL-016/018/019/032. `link` adds
+> BL-025..BL-030 and DEC-008/009/011; its
 > npm-audit item was renumbered BL-024 → BL-030 on that merge because
 > main's BL-024 is the approval-invalidation item.
 > `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039;
 > `feat/bl-031-verify-before-contain` adds DEC-014;
-> `feat/bl-017-analysis-persistence` adds DEC-015.
-> Next free IDs: **BL-040** and **DEC-016**.
+> `feat/bl-017-analysis-persistence` adds DEC-015;
+> `feat/bl-020-untrusted-evidence` adds DEC-016.
+> Next free IDs: **BL-040** and **DEC-017**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
@@ -24,7 +26,11 @@
 > BL-034 folded into BL-037; both done (retrieval branch). BL-031 done
 > (verification-first skill, DEC-014; live 12/12 · 5/5 · 92.4). BL-017 done
 > (analysis persisted in plan docs; report findings/ATT&CK filled, DEC-015;
-> coverage cleared, live 12/12 · 5/5 · 93.4).
+> coverage cleared, live 12/12 · 5/5 · 93.4). BL-020 done (untrusted-evidence
+> skill + full state descriptions, DEC-016; live 12/12 · 5/5 · 93.4
+> post-merge).
+> BL-016/018/019/032 closed by PR #22 (GAS-lite entity extraction; the
+> deterministic policy guard, DEC-010).
 
 ## Open Items
 
@@ -57,8 +63,6 @@
   per plan runs; the next needs a fresh plan). Re-approval prototype kept
   out of PR #9 (commit `abab1c4`, reverted). See DEC-007. — deferred /
   Raaj + Syafieqah + Aidan
-- BL-020 — Mark evidence as untrusted data in planner prompts (sc02
-  prompt-injection test). — open / Airil
 - BL-033 — Fill report notifications, policy_conformance and asset
   criticality from guidance.json. — open / Raaj
 - BL-035 — Confirm asset host names match the synthetic logs

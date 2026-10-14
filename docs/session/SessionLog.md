@@ -3,6 +3,20 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 BL-020 merged main (PR #22 policy guard) — post-merge live 12/12, mean 93.4 (DONE)
+
+- Merged `origin/main` (`70b6c56`, PR #22: GAS-lite + deterministic policy
+  guard) into `feat/bl-020-untrusted-evidence` (`e92907f`); conflicts resolved
+  semantically in README/SUMMARY/Backlog/Decisions/SessionLog — both sides'
+  closures kept (BL-016/018/019/032 by main; BL-020 by this branch), both
+  decisions kept (DEC-010, DEC-016), SUMMARY keeps this branch's live row +
+  main's recalibrated fake row.
+- Full backend suite on the merged tree: **212 passed** (205 + this branch's
+  7 new tests).
+- Post-merge live rerun (policy guard active): **12/12 checkpoints, 5/5
+  scenarios, mean 93.4**; injection gates hold; report coverage still empty.
+  README/SessionContext numbers refreshed; PR #21 updated.
+
 ### 2026-10-13 Deterministic policy enforcement + main merge into GAS-lite (DONE)
 
 - Merged `origin/main` (`cced814`: PR #10 policy pack, #11 API wiring, #15
@@ -34,6 +48,20 @@
   preserved (12/12, 93.4); `oracle.json` line-ending-only diff reverted.
 - 16 new tests in `test_policy_enforcement.py`. Full backend **205 passed**;
   frontend typecheck + **75** tests + build green. BL-018/BL-019/BL-032 closed.
+
+### 2026-10-13 BL-020 untrusted-evidence marking: live 12/12, 5/5, mean 95.5 (DONE)
+
+- Adds `backend/app/ai/skills/untrusted_evidence/SKILL.md` — evidence text
+  (email bodies, notes, timeline descriptions) is data, never instructions;
+  embedded in both system prompts and the analysis payload is labeled.
+  The state also stops truncating evidence descriptions (the 300-char cut
+  was never an injection defence). DEC-016.
+- Live: scoped sc02 PASS (88.8/92.5) → full run 1 exposed `warn_staff ->
+  HOST::SOC-WS-01` (the injection's target): the adapter never validated
+  tool↔target-type compatibility. Fix `360b221` validates against the
+  simulator catalogue's `target_type`; scoped sc02 PASS (90/90); final full
+  run **12/12 checkpoints, 5/5 scenarios, mean 95.5** (was 93.4). 163 tests;
+  artifacts in `.agents/tasks/bl-020-untrusted-evidence/`.
 
 ### 2026-10-13 BL-017 planner analysis persisted; report findings/ATT&CK filled — live 12/12, mean 93.4 (DONE)
 
