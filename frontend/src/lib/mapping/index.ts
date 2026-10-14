@@ -429,23 +429,45 @@ export function reportValidationVerdict(status: string): string {
 const REPORT_SECTION_ORDER: { key: string; title: string }[] = [
   { key: "executive_summary", title: "Executive summary" },
   { key: "classification", title: "Incident classification" },
-  { key: "timeline", title: "Timeline" },
   { key: "affected", title: "Affected assets and identities" },
-  { key: "evidence_index", title: "Evidence" },
+  { key: "exposed_credentials", title: "Exposed credentials and sessions" },
+  { key: "timeline", title: "Timeline" },
+  { key: "findings", title: "Findings" },
+  { key: "root_cause", title: "Root cause" },
+  { key: "impact", title: "Impact" },
   { key: "attack", title: "ATT&CK mappings" },
   { key: "decisions", title: "Decisions and approvals" },
+  { key: "action_policy", title: "Action provenance and policy" },
   { key: "actions", title: "Recommended / simulated actions" },
   { key: "validation", title: "Validation results" },
+  { key: "evidence_preservation", title: "Evidence preservation" },
+  { key: "notifications", title: "Notifications and escalation" },
   { key: "open_questions", title: "Unresolved gaps" },
   { key: "recommendations", title: "Lessons and hardening" },
+  { key: "metrics", title: "Metrics" },
+  { key: "policy_conformance", title: "Policy conformance" },
+  { key: "sign_off", title: "Sign-off" },
+  { key: "evidence_index", title: "Evidence index" },
 ];
+
+function reportRefs(label: string, refs: string[] | undefined): string {
+  return refs?.length ? ` · ${label}: ${refs.join(", ")}` : "";
+}
+
+function reportRecordLines(record: Record<string, unknown>): string[] {
+  return Object.entries(record)
+    .filter(([, value]) => value !== "" && value != null && value !== "unknown" && value !== "not assessed")
+    .map(([key, value]) => `${key.replaceAll("_", " ")}: ${String(value)}`);
+}
 
 export function toReportVM(dto: StructuredReportDTO): ReportVM {
   const sections: ReportSectionVM[] = REPORT_SECTION_ORDER.map(({ key, title }) => {
     let lines: string[] = [];
     switch (key) {
       case "executive_summary":
-        lines = dto.executive_summary.text ? [dto.executive_summary.text] : [];
+        lines = dto.executive_summary.text
+          ? [dto.executive_summary.text + reportRefs("findings", dto.executive_summary.finding_ids)]
+          : [];
         break;
       case "classification": {
         const c = dto.classification;
@@ -453,19 +475,54 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
           `Type: ${c.incident_type}`,
           `Status: ${c.status}`,
           `Severity: ${c.severity} (${c.severity_reason})`,
+          `Confidence: ${c.confidence}`,
           `Phase: ${c.current_phase}`,
           `Analyst-confirmed: ${c.confirmed_by_analyst ? "yes" : "no"}`,
+          ...(c.closure_reason ? [`Closure reason: ${c.closure_reason}${reportRefs("evidence", c.closure_evidence_ids)}`] : []),
         ];
         break;
       }
       case "timeline":
-        lines = dto.timeline.map((t) => `[${t.side}] ${t.event}`);
+        lines = dto.timeline.map((t) =>
+          `${t.time ? `${t.time} ` : ""}[${t.side}/${t.source}] ${t.event}`
+          + (t.attack_technique ? ` · ATT&CK ${t.attack_technique}` : "")
+          + reportRefs("evidence", t.evidence_ids),
+        );
         break;
       case "affected":
-        lines = dto.affected.map((a) => `${a.asset_id} (${a.type})`);
+        lines = dto.affected.map((a) =>
+          `${a.asset_id} (${a.type}; criticality ${a.criticality}; data ${a.data_classification || "unknown"})`
+          + (a.owner ? ` · owner: ${a.owner}` : "")
+          + (a.how_affected ? ` · ${a.how_affected}` : "")
+          + reportRefs("evidence", a.evidence_ids),
+        );
+        break;
+      case "exposed_credentials":
+        lines = dto.exposed_credentials.map((c) =>
+          `${c.account} at ${c.service}: ${c.exposed} (${c.status})${reportRefs("evidence", c.evidence_ids)}`,
+        );
+        break;
+      case "findings":
+        lines = dto.findings.map((f) =>
+          `${f.finding_id} [${f.status || "hypothesis"}; confidence ${f.confidence}]: ${f.summary}`
+          + reportRefs("evidence", f.evidence_ids),
+        );
+        break;
+      case "root_cause":
+        lines = dto.root_cause.text
+          ? [`[${dto.root_cause.status}] ${dto.root_cause.text}${reportRefs("findings", dto.root_cause.finding_ids)}`]
+          : [];
+        break;
+      case "impact":
+        lines = reportRecordLines(dto.impact);
         break;
       case "evidence_index":
-        lines = dto.evidence_index.map((e) => `${e.evidence_id} — ${e.source_file}`);
+        lines = dto.evidence_index.map((e) =>
+          `${e.evidence_id} — ${e.source_file}`
+          + (e.line != null ? `:${e.line}` : "")
+          + (e.time ? ` · ${e.time}` : "")
+          + ` · SHA-256 ${e.sha256}${e.untrusted ? " · untrusted input" : ""}`,
+        );
         break;
       case "attack":
         lines = dto.classification.attack_techniques.slice();
@@ -480,8 +537,21 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
             const head = decision
               ? `${decision === "approved" ? "Approved" : "Rejected"} by ${a.decided_by}`
               : `Decided by ${a.decided_by} (status ${a.status})`;
-            return `${head}: ${a.recommendation}${a.reason ? ` — reason: ${a.reason}` : ""}`;
+            return `${head}${a.approver_role ? ` (${a.approver_role})` : ""}: ${a.recommendation}${a.reason ? ` — reason: ${a.reason}` : ""}`;
           });
+        break;
+      case "action_policy":
+        lines = dto.actions
+          .filter((a) => a.tool_name || a.target_id || a.plan_id || a.based_on_state_version != null || a.policy_check)
+          .map((a) =>
+            `${a.action_id}: ${a.tool_name || "tool not recorded"} → ${a.target_id || "target not recorded"}`
+            + (a.plan_id ? ` · plan ${a.plan_id}` : "")
+            + (a.based_on_state_version != null ? ` · state v${a.based_on_state_version}` : "")
+            + reportRefs("evidence", a.evidence_ids)
+            + reportRefs("rules cited", a.policy_refs)
+            + (a.required_approver ? ` · required approver: ${a.required_approver}` : "")
+            + (a.policy_check ? ` · policy ${a.policy_check.result}${reportRefs("reasons", a.policy_check.reasons)}` : ""),
+          );
         break;
       case "actions":
         lines = dto.actions.map((a) => `${reportActionStage(a.status)}: ${a.recommendation}`);
@@ -491,11 +561,46 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
           .filter((a) => a.result_source != null || !!a.result)
           .map((a) => `${reportValidationVerdict(a.status)}: ${a.recommendation} → ${a.result || "no observed effect recorded"}`);
         break;
+      case "evidence_preservation":
+        lines = dto.evidence_preservation.map((e) =>
+          `${e.evidence_id}: ${e.item} · stored ${e.stored_at} · collected by ${e.collected_by} at ${e.collected_at} · SHA-256 ${e.sha256}`,
+        );
+        break;
+      case "notifications":
+        lines = dto.notifications.map((n) =>
+          `${n.policy_rule_id}: ${n.triggered} · notify ${n.notify} within ${n.deadline_hours}h · ${n.status}`
+          + (n.due_by ? ` · due ${n.due_by}` : "")
+          + reportRefs("findings", n.finding_ids),
+        );
+        break;
       case "open_questions":
-        lines = dto.open_questions.map((q) => q.question);
+        lines = dto.open_questions.map((q) =>
+          `${q.question} · reason: ${q.reason}`
+          + (q.answer ? ` · answer: ${q.answer}` : "")
+          + reportRefs("related", q.related_ids),
+        );
         break;
       case "recommendations":
-        lines = (dto.recommendations as string[]).map(String);
+        lines = dto.recommendations.map((r) =>
+          typeof r === "string"
+            ? r
+            : `${r.text}${r.addresses_root_cause ? " · addresses root cause" : ""}${reportRefs("findings", r.finding_ids)}`,
+        );
+        break;
+      case "metrics":
+        lines = reportRecordLines(dto.metrics);
+        break;
+      case "policy_conformance":
+        lines = dto.policy_conformance.map((p) =>
+          `${p.policy_rule_id} [${p.result}]: ${p.requirement} · ${p.reason}`
+          + reportRefs("related", p.related_ids)
+          + (p.override_reason ? ` · override: ${p.override_reason}` : ""),
+        );
+        break;
+      case "sign_off":
+        lines = dto.sign_off
+          ? [`${dto.sign_off.decision} by ${dto.sign_off.analyst} (${dto.sign_off.role}) at ${dto.sign_off.at}${dto.sign_off.comments ? ` · ${dto.sign_off.comments}` : ""}`]
+          : [];
         break;
     }
     return { key, title, present: lines.length > 0, lines };
@@ -508,6 +613,13 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
     organisation: dto.organisation,
     status: dto.status,
     generatedAt: dto.created_at,
+    version: dto.version,
+    plannerModel: dto.planner_model || null,
+    stateVersion: dto.current_state_version ?? null,
+    recoveryStatus: dto.recovery_status ?? null,
+    planId: dto.plan_id ?? null,
+    planStateVersion: dto.plan_based_on_state_version ?? null,
+    planIsStale: dto.plan_is_stale ?? false,
     sections,
     completeness: {
       present: sections.filter((s) => s.present).length,

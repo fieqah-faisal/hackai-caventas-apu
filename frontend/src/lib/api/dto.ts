@@ -329,12 +329,13 @@ export interface AuditEventDTO {
   timestamp: string;
 }
 
-// ---- Report (v1.2 structured report) --------------------------------------
+// ---- Report (v1.3 structured report) --------------------------------------
 
 export interface ReportClassificationDTO {
   incident_type: string;
   status: string;
   closure_reason?: string | null;
+  closure_evidence_ids?: string[];
   severity: string;
   severity_reason: string;
   confidence: number;
@@ -365,17 +366,89 @@ export interface ReportTimelineRowDTO {
 
 export interface ReportActionRowDTO {
   action_id: string;
+  plan_id?: string | null;
+  based_on_state_version?: number | null;
   playbook_step_id: string;
   phase: string;
+  tool_name?: string;
+  target_id?: string;
   recommendation: string;
+  evidence_ids?: string[];
+  policy_refs?: string[];
+  required_approver?: string | null;
+  approver_role?: string | null;
+  policy_check?: { result: "pass" | "blocked" | string; reasons: string[] };
   status: string;
   replaces_action_id?: string | null;
   decided_by?: string | null;
   decided_at?: string | null;
   reason?: string | null;
   executed_by?: string | null;
+  execution_id?: string | null;
+  execution_status?: string | null;
+  validation_status?: string | null;
   result?: string | null;
   result_source?: string | null;
+}
+
+export interface ReportFindingDTO {
+  finding_id: string;
+  summary: string;
+  status?: "hypothesis" | "confirmed" | string;
+  confidence: number;
+  evidence_ids: string[];
+}
+
+export interface ReportCredentialDTO {
+  service: string;
+  account: string;
+  exposed: string;
+  status: string;
+  evidence_ids: string[];
+}
+
+export interface ReportPreservationDTO {
+  evidence_id: string;
+  item: string;
+  stored_at: string;
+  collected_by: string;
+  collected_at: string;
+  sha256: string;
+}
+
+export interface ReportNotificationDTO {
+  policy_rule_id: string;
+  trigger: string;
+  triggered: string;
+  notify: string;
+  deadline_hours: number;
+  due_by?: string | null;
+  status: string;
+  done_at?: string | null;
+  finding_ids: string[];
+}
+
+export interface ReportRecommendationDTO {
+  text: string;
+  finding_ids: string[];
+  addresses_root_cause: boolean;
+}
+
+export interface ReportPolicyConformanceDTO {
+  policy_rule_id: string;
+  requirement: string;
+  result: string;
+  reason: string;
+  related_ids: string[];
+  override_reason?: string | null;
+}
+
+export interface ReportSignOffDTO {
+  analyst: string;
+  role: string;
+  decision: string;
+  at: string;
+  comments: string;
 }
 
 export interface ReportOpenQuestionDTO {
@@ -403,24 +476,30 @@ export interface StructuredReportDTO {
   organisation: string;
   playbook: { id: string; version: string };
   policy_pack_version: string;
+  planner_model?: string;
+  current_state_version?: number | null;
+  recovery_status?: string | null;
+  plan_id?: string | null;
+  plan_based_on_state_version?: number | null;
+  plan_is_stale?: boolean;
   created_at: string;
   updated_at: string;
   executive_summary: { text: string; finding_ids: string[] };
   classification: ReportClassificationDTO;
   affected: ReportAffectedDTO[];
-  exposed_credentials: unknown[];
+  exposed_credentials: ReportCredentialDTO[];
   timeline: ReportTimelineRowDTO[];
-  findings: unknown[];
+  findings: ReportFindingDTO[];
   root_cause: { text: string; finding_ids: string[]; status: string };
   impact: Record<string, unknown>;
   actions: ReportActionRowDTO[];
-  evidence_preservation: unknown[];
-  notifications: unknown[];
-  recommendations: unknown[];
+  evidence_preservation: ReportPreservationDTO[];
+  notifications: ReportNotificationDTO[];
+  recommendations: Array<ReportRecommendationDTO | string>;
   open_questions: ReportOpenQuestionDTO[];
   metrics: Record<string, unknown>;
-  policy_conformance: unknown[];
-  sign_off: unknown | null;
+  policy_conformance: ReportPolicyConformanceDTO[];
+  sign_off: ReportSignOffDTO | null;
   evidence_index: ReportEvidenceIndexRowDTO[];
   /** Server-local filesystem path. NOT a downloadable URL — never expose as a link. */
   pdf_path?: string;

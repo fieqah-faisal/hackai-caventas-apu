@@ -1,6 +1,6 @@
 """Reporting service (BL-003).
 
-Generates the structured incident-report JSON (schema v1.2 shape) from stored
+Generates the structured incident-report JSON (schema v1.3 shape) from stored
 case records, then renders it to PDF with ReportLab. Reports reference a
 specific incident-state version and may only contain facts supported by
 stored records; sections the prototype cannot source stay empty or are
@@ -23,7 +23,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from app.ai.langgraph_planner import ATTACK_TECHNIQUE_ID, load_guidance
 from app.config import get_settings
 from app.database import repositories
-from app.services import audit_service, state_manager
+from app.services import audit_service, policy_service, state_manager
 
 ORGANISATION = "Caventas Demo Organisation"
 
@@ -77,6 +77,7 @@ def _finding_rows(analysis: dict[str, Any]) -> list[dict[str, Any]]:
             {
                 "finding_id": f"FND-{index:02d}",
                 "summary": str(finding.get("summary", "")),
+                "status": "hypothesis",
                 "evidence_ids": evidence,
                 "confidence": _float_or_zero(finding.get("confidence")),
             }
@@ -84,35 +85,77 @@ def _finding_rows(analysis: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
-def _latest_plan(case_id: str) -> dict[str, Any] | None:
+def _plans_newest_last(case_id: str) -> list[dict[str, Any]]:
     # Real Firestore streams documents in document-ID order (random hex ids),
     # not insertion order like the test fake, so sort by creation time.
-    plans = sorted(repositories.list_plans(case_id), key=_created_at_key)
-    return plans[-1] if plans else None
+    return sorted(repositories.list_plans(case_id), key=_created_at_key)
 
 
-def _action_rows(case_id: str, phase: str) -> list[dict[str, Any]]:
+def _action_rows(
+    case_id: str,
+    plans_by_id: dict[str, dict[str, Any]],
+    guidance: dict[str, Any],
+) -> list[dict[str, Any]]:
     results = {
         result.get("action_id"): result
         for result in repositories.list_action_results(case_id)
     }
+    blocked = {
+        event.get("details", {}).get("action_id"): event.get("details", {})
+        for event in repositories.list_audit_events(case_id)
+        if event.get("event_type") == "action_blocked"
+        and isinstance(event.get("details"), dict)
+    }
     rows: list[dict[str, Any]] = []
-    for action in repositories.list_actions(case_id):
+    for action in sorted(repositories.list_actions(case_id), key=_created_at_key):
         proposal = action.get("proposal", {}) or {}
         result = results.get(action.get("action_id"), {})
+        action_id = action.get("action_id")
+        plan_id = action.get("plan_id")
+        plan = plans_by_id.get(str(plan_id), {})
+        tool = str(proposal.get("tool_name", ""))
+        target = str(proposal.get("target_id", ""))
+        approver_role = action.get("decided_by_role")
+        policy = policy_service.evaluate_approval(
+            tool, target, approver_role, guidance=guidance
+        )
+        policy_reasons = [check.detail for check in policy.checks if check.detail]
+        blocked_event = blocked.get(action_id)
+        if blocked_event and not result:
+            detail = blocked_event.get("detail") or blocked_event.get("reason")
+            if detail:
+                policy_reasons.append(str(detail))
         rows.append(
             {
-                "action_id": action.get("action_id"),
+                "action_id": action_id,
+                "plan_id": plan_id,
+                "based_on_state_version": action.get("based_on_state_version"),
                 "playbook_step_id": "",
-                "phase": phase,
+                "phase": plan.get("stage", "assessment"),
+                "tool_name": tool,
+                "target_id": target,
                 "recommendation": proposal.get("rationale")
-                or f"{proposal.get('tool_name')} on {proposal.get('target_id')}",
+                or f"{tool} on {target}",
+                "evidence_ids": list(proposal.get("evidence_ids") or []),
+                "policy_refs": list(proposal.get("policy_refs") or []),
+                "required_approver": action.get("required_role")
+                or policy.required_role,
+                "approver_role": approver_role,
+                "policy_check": {
+                    "result": "pass"
+                    if policy.ok and not (blocked_event and not result)
+                    else "blocked",
+                    "reasons": policy_reasons,
+                },
                 "status": action.get("status", "recommended"),
                 "replaces_action_id": None,
                 "decided_by": action.get("decided_by"),
                 "decided_at": action.get("decided_at"),
                 "reason": action.get("reason"),
                 "executed_by": None,
+                "execution_id": result.get("execution_id"),
+                "execution_status": result.get("execution_status"),
+                "validation_status": result.get("validation_status"),
                 "result": result.get("observed_effect"),
                 "result_source": result.get("result_source") if result else None,
             }
@@ -132,6 +175,35 @@ def _timeline_rows(state: Any) -> list[dict[str, Any]]:
                 "side": "defender" if description.startswith("defender:") else "attacker",
                 "attack_technique": None,
                 "evidence_ids": list(event.evidence_ids),
+            }
+        )
+    return rows
+
+
+def _affected_rows(state: Any, guidance: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for entity in state.entities if state else []:
+        asset = policy_service.resolve_asset(guidance, entity.id)
+        rows.append(
+            {
+                "asset_id": entity.id,
+                "name": entity.name,
+                "type": asset.get("type", entity.type.value)
+                if asset
+                else entity.type.value,
+                "owner": "",
+                "criticality": asset.get("criticality", "unknown")
+                if asset
+                else "unknown",
+                "how_affected": "",
+                "data_classification": (
+                    "personal_data"
+                    if asset and asset.get("holds_personal_data")
+                    else "internal"
+                    if asset
+                    else "unknown"
+                ),
+                "evidence_ids": list(entity.evidence_ids),
             }
         )
     return rows
@@ -159,6 +231,18 @@ def _render_pdf(report: dict[str, Any]) -> Path:
     )
     story.append(Spacer(1, 0.4 * cm))
 
+    section(
+        "Record provenance",
+        [
+            f"Incident state: v{report['current_state_version']}"
+            if report.get("current_state_version") is not None
+            else "Incident state: none recorded",
+            f"Latest plan: {report.get('plan_id') or 'none'}"
+            + (" (stale; analysis is bound to an earlier state)" if report.get("plan_is_stale") else ""),
+            f"Planner model: {report.get('planner_model', 'unknown')}",
+        ],
+    )
+
     classification = report["classification"]
     techniques = classification.get("attack_techniques") or []
     section(
@@ -182,7 +266,12 @@ def _render_pdf(report: dict[str, Any]) -> Path:
     section("Affected entities", affected or ["None recorded"])
     timeline = [f"[{t['side']}] {t['event']}" for t in report["timeline"][:40]]
     section("Timeline", timeline or ["None recorded"])
-    actions = [f"{a['status'].upper()}: {a['recommendation']}" for a in report["actions"]]
+    actions = [
+        f"{a['status'].upper()}: {a['recommendation']} "
+        f"[{a.get('tool_name') or 'no tool'} -> {a.get('target_id') or 'no target'}; "
+        f"state v{a.get('based_on_state_version')}]"
+        for a in report["actions"]
+    ]
     section("Response actions", actions or ["None recorded"])
     gaps = [q["question"] for q in report["open_questions"]]
     section("Open questions", gaps or ["None"])
@@ -203,7 +292,14 @@ def generate_report(case_id: str) -> dict[str, Any]:
     state = state_manager.get_current_state(case_id)
     evidence = repositories.list_evidence(case_id)
     stored_evidence_ids = {item.get("evidence_id") for item in evidence}
-    plan = _latest_plan(case_id)
+    plans = _plans_newest_last(case_id)
+    plan = plans[-1] if plans else None
+    current_state_version = state.version if state else None
+    plan_state_version = (plan or {}).get("based_on_state_version")
+    plan_is_stale = bool(plan and plan_state_version != current_state_version)
+    # A plan remains part of the historical record after an action result creates
+    # a newer state. Keep its analysis, but expose the exact binding and stale bit
+    # so consumers never mistake it for analysis of the current state.
     phase = (plan or {}).get("stage", "assessment")
     gaps = list((plan or {}).get("missing_evidence", []))
     analysis = (plan or {}).get("analysis")
@@ -214,16 +310,32 @@ def generate_report(case_id: str) -> dict[str, Any]:
     severity = analysis.get("severity")
     severity = severity if isinstance(severity, str) and severity else "unknown"
     raw_techniques = analysis.get("attack_techniques")
-    techniques = (
+    analysis_techniques = (
         [t for t in raw_techniques if isinstance(t, str) and ATTACK_TECHNIQUE_ID.match(t)]
         if isinstance(raw_techniques, list)
         else []
     )
     guidance = load_guidance()
+    techniques = list(
+        dict.fromkeys(
+            [
+                technique
+                for technique in [
+                    *(state.attack_mapping if state else []),
+                    *analysis_techniques,
+                ]
+                if ATTACK_TECHNIQUE_ID.match(technique)
+            ]
+        )
+    )
+    settings = get_settings()
     now = datetime.now(timezone.utc).isoformat()
     report_id = f"RPT-{uuid.uuid4().hex[:12]}"
 
-    actions = _action_rows(case_id, phase)
+    plans_by_id = {
+        str(item.get("plan_id")): item for item in plans if item.get("plan_id")
+    }
+    actions = _action_rows(case_id, plans_by_id, guidance)
     entity_count = len(state.entities) if state else 0
     summary = (
         f"Draft generated from stored case records: {entity_count} entities "
@@ -234,7 +346,11 @@ def generate_report(case_id: str) -> dict[str, Any]:
     report: dict[str, Any] = {
         "report_id": report_id,
         "incident_id": case_id,
-        "version": 1,
+        "version": max(
+            [int(item.get("version", 0)) for item in repositories.list_reports(case_id)]
+            or [0]
+        )
+        + 1,
         "status": "draft",
         "title": case.get("title", ""),
         "organisation": ORGANISATION,
@@ -243,6 +359,12 @@ def generate_report(case_id: str) -> dict[str, Any]:
             "version": guidance["playbook"]["version"],
         },
         "policy_pack_version": guidance["policy_pack_version"],
+        "planner_model": getattr(settings, "opencode_go_model", "unknown"),
+        "current_state_version": current_state_version,
+        "recovery_status": state.recovery_status.value if state else None,
+        "plan_id": (plan or {}).get("plan_id"),
+        "plan_based_on_state_version": plan_state_version,
+        "plan_is_stale": plan_is_stale,
         "created_at": now,
         "updated_at": now,
         "executive_summary": {"text": summary, "finding_ids": []},
@@ -250,6 +372,7 @@ def generate_report(case_id: str) -> dict[str, Any]:
             "incident_type": incident_type,
             "status": "suspected",
             "closure_reason": None,
+            "closure_evidence_ids": [],
             "severity": severity,
             "severity_reason": (
                 "Assessed by the planner from stored evidence."
@@ -261,19 +384,7 @@ def generate_report(case_id: str) -> dict[str, Any]:
             "attack_techniques": list(techniques),
             "confirmed_by_analyst": False,
         },
-        "affected": [
-            {
-                "asset_id": entity.id,
-                "name": entity.name,
-                "type": entity.type.value,
-                "owner": "",
-                "criticality": "unknown",
-                "how_affected": "",
-                "data_classification": "",
-                "evidence_ids": [],
-            }
-            for entity in (state.entities if state else [])
-        ],
+        "affected": _affected_rows(state, guidance),
         "exposed_credentials": [],
         "timeline": _timeline_rows(state),
         "findings": [

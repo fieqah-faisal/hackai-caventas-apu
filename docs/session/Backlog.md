@@ -29,7 +29,9 @@
 > (analysis persisted in plan docs; report findings/ATT&CK filled, DEC-015;
 > coverage cleared, live 12/12 · 5/5 · 93.4). BL-020 done (untrusted-evidence
 > skill + full state descriptions, DEC-016; live 12/12 · 5/5 · 93.4
-> post-merge).
+> post-merge). BL-041 done (incident_type schema enum + v1.3 doc fixes; live
+> 12/12 · 5/5 · 92.7). BL-040/BL-042 done by final integration (backend v1.3
+> action/report provenance fields plus complete typed frontend rendering).
 > BL-016/018/019/032 closed by PR #22 (GAS-lite entity extraction; the
 > deterministic policy guard, DEC-010).
 > BL-013 and BL-025 closed by the persisted case/dashboard and latest-report
@@ -78,17 +80,6 @@
   fixture demonstrates the renderer's attack/inferred presentation. Never
   classify arbitrary network activity as malicious solely by event name.
   — open / Raaj + Aidan
-- BL-040 — Report: write the v1.3 action fields (tool_name, target_id,
-  policy_refs, required_approver from required_role, approver_role from
-  decided_by_role, policy_check), planner_model, findings[].status
-  (default hypothesis) and affected[].evidence_ids. See
-  docs/report-schema/README.md. — open / Raaj
-- BL-041 — Planner: limit incident_type to the schema values
-  (infostealer_session_hijack | phishing_account_takeover |
-  not_an_incident | other). — open / Airil
-- BL-042 — Frontend: add the v1.3 report fields to dto.ts (typed
-  findings, action policy fields, planner_model). — open / Syafieqah
-
 ### P3
 
 - BL-022 — Re-check ATT&CK technique IDs on attack.mitre.org (blocked in

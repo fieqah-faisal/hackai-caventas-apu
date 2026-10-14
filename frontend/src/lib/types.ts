@@ -395,6 +395,13 @@ export interface ReportVM {
   organisation: string;
   status: string;
   generatedAt: string;
+  version: number;
+  plannerModel: string | null;
+  stateVersion: number | null;
+  recoveryStatus: string | null;
+  planId: string | null;
+  planStateVersion: number | null;
+  planIsStale: boolean;
   sections: ReportSectionVM[];
   completeness: { present: number; total: number };
   /** True when the backend exposes the generated PDF through its download API. */

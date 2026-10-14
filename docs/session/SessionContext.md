@@ -49,15 +49,16 @@ Firestore; no credentials needed).
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
   unsafe 0/12, fake planner 0/12 (fake 1/12 · 42.9 post-policy-guard).
-  BL-020 untrusted-evidence marking merged main (PR #22 policy guard) and
-  reran live: **12/12 checkpoints, 5/5 scenarios, mean 93.4** (pre-merge
-  branch run: 95.5); injection gates hold; report coverage complete.
+  BL-020 untrusted-evidence marking (merged) and BL-041 incident_type enum
+  (branch) reran live: **12/12 checkpoints, 5/5 scenarios, mean 92.7**
+  (branch history: 95.5 pre-merge, 93.4 post-policy-guard); injection gates
+  hold; report coverage complete.
   History: BL-017 (12/12, 93.4, PR #19), BL-031 (92.4, PR #18), BL-038
   (10/12, PR #17), BL-014 (8/12, PR #13).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **212 passed** on merged main. Live results merged via
+  Suite **214 passed** on this branch (212 on main). Live results merged via
   PR #13 (`4145f41`).
 - Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
   structured rules (ten fields) + 8-asset list in
@@ -73,8 +74,14 @@ Firestore; no credentials needed).
   `backend/app/ai/skills/untrusted_evidence/SKILL.md` with full state
   descriptions and catalogue target-type validation (BL-020, DEC-016); the
   full live run is 12/12 with all gates holding.
-- Report schema v1.3 (Aida, DEC-017) lives in `docs/report-schema/`; code
-  fill-ins are tracked by BL-033 and BL-040–BL-042.
+- Report schema v1.3 (Aida, DEC-017) in `docs/report-schema/`: the contract
+  for the report JSON. BL-041's constrained `incident_type` enum is merged.
+  BL-040/BL-042 are complete: reports persist current-state/latest-plan
+  provenance and staleness, increment report versions, keep every historical
+  action's own plan/state/phase, expose deterministic action-policy fields,
+  and carry planner model, finding status and affected-entity evidence IDs.
+  The typed frontend renders every v1.3 section and does not count unknown or
+  not-assessed placeholders as populated. Remaining fill-ins are BL-033.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).
@@ -175,6 +182,15 @@ Firestore; no credentials needed).
   and diff checks passed. Isolated deterministic browser acceptance verified
   active-run duplicate recovery, navigation persistence, refresh recovery,
   minimisation/reopening and directed graph arrows without a live-provider call.
+- Final `origin/main` integration gate (2026-10-14): the no-commit merge of
+  BL-041 was resolved with no application-code conflicts, then structured
+  reporting BL-040/BL-042 was completed. Backend **227 passed**; frontend
+  strict typecheck, **97 tests in 17 files**, production build, Compose config,
+  both image builds and recreated container health checks passed. Deterministic
+  API-mode browser acceptance used `FakePlannerAdapter` and verified states
+  1/2/3, plans bound to 1/2, response edge, persisted state-v3/plan-v2 stale
+  report disclosure, per-action provenance, refresh recovery and a valid
+  13,405-byte PDF. No live planner request was made; BL-043 remains open.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

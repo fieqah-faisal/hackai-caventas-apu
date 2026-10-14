@@ -251,6 +251,48 @@ describe("report action wording keeps proposed / approved / executed / effective
   it("marks the PDF downloadable through the report API", () => {
     expect(toReportVM(reportBody("RPT-000000000001")).pdfAvailable).toBe(true);
   });
+
+  it("maps the complete v1.3 report contract without dropping authoritative fields", () => {
+    const dto = reportBody("RPT-000000000001", [{
+      ...REPORT_ACTION_ROWS[0],
+      plan_id: "PLAN-1",
+      based_on_state_version: 3,
+      tool_name: "isolate_host",
+      target_id: "HOST::SYNTH-LT-01",
+      evidence_ids: ["EV-1"],
+      policy_refs: ["POL-04"],
+      required_approver: "soc_analyst",
+      approver_role: "soc_analyst",
+      policy_check: { result: "pass", reasons: ["role accepted"] },
+    }]);
+    dto.exposed_credentials = [{ service: "CRM", account: "synthetic.user", exposed: "session", status: "revoked", evidence_ids: ["EV-1"] }];
+    dto.findings = [{ finding_id: "FND-01", summary: "Synthetic session reuse observed.", status: "hypothesis", confidence: 0.8, evidence_ids: ["EV-1"] }];
+    dto.root_cause = { text: "Synthetic installer execution.", finding_ids: ["FND-01"], status: "hypothesis" };
+    dto.impact = { operational: "Synthetic test disruption", personal_data_involved: "unknown" };
+    dto.evidence_preservation = [{ evidence_id: "EV-1", item: "logs", stored_at: "case store", collected_by: "analyst", collected_at: dto.created_at, sha256: "abc" }];
+    dto.notifications = [{ policy_rule_id: "POL-13", trigger: "synthetic trigger", triggered: "yes", notify: "it_manager", deadline_hours: 4, status: "pending", finding_ids: ["FND-01"] }];
+    dto.recommendations = [{ text: "Harden synthetic sessions.", finding_ids: ["FND-01"], addresses_root_cause: true }];
+    dto.policy_conformance = [{ policy_rule_id: "POL-04", requirement: "Analyst approval", result: "pass", reason: "Role accepted", related_ids: ["ACT-1"] }];
+    dto.sign_off = { analyst: "Analyst A", role: "soc_analyst", decision: "return", at: dto.created_at, comments: "Draft only" };
+
+    const vm = toReportVM(dto);
+    const section = (key: string) => vm.sections.find((item) => item.key === key);
+
+    expect(vm).toMatchObject({
+      version: 1,
+      plannerModel: "fake-planner",
+      stateVersion: 3,
+      planId: "PLAN-4e0000000003",
+      planStateVersion: 3,
+      planIsStale: false,
+    });
+    for (const key of ["exposed_credentials", "findings", "root_cause", "impact", "action_policy", "evidence_preservation", "notifications", "recommendations", "metrics", "policy_conformance", "sign_off"]) {
+      expect(section(key)?.present, key).toBe(true);
+    }
+    expect(section("action_policy")?.lines[0]).toContain("isolate_host → HOST::SYNTH-LT-01");
+    expect(section("findings")?.lines[0]).toContain("EV-1");
+    expect(vm.completeness.total).toBe(vm.sections.length);
+  });
 });
 
 describe("approvals queue mapping (GET /cases/{id}/actions, BL-027)", () => {

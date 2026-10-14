@@ -226,6 +226,12 @@ export function reportBody(reportId: string, actions: ReportActionRowDTO[] = REP
     organisation: "Caventas Demo Organisation",
     playbook: { id: "PB-IR-001", version: "0.1" },
     policy_pack_version: "0.1-draft",
+    planner_model: "fake-planner",
+    current_state_version: 3,
+    recovery_status: "investigating",
+    plan_id: "PLAN-4e0000000003",
+    plan_based_on_state_version: 3,
+    plan_is_stale: false,
     created_at: "2026-10-12T02:45:53.540003+00:00",
     updated_at: "2026-10-12T02:45:53.540003+00:00",
     executive_summary: {

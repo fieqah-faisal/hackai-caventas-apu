@@ -73,7 +73,13 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
         <div>
           <h2 className="text-lg font-semibold text-text-primary">{report.title}</h2>
           <p className="mt-0.5 text-meta text-text-muted">
-            {report.organisation} · status {report.status} · generated {relativeTime(report.generatedAt)}
+            {report.organisation} · report v{report.version} · status {report.status} · generated {relativeTime(report.generatedAt)}
+          </p>
+          <p className="mt-1 text-meta text-text-muted">
+            State {report.stateVersion == null ? "not recorded" : `v${report.stateVersion}`}
+            {report.recoveryStatus ? ` · recovery ${report.recoveryStatus}` : ""}
+            {report.planId ? ` · plan ${report.planId}${report.planStateVersion == null ? "" : ` on state v${report.planStateVersion}`}` : " · no plan recorded"}
+            {report.plannerModel ? ` · model ${report.plannerModel}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -104,6 +110,12 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
           )}
         </div>
       </section>
+
+      {report.planIsStale && (
+        <p role="status" className="rounded-md border border-status-warning/45 bg-surface px-4 py-2 text-meta text-text-secondary">
+          The latest plan is stale for this incident state. Its narrative classification and open questions are retained as historical analysis bound to the earlier state; actions retain their own plan and state references.
+        </p>
+      )}
 
       <div className="space-y-2">
         {report.sections.map((s) => (

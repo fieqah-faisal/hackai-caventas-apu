@@ -50,8 +50,12 @@ def test_generate_report_from_stored_records(client, monkeypatch, tmp_path):
     assert report["report_id"].startswith("RPT-")
     assert report["incident_id"] == case_id
     assert report["status"] == "draft"
+    assert report["current_state_version"] == 2
+    assert report["plan_based_on_state_version"] == 1
+    assert report["plan_is_stale"] is True
     assert report["classification"]["current_phase"] == "containment"
     assert report["evidence_index"], "evidence index must list stored evidence"
+    assert any(row["evidence_ids"] for row in report["affected"])
     assert isinstance(report["open_questions"], list)
 
     assert len(report["actions"]) == 1
@@ -59,6 +63,14 @@ def test_generate_report_from_stored_records(client, monkeypatch, tmp_path):
     assert action["status"] == "failed"  # executed but ineffective
     assert action["decided_by"] == "aida"
     assert action["result_source"] == "simulator"
+    assert action["plan_id"] == report["plan_id"]
+    assert action["based_on_state_version"] == 1
+    assert action["tool_name"] == "isolate_host"
+    assert action["target_id"]
+    assert action["evidence_ids"]
+    assert action["required_approver"] == "soc_analyst"
+    assert action["approver_role"] == "soc_analyst"
+    assert action["policy_check"]["result"] == "pass"
 
     descriptions = " ".join(row["event"] for row in report["timeline"])
     assert "isolate_host" in descriptions
@@ -93,6 +105,8 @@ def test_latest_report_and_pdf_survive_a_later_read(client, monkeypatch, tmp_pat
     assert latest.status_code == 200
     assert latest.json()["report_id"] == second["report_id"]
     assert latest.json()["report_id"] != first["report_id"]
+    assert first["version"] == 1
+    assert second["version"] == 2
 
     pdf = client.get(f"/cases/{case_id}/reports/{second['report_id']}/pdf")
     assert pdf.status_code == 200
@@ -146,6 +160,66 @@ def test_report_uses_newest_plan_not_stream_order(client, monkeypatch, tmp_path)
 
     assert report["classification"]["current_phase"] == "eradication"
     assert [q["question"] for q in report["open_questions"]] == ["newest gap"]
+    assert report["plan_id"] == "PLAN-newest"
+    assert report["plan_based_on_state_version"] == 1
+    assert report["plan_is_stale"] is True
+
+
+def test_report_actions_keep_their_own_plan_phase_and_state(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "action provenance"}).json()["case_id"]
+    upload = client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("batch1.json", FIXTURE.read_bytes(), "application/json")},
+    )
+    assert upload.status_code == 200, upload.text
+    target = client.get(f"/cases/{case_id}/state").json()["entities"][0]["id"]
+    evidence_id = client.get(f"/cases/{case_id}/evidence").json()[0]["evidence_id"]
+
+    for index, phase in enumerate(("preservation", "containment"), start=1):
+        plan_id = f"PLAN-{index}"
+        action_id = f"ACT-{index}"
+        repositories.add_plan(
+            case_id,
+            plan_id,
+            {
+                "plan_id": plan_id,
+                "case_id": case_id,
+                "based_on_state_version": 1,
+                "stage": phase,
+                "missing_evidence": [],
+                "action_ids": [action_id],
+                "created_at": f"2026-10-13T11:00:0{index}+00:00",
+            },
+        )
+        repositories.add_action(
+            case_id,
+            action_id,
+            {
+                "action_id": action_id,
+                "case_id": case_id,
+                "plan_id": plan_id,
+                "version": 1,
+                "based_on_state_version": 1,
+                "proposal": {
+                    "tool_name": "preserve_evidence",
+                    "target_id": target,
+                    "evidence_ids": [evidence_id],
+                    "policy_refs": ["POL-05"],
+                    "rationale": f"{phase} action",
+                },
+                "status": "awaiting_approval",
+                "created_at": f"2026-10-13T11:00:0{index}+00:00",
+            },
+        )
+
+    report = client.post(f"/cases/{case_id}/reports").json()
+
+    assert [(row["plan_id"], row["phase"]) for row in report["actions"]] == [
+        ("PLAN-1", "preservation"),
+        ("PLAN-2", "containment"),
+    ]
+    assert all(row["based_on_state_version"] == 1 for row in report["actions"])
 
 
 def test_generate_report_unknown_case_404(client):
@@ -198,12 +272,16 @@ def test_report_fills_classification_findings_and_attack(client, monkeypatch, tm
     assert report["classification"]["incident_type"] == "infostealer_session_hijack"
     assert report["classification"]["severity"] == "high"
     assert report["classification"]["confidence"] == 0.7
-    assert report["classification"]["attack_techniques"] == ["T1204.002", "T1555.003"]
+    assert set(report["classification"]["attack_techniques"]) >= {
+        "T1204.002",
+        "T1555.003",
+    }
     assert report["classification"]["severity_reason"] == (
         "Assessed by the planner from stored evidence."
     )
     assert report["findings"][0]["finding_id"] == "FND-01"
     assert report["findings"][0]["summary"] == "Unsigned installer ran on the endpoint."
+    assert report["findings"][0]["status"] == "hypothesis"
     assert report["findings"][0]["evidence_ids"] == [evidence_id]
     assert report["findings"][0]["confidence"] == 0.8
     assert Path(report["pdf_path"]).exists()

@@ -90,4 +90,13 @@ describe("ReportTab (H4: generate only on explicit action)", () => {
     await waitFor(() => expect(screen.getByText("No report generated yet")).toBeInTheDocument());
     expect(screen.queryByRole("heading", { name: "Synthetic login anomaly" })).not.toBeInTheDocument();
   });
+
+  it("labels analysis from a plan bound to an older state", async () => {
+    const stale = { ...REPORT, stateVersion: 3, planStateVersion: 2, planIsStale: true };
+    provider.getReport.mockResolvedValue({ kind: "ok", value: { data: stale, source: "real" } });
+    renderTab();
+
+    expect(await screen.findByRole("status")).toHaveTextContent("latest plan is stale");
+    expect(screen.getByText(/plan PLAN-4e0000000003 on state v2/)).toBeInTheDocument();
+  });
 });

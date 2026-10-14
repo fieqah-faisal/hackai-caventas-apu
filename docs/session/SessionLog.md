@@ -3,6 +3,12 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-14 Final main merge and authoritative structured reporting (DONE)
+
+- Merged `origin/main` into `chore/final-integration-fieqah` with no application-code conflicts; resolved only the expected evaluation/session documentation conflicts while retaining both integration and BL-041 history. BL-041's constrained incident type and committed live evaluation artifacts now coexist with GAS-lite, persisted global analysis runs, directed incident graph, approvals/simulation and persisted report/PDF flows.
+- Completed BL-040/BL-042 without replacing the report UI: the backend now emits planner model, incrementing report version, current state/recovery status, latest-plan binding/staleness, finding status, evidence-backed affected entities, policy-pack asset metadata and complete per-action plan/state/phase, tool/target/evidence/rules/approver/policy/execution provenance. Historical stale-plan analysis remains explicitly bound and labelled rather than silently presented as current. The typed frontend renders every v1.3 section, shows report/state/plan provenance and stale status, and excludes placeholder-only unknown/not-assessed sections from completeness.
+- Verification: focused backend reporting **11 passed** and focused frontend report/mapping **30 passed**; full backend **227 passed**; frontend strict typecheck, **97 tests in 17 files** and production build passed; Compose config and both image builds passed; recreated backend/frontend containers are healthy and nginx `/healthz` returned 200; `git diff --check` passed. Assertion-backed synthetic browser acceptance used only `FakePlannerAdapter` and verified state versions 1/2/3, plans bound to 1/2, a state-v3 response edge, persisted report bound to stale plan state v2 with two provenance-complete actions, refresh recovery and a valid 13,405-byte PDF. `.venv` and `backend/.env` are ignored/untracked, and gitleaks found no leaks in the complete staged diff. No post-merge evaluation or live planner call was made; BL-043 remains open.
+
 ### 2026-10-14 Global analysis recovery and directed graph repair (DONE)
 
 - Added case-scoped active-run discovery backed by the existing atomic Firestore marker. Duplicate async-run creation remains HTTP 409 but now exposes the existing run ID; API mode resolves that conflict to the persisted run without scheduling another planner task. A shell-level provider owns runs by case, one poll loop per active run, completion refresh, route/refresh recovery and a persistent minimisable/reopenable accessible Caventas robot dialog. The adapted presentation uses only Caventas tokens, real run fields and reduced-motion-safe CSS; Create Case and Analysis share the same run truth.
@@ -121,6 +127,21 @@
   passed. User-managed services were not restarted or stopped. No credential,
   `.env`, authentication or service-account file was read. Changes remain
   uncommitted; nothing was pushed or merged.
+
+### 2026-10-14 BL-041 incident_type schema enum: live 12/12, 5/5, mean 92.7 (DONE)
+
+- The analyze prompt now requests exactly one of `infostealer_session_hijack`,
+  `phishing_account_takeover`, `not_an_incident`, `other` (schema v1.3), and
+  the adapter coerces non-conforming model output to `other`
+  (`INCIDENT_TYPES`, `_incident_type`). Verified live: sc02 →
+  `phishing_account_takeover`, sc03 → `not_an_incident` (direct planner runs);
+  scoped sc02+sc03 PASS.
+- Also fixed two v1.3 doc bugs: `docs/report-schema/README.md` said report
+  status "stays `final`" (the code writes `draft`) and the
+  `SessionContext.md` v1.3 bullet splice.
+- Full live rerun: **12/12 checkpoints, 5/5 scenarios, mean 92.7** (all gates
+  hold; coverage complete). 214 backend tests; artifacts in
+  `.agents/tasks/bl-041-incident-type-enum/`.
 
 ### 2026-10-14 Report schema v1.3 added to docs/ (DONE)
 
