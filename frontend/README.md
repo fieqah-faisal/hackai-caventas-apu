@@ -74,15 +74,16 @@ Known backend gaps are surfaced explicitly rather than faked:
   `GET /action-results` after the approval queue refreshes.
 - Audit events map the backend shape (`audit_id`, `event_type`,
   `timestamp`, `details`); evidence lists in upload order.
-- The Report uses the actual backend report DTO; PDF download is disabled
-  because `pdf_path` is not downloadable over the API.
+- The Report uses the actual backend report DTO. `GET /reports/latest` restores
+  the newest persisted report after refresh, and the PDF is downloaded through
+  the report API rather than exposing the server-local `pdf_path`.
 - Opening the Report tab only reads. A report is generated only when the
   analyst clicks Generate / Regenerate. Each `POST /reports` stores a new
-  report version, PDF and audit event. The latest report generated in this
-  page session is kept in memory (never `localStorage`). The backend has no
-  report-list endpoint, so earlier reports are not shown after a reload.
-- Global dashboard aggregates that have no backend endpoint are shown only in
-  fixture mode, never fabricated in API mode.
+  report version, PDF and audit event.
+- Persisted `GET /cases` backs the Cases page and API-mode dashboard. Planning
+  and decision summaries are derived from stored plans/actions; active-run
+  status remains explicitly unavailable because the backend has no run-status
+  contract.
 
 Point API mode at a backend by running the FastAPI app on `:8000`; the Vite
 dev server proxies `/api` to it (see `vite.config.ts`). The two modes are a

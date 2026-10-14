@@ -6,14 +6,18 @@
 >
 > **ID registry (2026-10-12):** PR #9 (security-lead) is merged: BL-014..024
 > and DEC-006/DEC-007 are on `main`; PR #10 adds BL-032..BL-036 and DEC-012.
-> `feat/gas-lite-state-fieqah` claims BL-020 (collides with merged BL-020)
-> and DEC-010. `link` adds BL-025..BL-030 and DEC-008/009/011; its
+> `feat/gas-lite-state-fieqah` (PR #22) adds DEC-010 (GAS-lite) and the
+> deterministic policy guard; it closed BL-016/018/019/032. `link` adds
+> BL-025..BL-030 and DEC-008/009/011; its
 > npm-audit item was renumbered BL-024 → BL-030 on that merge because
 > main's BL-024 is the approval-invalidation item.
 > `feat/bl-037-stage-retrieval` adds DEC-013 and registers BL-038/BL-039;
 > `feat/bl-031-verify-before-contain` adds DEC-014;
-> `feat/bl-017-analysis-persistence` adds DEC-015.
-> Next free IDs: **BL-041** and **DEC-016**.
+> `feat/bl-017-analysis-persistence` adds DEC-015;
+> `feat/bl-020-untrusted-evidence` adds DEC-016.
+> `docs/report-schema-v1.3` adds DEC-017 and BL-040..BL-042.
+> `chore/final-integration-fieqah` adds BL-043.
+> Next free IDs: **BL-044** and **DEC-018**.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
 > (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done
@@ -23,7 +27,13 @@
 > BL-034 folded into BL-037; both done (retrieval branch). BL-031 done
 > (verification-first skill, DEC-014; live 12/12 · 5/5 · 92.4). BL-017 done
 > (analysis persisted in plan docs; report findings/ATT&CK filled, DEC-015;
-> coverage cleared, live 12/12 · 5/5 · 93.4).
+> coverage cleared, live 12/12 · 5/5 · 93.4). BL-020 done (untrusted-evidence
+> skill + full state descriptions, DEC-016; live 12/12 · 5/5 · 93.4
+> post-merge).
+> BL-016/018/019/032 closed by PR #22 (GAS-lite entity extraction; the
+> deterministic policy guard, DEC-010).
+> BL-013 and BL-025 closed by the persisted case/dashboard and latest-report
+> API repair on `chore/final-integration-fieqah`.
 
 ## Open Items
 
@@ -31,7 +41,7 @@
 
 - BL-001 — Reconcile proposal (SQLite + JSON) vs repo (Firestore); confirm
   and record the change. — open / team
-- BL-040 — Investigate the intermittent live planner HTTP 502 seen in the
+- BL-043 — Investigate the intermittent live planner HTTP 502 seen in the
   single post-repair browser smoke on 2026-10-14. The request stayed singular,
   pending UX behaved correctly, no plan/action was persisted, deterministic
   planner/API tests pass, and an earlier same-day live plan is persisted and
@@ -59,6 +69,16 @@
   (SALES-LT-07, FS-01, …). — open / Aida + Aidan
 - BL-039 — Align the simulator catalogue with policy pack v1.0: trigger
   event types and tool gaps (`purge_email`, `restore_host`). — open / Aidan
+- BL-040 — Report: write the v1.3 action fields (tool_name, target_id,
+  policy_refs, required_approver from required_role, approver_role from
+  decided_by_role, policy_check), planner_model, findings[].status
+  (default hypothesis) and affected[].evidence_ids. See
+  docs/report-schema/README.md. — open / Raaj
+- BL-041 — Planner: limit incident_type to the schema values
+  (infostealer_session_hijack | phishing_account_takeover |
+  not_an_incident | other). — open / Airil
+- BL-042 — Frontend: add the v1.3 report fields to dto.ts (typed
+  findings, action policy fields, planner_model). — open / Syafieqah
 
 ### P3
 

@@ -3,6 +3,26 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-14 Synchronize final integration with main (DONE)
+
+- Fetched `origin/main` at `f6f002e` and merged it into
+  `chore/final-integration-fieqah` without rebasing. The branch already
+  contained integration checkpoint `90ab444` and browser-repair commit
+  `84d91e5`; the pre-merge worktree was clean.
+- Conflicts were resolved semantically in `langgraph_planner.py`, Backlog,
+  SessionContext, SessionLog and the frontend README. Main's complete BL-020
+  untrusted-evidence skill, labeled analysis payload, full evidence
+  descriptions and catalogue target-type validation are retained alongside
+  integration Docker packaging, API compatibility, execution/validation
+  history and browser repairs. The auto-merged planner tests retain both
+  branches' coverage. The browser live-provider follow-up was renumbered from
+  BL-040 to BL-043 because main owns BL-040–BL-042.
+- Verification before the local merge commit: backend **218 passed**; frontend
+  strict typecheck, **83 tests in 11 files** and production build passed;
+  `docker compose -f compose.yaml config --quiet` and `git diff --check`
+  passed. No sensitive path or credential material is staged. No push was
+  performed.
+
 ### 2026-10-14 API-mode demo-blocker repair (DONE; live provider blocker recorded)
 
 - Added persisted `GET /cases`, replaced the `/cases` placeholder, and derived
@@ -24,13 +44,23 @@
   `POST /runs`, displayed the pending status, and failed honestly with HTTP
   502; no plan/action was persisted and the UI did not navigate falsely.
   An earlier persisted live plan still renders across the complete workspace.
-  The provider failure is tracked as BL-040; no retry or evaluation run was
+  The provider failure is tracked as BL-043; no retry or evaluation run was
   performed.
 - Checks: backend **211 passed**; frontend strict typecheck, **83 tests in 11
   files**, production build, Compose config and both Docker image builds
   passed. User-managed services were not restarted or stopped. No credential,
   `.env`, authentication or service-account file was read. Changes remain
   uncommitted; nothing was pushed or merged.
+
+### 2026-10-14 Report schema v1.3 added to docs/ (DONE)
+
+- Branch `docs/report-schema-v1.3`: `docs/report-schema/` (README.md,
+  report_schema_v1.3.json, lifecycle.png). Docs only; no code changed.
+- Checked against `reporting.py` on main: every written key is covered
+  except `pdf_path`; findings use `summary` (DEC-015).
+- DEC-017; BL-040 (Raaj), BL-041 (Airil), BL-042 (Syafieqah).
+- Backend suite unchanged: 212 passed. Policy pack checker: all PASS.
+- Next: BL-040 / BL-033 (Raaj); BL-035 asset list (Aida + Aidan).
 
 ### 2026-10-14 Final integration and production-stack verification (DONE)
 
@@ -107,6 +137,37 @@
   BL-015, BL-020, BL-021, BL-026, BL-027 and BL-036. Next: real API-mode
   Firestore-emulator workflow, then minimal fixes only.
 
+### 2026-10-14 README post-merge refresh (DONE)
+
+- Audited all five repository README files against the current backend,
+  frontend, scenarios, fixtures, routes, evaluation artifacts and notebook;
+  the session-protocol README required no content change.
+- Updated the root, backend, frontend and scenario READMEs for stage-scoped
+  retrieval, current simulator ownership, open handoff items, API-mode plan
+  limitations and the full 19-rule policy pack.
+- Branch `docs/readme-postmerge-refresh`, base `ef610fc`; documentation changes
+  remain uncommitted.
+- Verification: `git diff --check`; backend `../.venv/bin/python -m pytest -q`
+  (**212 passed**); frontend `npm run test` (**75 passed**) and `npm run build`
+  (green); evaluation fixtures confirmed 5 scenarios, 12 checkpoints, 19
+  rules, 8 assets, 9 tools and zero live report gaps.
+- Next: review and commit the documentation changes; open product follow-ups
+  remain tracked in `docs/session/Backlog.md`.
+
+### 2026-10-13 BL-020 merged main (PR #22 policy guard) — post-merge live 12/12, mean 93.4 (DONE)
+
+- Merged `origin/main` (`70b6c56`, PR #22: GAS-lite + deterministic policy
+  guard) into `feat/bl-020-untrusted-evidence` (`e92907f`); conflicts resolved
+  semantically in README/SUMMARY/Backlog/Decisions/SessionLog — both sides'
+  closures kept (BL-016/018/019/032 by main; BL-020 by this branch), both
+  decisions kept (DEC-010, DEC-016), SUMMARY keeps this branch's live row +
+  main's recalibrated fake row.
+- Full backend suite on the merged tree: **212 passed** (205 + this branch's
+  7 new tests).
+- Post-merge live rerun (policy guard active): **12/12 checkpoints, 5/5
+  scenarios, mean 93.4**; injection gates hold; report coverage still empty.
+  README/SessionContext numbers refreshed; PR #21 updated.
+
 ### 2026-10-13 Deterministic policy enforcement + main merge into GAS-lite (DONE)
 
 - Merged `origin/main` (`cced814`: PR #10 policy pack, #11 API wiring, #15
@@ -138,6 +199,20 @@
   preserved (12/12, 93.4); `oracle.json` line-ending-only diff reverted.
 - 16 new tests in `test_policy_enforcement.py`. Full backend **205 passed**;
   frontend typecheck + **75** tests + build green. BL-018/BL-019/BL-032 closed.
+
+### 2026-10-13 BL-020 untrusted-evidence marking: live 12/12, 5/5, mean 95.5 (DONE)
+
+- Adds `backend/app/ai/skills/untrusted_evidence/SKILL.md` — evidence text
+  (email bodies, notes, timeline descriptions) is data, never instructions;
+  embedded in both system prompts and the analysis payload is labeled.
+  The state also stops truncating evidence descriptions (the 300-char cut
+  was never an injection defence). DEC-016.
+- Live: scoped sc02 PASS (88.8/92.5) → full run 1 exposed `warn_staff ->
+  HOST::SOC-WS-01` (the injection's target): the adapter never validated
+  tool↔target-type compatibility. Fix `360b221` validates against the
+  simulator catalogue's `target_type`; scoped sc02 PASS (90/90); final full
+  run **12/12 checkpoints, 5/5 scenarios, mean 95.5** (was 93.4). 163 tests;
+  artifacts in `.agents/tasks/bl-020-untrusted-evidence/`.
 
 ### 2026-10-13 BL-017 planner analysis persisted; report findings/ATT&CK filled — live 12/12, mean 93.4 (DONE)
 

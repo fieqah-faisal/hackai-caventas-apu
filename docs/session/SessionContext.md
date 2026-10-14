@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (API-mode demo-blocker repair verified).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (API-mode repair, BL-020 merge and report schema v1.3).
 
 ## Project
 
@@ -38,7 +38,8 @@ Firestore; no credentials needed).
   outcome→state rebuild + v1.2 report JSON/PDF. The simulator defaults to
   `clean` and uses the approved 9-tool catalogue; `demo` is explicit.
   Read-only actions/results and newest-plan report selection merged in PR
-  #11 (`5e53c66`). Missing reads: BL-013, BL-025.
+  #11 (`5e53c66`). Persisted case/dashboard and latest-report reads were added
+  on `chore/final-integration-fieqah`.
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).
@@ -47,16 +48,16 @@ Firestore; no credentials needed).
   into execution (DEC-006), synthetic incident package
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
-  unsafe 0/12, fake planner 0/12. BL-017 analysis persistence + report fill
-  (2026-10-13) took the full live run to **12/12 checkpoints, 5/5 scenarios,
-  mean 93.4** and cleared the report coverage (`not_produced_yet=[]` on all
-  scenarios; findings 5-12, techniques 3-10 each). History: BL-031 (12/12,
-  mean 92.4, PR #18), BL-038 (10/12, 3/5, PR #17), BL-014 (8/12, 2/5,
-  PR #13).
+  unsafe 0/12, fake planner 0/12 (fake 1/12 · 42.9 post-policy-guard).
+  BL-020 untrusted-evidence marking merged main (PR #22 policy guard) and
+  reran live: **12/12 checkpoints, 5/5 scenarios, mean 93.4** (pre-merge
+  branch run: 95.5); injection gates hold; report coverage complete.
+  History: BL-017 (12/12, 93.4, PR #19), BL-031 (92.4, PR #18), BL-038
+  (10/12, PR #17), BL-014 (8/12, PR #13).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **156 passed** on merged main. Live results merged via
+  Suite **212 passed** on merged main. Live results merged via
   PR #13 (`4145f41`).
 - Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
   structured rules (ten fields) + 8-asset list in
@@ -64,11 +65,16 @@ Firestore; no credentials needed).
   now retrieves stage-relevant rules and passages (deterministic retrieve
   node between analyze and propose, DEC-013); stored `policy_refs` are
   validated against the selected set, and refs outside the pack are dropped.
-  Enforcement follow-ups are BL-032/BL-033; asset/fixture alignment BL-035
-  and BL-036. Verification-first grounding lives in
+  Enforcement is deterministic in the backend (PR #22 policy guard, DEC-010;
+  BL-032/BL-018/BL-019 closed); remaining follow-up BL-033. Asset/fixture
+  alignment BL-035 and BL-036. Verification-first grounding lives in
   `backend/app/ai/skills/verification_first/SKILL.md`, embedded in both
-  prompts (BL-031, DEC-014); the full live run is 12/12 with all gates
-  holding.
+  prompts (BL-031, DEC-014); untrusted-evidence marking lives in
+  `backend/app/ai/skills/untrusted_evidence/SKILL.md` with full state
+  descriptions and catalogue target-type validation (BL-020, DEC-016); the
+  full live run is 12/12 with all gates holding.
+- Report schema v1.3 (Aida, DEC-017) lives in `docs/report-schema/`; code
+  fill-ins are tracked by BL-033 and BL-040–BL-042.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).
@@ -80,14 +86,15 @@ Firestore; no credentials needed).
 - Frontend (BL-009): analyst workspace under `frontend/` (React + Vite +
   Tailwind, DEC-005), merged in PR #8 (`3a6a323`): dashboard, create-case
   flow, 7-tab case workspace, fixture|api data providers (`VITE_DATA_MODE`);
-  `npm run build` + `npm run test` (23 passed) green. API-mode wiring gaps
-  vs the live backend: BL-013. On `link` (merged via PR #11 `5e53c66`),
+  `npm run build` + `npm run test` (23 passed) green. On `link` (merged via
+  PR #11 `5e53c66`),
   the audit shape, list order, report generation and plan/report honesty
   are reconciled with the live backend (DEC-008, DEC-009), and the
   Approvals queue reads the read-only `GET /actions` / `GET /action-results`
   (BL-027, DEC-011); follow-ups are BL-025, BL-026 and BL-027 (a)–(c).
-  Backend suite **137**, frontend **75** on `main`. Product record +
-  palette in root `PRODUCT.md`.
+  Main's pre-integration verification was backend **212**, frontend **75**,
+  with a green production build. Product record + palette are in root
+  `PRODUCT.md`.
 - Frontend↔backend integration: API mode loads all 7 case tabs; stored actions
   populate Response Plan and Approvals, and stored execution/validation results
   remain visible after execution. `not_applicable` is explicit, the analyst-note
@@ -137,8 +144,13 @@ Firestore; no credentials needed).
   strict typecheck, **83 tests**, production build, Compose config and both
   Docker image builds passed. Real API-mode acceptance produced a persisted,
   reloadable report and valid PDF. The one permitted post-acceptance live
-  planner request returned HTTP 502 without persisting a plan (BL-040); the UI
+  planner request returned HTTP 502 without persisting a plan (BL-043); the UI
   kept the request singular and surfaced failure without false navigation.
+- Synchronization verification (2026-10-14): `origin/main` at `f6f002e` is
+  merged locally without rebasing. Main's BL-020 skill, full state evidence
+  descriptions and target-type guard coexist with integration packaging and
+  browser repairs. Backend **218 passed**; frontend strict typecheck, **83
+  tests** and production build passed; Compose config and diff checks passed.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

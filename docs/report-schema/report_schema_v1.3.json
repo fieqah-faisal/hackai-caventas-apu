@@ -1,0 +1,208 @@
+{
+  "report_id": "RPT-<12 hex>",
+  "incident_id": "string",
+  "version": "integer",
+  "status": "draft | in_review | final",
+  "title": "string",
+  "organisation": "string",
+  "playbook": {
+    "id": "string",
+    "version": "string"
+  },
+  "policy_pack_version": "string",
+  "planner_model": "string (e.g. deepseek-v4.1-flash)",
+  "created_at": "ISO 8601",
+  "updated_at": "ISO 8601",
+  "executive_summary": {
+    "text": "string (max 120 words)",
+    "finding_ids": [
+      "FND-01"
+    ]
+  },
+  "classification": {
+    "incident_type": "infostealer_session_hijack | phishing_account_takeover | not_an_incident | other",
+    "status": "confirmed | suspected | false_positive | near_miss",
+    "closure_reason": "string | null",
+    "closure_evidence_ids": [
+      "EV-<12 hex>"
+    ],
+    "severity": "low | medium | high | critical",
+    "severity_reason": "string",
+    "confidence": "number 0-1",
+    "current_phase": "assessment | preservation | containment | eradication | hardening | restoration",
+    "attack_techniques": [
+      "T1555.003"
+    ],
+    "confirmed_by_analyst": "boolean"
+  },
+  "affected": [
+    {
+      "asset_id": "HOST::SALES-LT-07",
+      "name": "string",
+      "type": "user_device | server | data_store | network (asset list) | account | host | ip | domain | process | file | session | other (entity type)",
+      "owner": "string",
+      "criticality": "low | medium | high | critical",
+      "how_affected": "string",
+      "data_classification": "personal_data | internal | unknown",
+      "evidence_ids": [
+        "EV-<12 hex>"
+      ]
+    }
+  ],
+  "exposed_credentials": [
+    {
+      "service": "string",
+      "account": "string",
+      "exposed": "password | session",
+      "status": "pending | reset | revoked",
+      "evidence_ids": [
+        "EV-<12 hex>"
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "time": "ISO 8601",
+      "event": "string",
+      "source": "endpoint | dns | firewall | signin | mail | crm_audit | analyst_note",
+      "side": "attacker | defender",
+      "attack_technique": "string | null",
+      "evidence_ids": [
+        "EV-<12 hex>"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "FND-01",
+      "summary": "string",
+      "status": "hypothesis | confirmed",
+      "confidence": "number 0-1",
+      "evidence_ids": [
+        "EV-<12 hex>"
+      ]
+    }
+  ],
+  "root_cause": {
+    "text": "string",
+    "finding_ids": [
+      "FND-01"
+    ],
+    "status": "hypothesis | confirmed"
+  },
+  "impact": {
+    "operational": "string",
+    "personal_data_involved": "yes | no | unknown",
+    "compliance": "string",
+    "financial": "string | 'not assessed'",
+    "overall_rating": "insignificant | distracting | painful | damaging | catastrophic | unknown"
+  },
+  "actions": [
+    {
+      "action_id": "ACT-<12 hex>",
+      "playbook_step_id": "PB-03",
+      "phase": "containment",
+      "tool_name": "string",
+      "target_id": "string",
+      "recommendation": "string",
+      "policy_refs": [
+        "POL-04"
+      ],
+      "required_approver": "soc_analyst | it_manager",
+      "approver_role": "soc_analyst | it_manager | null",
+      "policy_check": {
+        "result": "pass | blocked",
+        "reasons": [
+          "string"
+        ]
+      },
+      "status": "recommended | awaiting_approval | approved | rejected | manually_executed | verified | failed | not_applicable",
+      "replaces_action_id": "string | null",
+      "decided_by": "string | null",
+      "decided_at": "ISO 8601 | null",
+      "reason": "string | null",
+      "executed_by": "string | null",
+      "result": "string | null",
+      "result_source": "team | simulator | null"
+    }
+  ],
+  "evidence_preservation": [
+    {
+      "evidence_id": "EV-<12 hex>",
+      "item": "string",
+      "stored_at": "string",
+      "collected_by": "string",
+      "collected_at": "ISO 8601",
+      "sha256": "string"
+    }
+  ],
+  "notifications": [
+    {
+      "policy_rule_id": "POL-03",
+      "trigger": "string",
+      "triggered": "yes | no | unknown",
+      "notify": "dpo | it_manager",
+      "deadline_hours": "integer",
+      "due_by": "ISO 8601 | null",
+      "status": "pending | done | not_required",
+      "done_at": "ISO 8601 | null",
+      "finding_ids": [
+        "FND-02"
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "text": "string",
+      "finding_ids": [
+        "FND-01"
+      ],
+      "addresses_root_cause": "boolean"
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "string",
+      "reason": "missing_evidence | low_confidence",
+      "answer": "string | null",
+      "related_ids": [
+        "FND-03"
+      ]
+    }
+  ],
+  "metrics": {
+    "time_to_detect": "duration",
+    "time_to_contain": "duration",
+    "time_to_report": "duration",
+    "analyst_decisions": "integer"
+  },
+  "policy_conformance": [
+    {
+      "policy_rule_id": "POL-01",
+      "requirement": "string",
+      "result": "pass | fail | not_applicable",
+      "reason": "string",
+      "related_ids": [
+        "ACT-<12 hex>"
+      ],
+      "override_reason": "string | null"
+    }
+  ],
+  "sign_off": {
+    "analyst": "string",
+    "role": "soc_analyst",
+    "decision": "sign_off | return",
+    "at": "ISO 8601",
+    "comments": "string"
+  },
+  "evidence_index": [
+    {
+      "evidence_id": "EV-<12 hex>",
+      "source_file": "string",
+      "line": "integer",
+      "time": "ISO 8601",
+      "sha256": "string",
+      "untrusted": true
+    }
+  ]
+}

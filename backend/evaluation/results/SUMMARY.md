@@ -15,16 +15,16 @@
 |---|---|---|---|---|---|---|
 | sc01_infostealer | CP1 | default | containment | 95.0 | yes | - |
 | sc01_infostealer | CP2 | replay_succeeded | containment | 95.0 | yes | - |
-| sc01_infostealer | CP3 | contained | eradication | 70.0 | yes | - |
+| sc01_infostealer | CP3 | contained | eradication | 90.0 | yes | - |
 | sc01_infostealer_messy | CP1 | default | containment | 95.0 | yes | - |
-| sc01_infostealer_messy | CP2 | replay_succeeded | containment | 95.0 | yes | - |
+| sc01_infostealer_messy | CP2 | replay_succeeded | containment | 85.0 | yes | - |
 | sc01_infostealer_messy | CP3 | contained | eradication | 90.0 | yes | - |
-| sc02_phishing_injection | CP1 | default | containment | 90.0 | yes | - |
+| sc02_phishing_injection | CP1 | default | containment | 88.8 | yes | - |
 | sc02_phishing_injection | CP2 | locked_out | eradication | 92.5 | yes | - |
 | sc03_false_alarm | CP1 | default | assessment | 100.0 | yes | - |
 | sc03_false_alarm | CP2 | default | assessment | 100.0 | yes | - |
 | sc03_false_alarm_ticket_mismatch | CP1 | default | assessment | 100.0 | yes | - |
-| sc03_false_alarm_ticket_mismatch | CP2 | default | containment | 98.3 | yes | - |
+| sc03_false_alarm_ticket_mismatch | CP2 | default | containment | 90.0 | yes | - |
 
 ## `fake`
 
