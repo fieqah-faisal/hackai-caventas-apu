@@ -48,10 +48,14 @@ The loop continues until analyst-verified closure. Every version of the
 state, every decision and every outcome is kept for traceability.
 
 The planner retrieves stage-relevant approved guidance (deterministic
-retrieve step between analysis and proposal; BL-037, DEC-013) and embeds the
-verification-first grounding skill (BL-031, DEC-014). Its analysis — incident
-type, severity, confidence, findings and ATT&CK mappings — is persisted with
-the plan and rendered into the report (BL-017, DEC-015).
+retrieve step between analysis and proposal; BL-037, DEC-013) and embeds two
+repo skills — verification-first grounding and untrusted-evidence marking
+(BL-031/BL-020, DEC-014/DEC-016). Its analysis — incident type, severity,
+confidence, findings and ATT&CK mappings — is persisted with the plan and
+rendered into the report (BL-017, DEC-015). Approvals and execution are
+guarded deterministically by the backend policy pack (DEC-010): approver
+role, evidence validity and sequencing are checked from stored records,
+never from planner-cited references.
 
 ## Repository layout
 
@@ -128,12 +132,12 @@ cd backend
 ```
 
 Calibration (see `backend/evaluation/results/SUMMARY.md`): `oracle` 12/12
-checkpoints (upper bound), `unsafe` 0/12, `fake` 0/12 (mean 48.2), and
-`live` 12/12 across 5/5 scenarios (mean 95.5; verification-first grounding,
-analysis persistence and untrusted-evidence marking, 2026-10-13). All live
-safety gates hold, and report coverage is complete: live reports carry
-classification, evidence-backed findings and ATT&CK mappings
-(`not_produced_yet` is empty on all five scenarios).
+checkpoints (upper bound), `unsafe` 0/12 (mean 22.9), `fake` 1/12
+(mean 42.9), and `live` 12/12 across 5/5 scenarios (mean 93.4; post-merge
+run with the deterministic policy guard, 2026-10-13). All live safety gates
+hold, and report coverage is complete: live reports carry classification,
+evidence-backed findings and ATT&CK mappings (`not_produced_yet` is empty on
+all five scenarios).
 
 ## Status snapshot (2026-10-13)
 
@@ -184,6 +188,10 @@ classification, evidence-backed findings and ATT&CK mappings
 - **Provenance everywhere.** Findings, timeline rows and recommendations
   stay traceable to source evidence; reports contain only facts supported by
   stored case records.
+- **Untrusted evidence.** Log text, email bodies and notes are data, never
+  instructions — the planner loads an explicit untrusted-evidence skill, the
+  state keeps evidence descriptions complete, and injection attempts are
+  recorded as findings, not followed.
 - Full rules: [`.kiro/steering/security.md`](.kiro/steering/security.md).
 
 ## Project memory and workflow
