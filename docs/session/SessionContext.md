@@ -93,7 +93,7 @@ Firestore; no credentials needed).
   are reconciled with the live backend (DEC-008, DEC-009), and the
   Approvals queue reads the read-only `GET /actions` / `GET /action-results`
   (BL-027, DEC-011); follow-ups are BL-025, BL-026 and BL-027 (a)–(c).
-  Fresh local verification on this branch: backend **212**, frontend **75**;
+  Fresh local verification on this branch: backend **215**, frontend **75**;
   production build green. Product record + palette in root `PRODUCT.md`.
 - Frontend↔backend link (`link`, merged via PR #11 `5e53c66`): API mode verified
   end to end on the Firestore emulator (2026-10-09 S6). All 7 case tabs
