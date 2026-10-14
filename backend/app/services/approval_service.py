@@ -13,7 +13,7 @@ from typing import Any
 
 from app.database import repositories
 from app.schemas.approval import ApprovalRecord, DecisionRequest
-from app.services import audit_service
+from app.services import audit_service, policy_service
 
 _DECIDABLE = {"awaiting_approval", "recommended"}
 
@@ -44,12 +44,33 @@ def record_decision(
         )
 
     approved = request.decision.value == "approve"
+
+    # Deterministic policy guard: when approving, the declared approver role must
+    # satisfy the policy pack's required_approver for THIS action's tool+target.
+    # The planner's cited policy_refs are never trusted as authorization.
+    required_role: str | None = None
+    if approved:
+        proposal = action.get("proposal", {}) or {}
+        tool = str(proposal.get("tool_name", ""))
+        target = str(proposal.get("target_id", ""))
+        policy = policy_service.evaluate_approval(
+            tool, target, request.approver_role.value
+        )
+        required_role = policy.required_role
+        if not policy.ok:
+            reason = next((c for c in policy.checks if not c.ok), None)
+            detail = reason.detail if reason else "policy check failed"
+            raise ApprovalError(
+                f"approval denied by policy: {detail}", "forbidden"
+            )
     repositories.update_action(
         case_id,
         action_id,
         {
             "status": "approved" if approved else "rejected",
             "decided_by": request.analyst,
+            "decided_by_role": request.approver_role.value,
+            "required_role": required_role,
             "decided_at": datetime.now(timezone.utc).isoformat(),
             "reason": request.reason,
         },
@@ -64,6 +85,8 @@ def record_decision(
         state_version=int(action.get("based_on_state_version", 0)),
         decision="approved" if approved else "rejected",
         analyst=request.analyst,
+        approver_role=request.approver_role.value,
+        required_role=required_role,
         reason=request.reason,
     )
     repositories.add_approval(case_id, approval_id, record.model_dump(mode="json"))
@@ -74,6 +97,8 @@ def record_decision(
             "action_id": action_id,
             "approval_id": approval_id,
             "analyst": request.analyst,
+            "approver_role": request.approver_role.value,
+            "required_role": required_role,
             "reason": request.reason,
         },
     )
