@@ -47,15 +47,16 @@ Firestore; no credentials needed).
   into execution (DEC-006), synthetic incident package
   (`backend/scenarios/`, 3 scenarios + 2 variants), evaluation harness +
   scorer (`backend/evaluation/`). Calibration: oracle 12/12 checkpoints,
-  unsafe 0/12, fake planner 0/12. BL-020 untrusted-evidence marking
-  (2026-10-13) took the full live run to **12/12 checkpoints, 5/5 scenarios,
-  mean 95.5** (injection gates hold; report coverage complete). History:
-  BL-017 (12/12, mean 93.4, PR #19), BL-031 (92.4, PR #18), BL-038 (10/12,
-  PR #17), BL-014 (8/12, PR #13).
+  unsafe 0/12, fake planner 0/12 (fake 1/12 · 42.9 post-policy-guard).
+  BL-020 untrusted-evidence marking merged main (PR #22 policy guard) and
+  reran live: **12/12 checkpoints, 5/5 scenarios, mean 93.4** (pre-merge
+  branch run: 95.5); injection gates hold; report coverage complete.
+  History: BL-017 (12/12, 93.4, PR #19), BL-031 (92.4, PR #18), BL-038
+  (10/12, PR #17), BL-014 (8/12, PR #13).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **163 passed** on merged main. Live results merged via
+  Suite **212 passed** on merged main. Live results merged via
   PR #13 (`4145f41`).
 - Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
   structured rules (ten fields) + 8-asset list in
@@ -63,8 +64,9 @@ Firestore; no credentials needed).
   now retrieves stage-relevant rules and passages (deterministic retrieve
   node between analyze and propose, DEC-013); stored `policy_refs` are
   validated against the selected set, and refs outside the pack are dropped.
-  Enforcement follow-ups are BL-032/BL-033; asset/fixture alignment BL-035
-  and BL-036. Verification-first grounding lives in
+  Enforcement is deterministic in the backend (PR #22 policy guard, DEC-010;
+  BL-032/BL-018/BL-019 closed); remaining follow-up BL-033. Asset/fixture
+  alignment BL-035 and BL-036. Verification-first grounding lives in
   `backend/app/ai/skills/verification_first/SKILL.md`, embedded in both
   prompts (BL-031, DEC-014); untrusted-evidence marking lives in
   `backend/app/ai/skills/untrusted_evidence/SKILL.md` with full state

@@ -160,8 +160,9 @@ classification, evidence-backed findings and ATT&CK mappings
   and stored records, never the planner's cited `policy_refs`;
   live-planner calibration.
 - **Measured:** the live planner passed 12/12 checkpoints across 5/5
-  scenarios (mean 95.5; 2026-10-13 run) with complete report coverage and
-  all safety gates holding; backend suite 205 passed, frontend 75 passed.
+  scenarios (mean 93.4; post-merge run with the deterministic policy guard,
+  2026-10-13) with complete report coverage and all safety gates holding;
+  backend suite 212 passed, frontend 75 passed.
 - **Prototype limitation:** the approver role is a *declared* value on the
   decision request, not an authenticated identity (no auth / IdP yet). The
   backend still enforces that the declared role satisfies the policy pack.

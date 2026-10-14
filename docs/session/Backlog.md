@@ -27,7 +27,8 @@
 > (verification-first skill, DEC-014; live 12/12 · 5/5 · 92.4). BL-017 done
 > (analysis persisted in plan docs; report findings/ATT&CK filled, DEC-015;
 > coverage cleared, live 12/12 · 5/5 · 93.4). BL-020 done (untrusted-evidence
-> skill + full state descriptions, DEC-016; live 12/12 · 5/5 · 95.5).
+> skill + full state descriptions, DEC-016; live 12/12 · 5/5 · 93.4
+> post-merge).
 > BL-016/018/019/032 closed by PR #22 (GAS-lite entity extraction; the
 > deterministic policy guard, DEC-010).
 
