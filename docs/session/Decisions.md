@@ -464,6 +464,26 @@ failure class.
 `backend/app/services/state_manager.py`,
 `backend/app/simulator/catalog.py`, BL-020.
 
+## DEC-017: Report schema v1.3 is the report contract (2026-10-14)
+
+**Context:** Code, tests and the frontend DTO cite "report schema v1.2",
+but the schema lived only in a shared doc outside the repo.
+
+**Options considered:** (1) keep it outside the repo; (2) commit it
+under `docs/report-schema/` — chosen.
+
+**Decision:** `docs/report-schema/` holds v1.3 (README, JSON skeleton,
+lifecycle diagram). v1.3 only adds fields to v1.2, except
+`findings[].statement` → `summary`, which `reporting.py` already writes
+(DEC-015). Every key `reporting.py` writes is in the schema except
+`pdf_path` (a server path, not report content). Changes go through a PR.
+
+**Tradeoff:** several v1.3 fields exist before code fills them
+(BL-033, BL-040–BL-042).
+
+**Links:** `docs/report-schema/`, `backend/app/services/reporting.py`,
+DEC-012, DEC-015.
+
 ## DEC-010: GAS-lite incident-state model (STAIR-inspired) (2026-10-09)
 
 **Context:** The incident state needed to become the complete, versioned

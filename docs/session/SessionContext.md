@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (README refresh; verification rerun).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (README refresh; verification rerun; report schema v1.3).
 
 ## Project
 
@@ -70,6 +70,8 @@ Firestore; no credentials needed).
   `backend/app/ai/skills/verification_first/SKILL.md`, embedded in both
   prompts (BL-031, DEC-014); untrusted-evidence marking lives in
   `backend/app/ai/skills/untrusted_evidence/SKILL.md` with full state
+  - Report schema v1.3 (Aida, DEC-017) in `docs/report-schema/`: the
+  contract for the report JSON. Code fill-ins: BL-033, BL-040–BL-042.
   descriptions and catalogue target-type validation (BL-020, DEC-016); the
   full live run is 12/12 with all gates holding.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
