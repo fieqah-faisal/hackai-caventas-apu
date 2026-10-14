@@ -14,6 +14,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.ai.langgraph_planner import (
+    INCIDENT_TYPES,
     LangGraphPlannerAdapter,
     PlannerError,
     _analysis_messages,
@@ -577,3 +578,15 @@ def test_incident_type_matches_case_insensitively():
     plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
 
     assert plan.analysis.incident_type == "phishing_account_takeover"
+
+
+def test_incident_type_contract_is_pinned():
+    assert set(INCIDENT_TYPES) == {
+        "infostealer_session_hijack",
+        "phishing_account_takeover",
+        "not_an_incident",
+        "other",
+    }
+    system = _analysis_messages({"case_id": "CASE-001"})[0]["content"]
+    for value in INCIDENT_TYPES:
+        assert value in system

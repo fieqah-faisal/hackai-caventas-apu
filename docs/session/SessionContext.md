@@ -57,7 +57,7 @@ Firestore; no credentials needed).
   Simulator defaults to the `clean` profile; `demo` (CRM fault) is set
   explicitly by the demo / harness. Naive-timestamp crash fixed; stale
   approvals deferred to GAS-lite (DEC-007, BL-024).
-  Suite **214 passed** on merged main. Live results merged via
+  Suite **214 passed** on this branch (212 on main). Live results merged via
   PR #13 (`4145f41`).
 - Policy pack v1.0 (Aida, DEC-012) merged in PR #10 (`bae3f66`): 19
   structured rules (ten fields) + 8-asset list in
