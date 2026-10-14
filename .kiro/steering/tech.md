@@ -28,6 +28,9 @@ Incident Graph:
 JSON entities and relationships
 Optional NetworkX where graph traversal is useful
 
+Frontend graph renderer:
+@xyflow/react (read-only, deterministic local type-grouped layout; no graph DB)
+
 Evidence:
 CSV
 JSON

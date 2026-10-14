@@ -315,7 +315,7 @@ These are explicitly non-Core. Do NOT execute them as part of this slice.
 - [ ] (follow-on) **Non-material version suppression** in `_is_material` (Core's hook always returns `True`).
 - [ ] (follow-on) Planner working-context projection (Agent Working Context → PlannerAdapter) — Airil.
 - [ ] (follow-on) Simulator catalogue and real effects behind `simulator_adapter.py` — Aidan.
-- [ ] (follow-on) Frontend graph visualisation of the GAS-lite state.
+- [ ] (follow-on, integration slice in progress) Frontend graph visualisation of the GAS-lite state — see `.kiro/specs/caventas-gas-lite-frontend/` for its requirements, design and live task status.
 - [ ] (follow-on) Report integration beyond preserving compatibility.
 - [ ] (follow-on) Align the stale proposal **Technology Stack** section.
 - [ ] (follow-on) Extended `CreatedFrom` trigger vocabulary (analyst clarification, evidence-gap resolution, action approval, edited recommendation, rejection, another-path request, manual/simulator outcome, unexpected validation, scope change, hypothesis change, report-status change).

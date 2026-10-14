@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (API-mode repair, BL-020 merge and report schema v1.3).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (global analysis recovery and directed graph repair).
 
 ## Project
 
@@ -104,7 +104,20 @@ Firestore; no credentials needed).
   PDFs download through the API. Direct case/evidence refresh, all workspace
   tabs, long-running planning status/duplicate prevention and responsive review
   actions passed real browser acceptance. Other UI follow-ups remain in
-  BL-026/028/029.
+  BL-026/028/029. The final GAS-lite analyst integration adds a read-only
+  Incident Graph with state history/diff and provenance, persisted case-ID and
+  plan-analysis overview, repeat evidence uploads with stale-plan warning,
+  explicit re-analysis and backend-persisted agent progress. Active-run
+  discovery and structured duplicate recovery feed shell-level case-keyed
+  polling, a persistent indicator and an accessible minimisable robot dialog
+  across route changes and refresh. The Incident Graph now uses deterministic
+  left-to-right dependency ranks, explicit source/target handles, closed
+  semantic arrowheads, neighbourhood emphasis and a direction legend while
+  preserving immutable stored relationships. The additive analysis-run API
+  keeps `/runs` compatible; process-interruption recovery is tracked in BL-044.
+  Synthetic deterministic browser acceptance covers two
+  bound plans, three immutable states, an approved bounded simulation, a
+  response edge and a reloadable report/PDF; live planner BL-043 remains open.
 - GAS-lite incident-state (BL-030, **Core complete**): STAIR-inspired
   (not a STAIR reproduction) enrichment of the versioned incident state.
   All Core Tasks 1-8 implemented on `feat/gas-lite-state-fieqah`; merged with
@@ -151,6 +164,17 @@ Firestore; no credentials needed).
   descriptions and target-type guard coexist with integration packaging and
   browser repairs. Backend **218 passed**; frontend strict typecheck, **83
   tests** and production build passed; Compose config and diff checks passed.
+- Post-merge API-mode acceptance (2026-10-14): the complete assertion-backed
+  browser workflow passed without a live-provider retry. Primary navigation,
+  dashboard actions and the approval bell no longer expose unsupported
+  placeholder pages; retired direct URLs redirect to persisted Cases. Case
+  creation/evidence, refresh, every workspace tab, report reload/PDF download,
+  responsive review controls and single-request planning pending state passed.
+- Corrective integration gate (2026-10-14): backend **223 passed**; frontend
+  strict typecheck, **95 tests in 17 files**, production build, Compose config
+  and diff checks passed. Isolated deterministic browser acceptance verified
+  active-run duplicate recovery, navigation persistence, refresh recovery,
+  minimisation/reopening and directed graph arrows without a live-provider call.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

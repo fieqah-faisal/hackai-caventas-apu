@@ -44,6 +44,7 @@ export const STAGE_ORDER: Stage[] = [
 export type EntityType =
   | "host"
   | "account"
+  | "session"
   | "process"
   | "file"
   | "ip"
@@ -189,6 +190,94 @@ export interface AnalysisVM {
   attackTechniques: string[];
   missingEvidence: string[];
   hypotheses: string[];
+  severity?: Severity | null;
+  scope?: string | null;
+  findings?: { summary: string; evidenceIds: string[]; confidence: number | null }[];
+  unavailableReason?: string | null;
+}
+
+export interface StateVersionMetaVM {
+  version: number;
+  parentVersion: number | null;
+  createdFrom: string | null;
+  changeReason: string | null;
+  createdAt: string | null;
+  entityCount: number;
+  relationshipCount: number;
+  timelineCount: number;
+}
+
+export interface IncidentEntityVM {
+  id: string;
+  type: EntityType;
+  name: string;
+  attributes: Record<string, unknown>;
+  evidenceIds: string[];
+  firstSeen: string | null;
+  lastSeen: string | null;
+  condition: string | null;
+}
+
+export interface IncidentRelationshipVM {
+  id: string;
+  source: string;
+  relation: string;
+  target: string;
+  evidenceIds: string[];
+  status: RelationshipStatus;
+  category: "context" | "attack" | "response";
+  firstSeen: string | null;
+  lastSeen: string | null;
+  attributes: Record<string, unknown>;
+  actionId: string | null;
+  executionId: string | null;
+}
+
+export interface IncidentSnapshotVM {
+  caseId: string;
+  version: number;
+  parentVersion: number | null;
+  changeReason: string | null;
+  createdFrom: string | null;
+  createdAt: string;
+  entities: IncidentEntityVM[];
+  relationships: IncidentRelationshipVM[];
+  timeline: { timestamp: string | null; description: string; evidenceIds: string[] }[];
+  findings: { summary: string; evidenceIds: string[] }[];
+  attackMapping: string[];
+  hypotheses: string[];
+  missingEvidence: string[];
+  actions: string[];
+  actionResults: string[];
+  recoveryStatus: RecoveryStatus;
+  observedResponseStatus: string | null;
+  recommendedResponseFocus: string | null;
+  responseObjective: string | null;
+  responsePrerequisites: string[];
+  routingRationale: string | null;
+  routingEvidenceIds: string[];
+  routingConfidence: number | null;
+  routingTransition: string | null;
+  reportSectionsComplete: string[];
+  reportSectionsPending: string[];
+  reportSectionsInvalidated: string[];
+  latestReportId: string | null;
+  latestReportVersion: string | null;
+  reportStatus: string | null;
+}
+
+export interface AnalysisRunVM {
+  runId: string;
+  caseId: string;
+  status: "queued" | "running" | "completed" | "failed";
+  stage: string;
+  message: string;
+  basedOnStateVersion: number;
+  planId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  error: string | null;
 }
 
 // ---- Response plan view models --------------------------------------------
@@ -373,6 +462,7 @@ export type TabId =
   | "overview"
   | "evidence"
   | "timeline"
+  | "graph"
   | "analysis"
   | "plan"
   | "approvals"
@@ -381,6 +471,7 @@ export type TabId =
 export interface CaseFacts {
   evidenceUploaded: boolean;
   timelineReconstructed: boolean;
+  stateVersion?: number;
   planningRunStarted: boolean;
   proposalExists: boolean;
   actionAwaitingDecision: boolean;

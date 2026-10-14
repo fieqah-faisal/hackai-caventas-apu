@@ -13,6 +13,7 @@ import type { ApproverRoleDTO } from "./dto";
 import type {
   AgentPlanningVM,
   AnalysisVM,
+  AnalysisRunVM,
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
@@ -25,9 +26,11 @@ import type {
   EvidenceItemVM,
   ExecutionResultVM,
   HumanDecisionsVM,
+  IncidentSnapshotVM,
   PlanVM,
   RecentCaseRow,
   ReportVM,
+  StateVersionMetaVM,
   TimelineEventVM,
 } from "../types";
 
@@ -94,6 +97,12 @@ export interface DataProvider {
   getEvidence(caseId: string): Promise<Outcome<EvidenceItemVM[]>>;
   getTimeline(caseId: string): Promise<Outcome<TimelineEventVM[]>>;
   getAnalysis(caseId: string): Promise<Outcome<AnalysisVM>>;
+  getStateHistory(caseId: string): Promise<Outcome<StateVersionMetaVM[]>>;
+  getCurrentState(caseId: string): Promise<Outcome<IncidentSnapshotVM>>;
+  getStateVersion(caseId: string, version: number): Promise<Outcome<IncidentSnapshotVM>>;
+  createAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM>>;
+  getActiveAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM | null>>;
+  getAnalysisRun(caseId: string, runId: string): Promise<Outcome<AnalysisRunVM>>;
   /** All plan versions for a case, oldest first. */
   getPlans(caseId: string): Promise<Outcome<PlanVM[]>>;
   /** Metadata list of plan versions (always available if plans listed). */
@@ -133,7 +142,7 @@ export interface DataProvider {
 
   // Create-case flow
   createCase(title: string, description: string): Promise<Outcome<{ caseId: string }>>;
-  uploadEvidence(caseId: string, file: File): Promise<Outcome<{ accepted: number }>>;
+  uploadEvidence(caseId: string, file: File): Promise<Outcome<{ accepted: number; newStateVersion?: number | null }>>;
   countEvidence(caseId: string): Promise<Outcome<{ count: number; sources: string[] }>>;
   startRun(caseId: string): Promise<Outcome<{ planId: string }>>;
 }

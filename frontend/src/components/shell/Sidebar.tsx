@@ -11,11 +11,6 @@ interface NavItem {
 const primaryNav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
   { to: "/cases", label: "Cases", icon: "cases" },
-  { to: "/approvals", label: "Approvals", icon: "approvals" },
-  { to: "/guidance", label: "Guidance Library", icon: "guidance" },
-  { to: "/reports", label: "Reports", icon: "reports" },
-  { to: "/activity", label: "Activity Log", icon: "activity" },
-  { to: "/settings", label: "Settings", icon: "settings" },
 ];
 
 function Item({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {

@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { AppShell } from "@/components/shell/AppShell";
 import { ToastProvider } from "@/components/ui/Toast";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
@@ -12,8 +12,8 @@ import { AnalysisTab } from "@/features/caseWorkspace/tabs/AnalysisTab";
 import { ResponsePlanTab } from "@/features/caseWorkspace/tabs/ResponsePlanTab";
 import { ApprovalsTab } from "@/features/caseWorkspace/tabs/ApprovalsTab";
 import { ReportTab } from "@/features/caseWorkspace/tabs/ReportTab";
+import { IncidentGraphTab } from "@/features/caseWorkspace/tabs/IncidentGraphTab";
 import { AboutPage } from "./AboutPage";
-import { PlaceholderPage } from "./PlaceholderPage";
 import { NotFoundPage } from "./NotFoundPage";
 
 const router = createBrowserRouter([
@@ -30,6 +30,7 @@ const router = createBrowserRouter([
           { index: true, element: <OverviewTab /> },
           { path: "evidence", element: <EvidenceTab /> },
           { path: "timeline", element: <TimelineTab /> },
+          { path: "graph", element: <IncidentGraphTab /> },
           { path: "analysis", element: <AnalysisTab /> },
           { path: "plan", element: <ResponsePlanTab /> },
           { path: "approvals", element: <ApprovalsTab /> },
@@ -37,11 +38,11 @@ const router = createBrowserRouter([
         ],
       },
       { path: "cases", element: <CasesPage /> },
-      { path: "approvals", element: <PlaceholderPage title="Approvals" /> },
-      { path: "guidance", element: <PlaceholderPage title="Guidance Library" /> },
-      { path: "reports", element: <PlaceholderPage title="Reports" /> },
-      { path: "activity", element: <PlaceholderPage title="Activity Log" /> },
-      { path: "settings", element: <PlaceholderPage title="Settings" /> },
+      { path: "approvals", element: <Navigate replace to="/cases" /> },
+      { path: "guidance", element: <Navigate replace to="/cases" /> },
+      { path: "reports", element: <Navigate replace to="/cases" /> },
+      { path: "activity", element: <Navigate replace to="/cases" /> },
+      { path: "settings", element: <Navigate replace to="/cases" /> },
       { path: "about", element: <AboutPage /> },
     ],
   },

@@ -546,3 +546,15 @@ are not yet in this local tree. Reconcile on next `main` sync.
 **Links:** `.kiro/specs/caventas-gas-lite/` (requirements.md, design.md,
 tasks.md); `.kiro/steering/structure.md`, `.kiro/steering/tech.md`;
 DEC-001; BL-030; arXiv 2608.09524.
+
+## DEC-018: Read-only graph and persisted progress over existing GAS-lite (2026-10-14)
+
+**Context:** The demo needs graph/history browsing, continuous evidence and truthful long-running planner progress without changing the deterministic, allowlisted incident-state builder or Firestore store.
+
+**Options considered:** graph-maker/Neo4j/second LLM graph extraction; frontend-only timed progress; read-only React Flow over immutable snapshots and persisted background-run stages.
+
+**Decision:** Use `@xyflow/react` to render the stored `IncidentState.entities`/`.relationships`; `gas_lite.py` remains authoritative. New uploads create immutable state versions and require an explicit analyst-triggered re-analysis. The additive `analysis_runs` Firestore subcollection records a case-scoped active marker and actual service-boundary stages; the original synchronous `/runs` stays supported. Frontend motion is presentational only.
+
+**Tradeoff:** FastAPI background tasks are prototype-scoped: interrupted processes may leave an active marker/unfinished run until durable recovery is implemented (BL-044). The existing builder does not infer attack edges solely from a suspicious event name; such classification needs evidence-grounded rules (BL-045).
+
+**Links:** `.kiro/specs/caventas-gas-lite-frontend/`, `backend/app/services/analysis_runs.py`, `frontend/src/features/caseWorkspace/tabs/IncidentGraphTab.tsx`.

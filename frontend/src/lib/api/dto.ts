@@ -35,6 +35,7 @@ export type StageDTO =
 export type EntityTypeDTO =
   | "host"
   | "account"
+  | "session"
   | "process"
   | "file"
   | "ip"
@@ -109,14 +110,36 @@ export interface EntityDTO {
   type: EntityTypeDTO;
   name: string;
   attributes: Record<string, unknown>;
+  evidence_ids?: string[];
+  first_seen?: string | null;
+  last_seen?: string | null;
+  condition?: string | null;
 }
 
 export interface RelationshipDTO {
+  id?: string | null;
   source: string;
   relation: string;
   target: string;
   evidence_ids: string[];
   status: "observed" | "inferred";
+  category?: "context" | "attack" | "response";
+  first_seen?: string | null;
+  last_seen?: string | null;
+  attributes?: Record<string, unknown>;
+  action_id?: string | null;
+  execution_id?: string | null;
+}
+
+export interface StateVersionMetaDTO {
+  version: number;
+  parent_version: number | null;
+  created_from: string | null;
+  change_reason: string | null;
+  created_at: string | null;
+  entity_count: number;
+  relationship_count: number;
+  timeline_count: number;
 }
 
 export interface TimelineEventDTO {
@@ -133,6 +156,9 @@ export interface FindingDTO {
 export interface IncidentStateDTO {
   case_id: string;
   version: number;
+  parent_version?: number | null;
+  change_reason?: string | null;
+  created_from?: string | null;
   entities: EntityDTO[];
   relationships: RelationshipDTO[];
   timeline: TimelineEventDTO[];
@@ -144,6 +170,34 @@ export interface IncidentStateDTO {
   action_results: string[];
   recovery_status: RecoveryStatusDTO;
   created_at: string;
+  observed_response_status?: string | null;
+  recommended_response_focus?: string | null;
+  response_objective?: string | null;
+  response_prerequisites?: string[];
+  routing_rationale?: string | null;
+  routing_evidence_ids?: string[];
+  routing_confidence?: number | null;
+  routing_transition?: string | null;
+  report_sections_complete?: string[];
+  report_sections_pending?: string[];
+  report_sections_invalidated?: string[];
+  latest_report_id?: string | null;
+  latest_report_version?: string | null;
+  report_status?: string | null;
+}
+
+export interface AnalysisRunDTO {
+  run_id: string;
+  case_id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  stage: "queued" | "loading_state" | "loading_guidance" | "running_planner" | "persisting_plan" | "completed" | "failed";
+  message: string;
+  based_on_state_version: number;
+  plan_id: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  error: string | null;
 }
 
 // ---- Plans & actions ------------------------------------------------------
@@ -184,6 +238,14 @@ export interface PlanDocDTO {
   missing_evidence: string[];
   action_ids: string[];
   created_at: string;
+  analysis?: {
+    incident_type: string;
+    scope: string;
+    severity: string;
+    confidence: number;
+    findings: { summary: string; evidence_ids: string[]; confidence: number }[];
+    attack_techniques: string[];
+  } | null;
 }
 
 /** POST /cases/{id}/runs response — plan doc plus full action docs. */

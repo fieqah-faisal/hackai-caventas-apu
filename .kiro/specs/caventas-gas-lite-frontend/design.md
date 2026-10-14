@@ -1,0 +1,19 @@
+# GAS-lite analyst integration: design
+
+## Boundaries and data flow
+
+Firestore immutable `IncidentState` snapshots → existing FastAPI state-history endpoints → typed DTOs → view models → read-only `@xyflow/react` renderer and accessible node/edge lists. `gas_lite.py` alone constructs graph relationships from allowlisted evidence/result records. No graph database or second model is involved. `graph.ts` computes stable deterministic left-to-right ranks and parent diffs without mutating snapshots or reversing stored source/target direction.
+
+Existing `POST /evidence` produces one new version per accepted file; the workspace refreshes its case header/facts and child reads after confirmation. It compares latest stored plan binding with current state before offering explicit analysis. Fixture mode uses separate synthetic snapshots; API mode is never populated by fixture fallback.
+
+`POST /analysis-runs` writes a queued Firestore subdocument before returning 202 and schedules `planning_service.run_planning` in a FastAPI background task. A per-case active-run marker must be acquired atomically in the repository (transaction for real Firestore; fake-store compatibility in tests). `GET /analysis-runs/active` resolves that marker to the persisted run, and a duplicate create response exposes the same run ID without scheduling a second task. On worker progress, `GET /analysis-runs/{run_id}` returns the persisted stage. Service progress callbacks are invoked only at real code boundaries; existing synchronous callers continue to work. A sanitized error category is persisted on failure and the active marker is released. Restarted workers leave a queued/running status explicitly nonterminal; no claim of completion is inferred from elapsed time. A later run on an updated state never changes its original binding.
+
+An analysis-run provider mounted inside or immediately above `AppShell` owns run state keyed by case ID. It discovers active backend runs on case entry and application refresh, deduplicates starts, and owns exactly one polling loop for each active run independent of route-mounted controls. Create Case, Overview and Analysis consume this shared state. A persistent shell indicator opens a minimisable `role="dialog"` robot presentation with `aria-modal`, live stage announcements, real identifiers and elapsed time; the adapted eye/antenna motion uses Caventas tokens and honours reduced-motion preferences.
+
+## Rendering and accessibility
+
+The graph uses stable ID sorting and a deterministic directed-rank layout with fixed spacing and `fitView` on snapshot change. Nodes expose right-side source and left-side target handles. Directed edges use large closed matching arrowheads, allowlisted labels, category colour and observed/inferred line style. Selecting a node or edge emphasizes its immediate neighbourhood and dims unrelated elements; a legend and explicit direction details explain the visual encoding. Response-edge action sources are represented as labeled reference nodes when absent from `entities` (the builder stores an action ID as the source). A keyboard-operable list of every stored entity and relationship controls the same detail panel, with IDs, timestamps, all attributes and evidence links into the Evidence tab. Mobile widths prioritize the list. Controls, Background and dark palette are provided; no backend graph mutations occur.
+
+## Ownership and decisions
+
+Raaj-owned API/service/repositories are extended additively. Airil-owned deterministic `FakePlannerAdapter` may be extended minimally to persist synthetic typed analysis; live prompts and validation remain untouched. Aidan-owned simulation and reports are exercised, not redesigned. React Flow is a renderer only; graph-maker, Neo4j and other LLM graph extraction are rejected. Evidence never auto-triggers paid re-analysis. Progress is persisted backend status, not animated timing.

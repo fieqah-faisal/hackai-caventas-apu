@@ -136,7 +136,7 @@ function ApprovalCard({ item, caseId, onChanged }: { item: ApprovalItemVM; caseI
           </div>
           {item.supportingEvidence.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {item.supportingEvidence.map((e) => <Mono key={e} className="rounded border border-border-subtle px-1.5">{e}</Mono>)}
+              {[...new Set(item.supportingEvidence)].map((e) => <Mono key={e} className="rounded border border-border-subtle px-1.5">{e}</Mono>)}
             </div>
           )}
         </div>

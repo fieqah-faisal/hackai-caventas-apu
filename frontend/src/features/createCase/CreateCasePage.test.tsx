@@ -8,7 +8,9 @@ const provider = vi.hoisted(() => ({
   createCase: vi.fn(),
   uploadEvidence: vi.fn(),
   countEvidence: vi.fn(),
-  startRun: vi.fn(),
+  createAnalysisRun: vi.fn(),
+  getActiveAnalysisRun: vi.fn(),
+  getAnalysisRun: vi.fn(),
   synthetic: false,
 }));
 vi.mock("@/lib/api", () => ({
@@ -17,6 +19,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 import { CreateCasePage } from "./CreateCasePage";
+import { AnalysisRunProvider } from "@/features/analysisRuns/AnalysisRunContext";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -29,16 +32,16 @@ describe("CreateCasePage planning request", () => {
     provider.createCase.mockReset().mockResolvedValue({ kind: "ok", value: { data: { caseId: "CASE-TEST" }, source: "real" } });
     provider.uploadEvidence.mockReset().mockResolvedValue({ kind: "ok", value: { data: { accepted: 1 }, source: "real" } });
     provider.countEvidence.mockReset().mockResolvedValue({ kind: "ok", value: { data: { count: 1, sources: ["evidence.json"] }, source: "real" } });
-    provider.startRun.mockReset();
+    provider.createAnalysisRun.mockReset();
   });
 
   it("shows long-running progress and prevents a duplicate planning request", async () => {
     const run = deferred<{ kind: "http_error"; status: number; detail: string }>();
-    provider.startRun.mockReturnValue(run.promise);
+    provider.createAnalysisRun.mockReturnValue(run.promise);
     const user = userEvent.setup();
     const { container } = render(
       <MemoryRouter>
-        <ToastProvider><CreateCasePage /></ToastProvider>
+        <AnalysisRunProvider><ToastProvider><CreateCasePage /></ToastProvider></AnalysisRunProvider>
       </MemoryRouter>,
     );
 
@@ -52,9 +55,9 @@ describe("CreateCasePage planning request", () => {
     const start = screen.getByRole("button", { name: /^Start analysis$/ });
     await user.dblClick(start);
 
-    expect(provider.startRun).toHaveBeenCalledTimes(1);
+    expect(provider.createAnalysisRun).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: "Analyzing evidence…" })).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent("up to 120 seconds");
+    expect(screen.getByRole("status")).toHaveTextContent("Requesting a persisted analysis run");
 
     await act(async () => run.resolve({ kind: "http_error", status: 500, detail: "planner failed" }));
     expect(await screen.findByRole("button", { name: /^Start analysis$/ })).toBeEnabled();

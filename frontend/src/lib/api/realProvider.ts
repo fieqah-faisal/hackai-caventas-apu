@@ -23,6 +23,13 @@
  */
 import { apiGet, apiPost, apiPostForm, type ApiResult } from "./apiClient";
 import {
+  analysisFromRecords,
+  toAnalysisRun,
+  toSnapshot,
+  toStateMeta,
+  isStale,
+} from "../mapping/incidentState";
+import {
   ok,
   type DataProvider,
   type Outcome,
@@ -32,6 +39,7 @@ import {
   inApprovalQueue,
   mapActionState,
   mapRisk,
+  mapSeverity,
   recoveryFromState,
   sortEvidenceInUploadOrder,
   sortPlansOldestFirst,
@@ -45,6 +53,7 @@ import {
 } from "../mapping";
 import type {
   ActionResultDTO,
+  AnalysisRunDTO,
   ApproverRoleDTO,
   AuditEventDTO,
   CaseDTO,
@@ -56,11 +65,13 @@ import type {
   IncidentStateDTO,
   PlanDocDTO,
   RunResponseDTO,
+  StateVersionMetaDTO,
   StoredActionDTO,
   StructuredReportDTO,
 } from "./dto";
 import type {
   AgentPlanningVM,
+  AnalysisRunVM,
   AnalysisVM,
   ApprovalItemVM,
   AttentionItem,
@@ -73,9 +84,11 @@ import type {
   EvidenceItemVM,
   ExecutionResultVM,
   HumanDecisionsVM,
+  IncidentSnapshotVM,
   PlanVM,
   RecentCaseRow,
   ReportVM,
+  StateVersionMetaVM,
   TimelineEventVM,
 } from "../types";
 
@@ -255,25 +268,63 @@ export class RealProvider implements DataProvider {
     const r = await apiGet<IncidentStateDTO>(`/cases/${caseId}/state`);
     return r.kind === "ok" ? r.data : null;
   }
-  private async loadPlans(caseId: string): Promise<PlanDocDTO[]> {
-    const r = await this.readPlans(caseId);
-    return r.kind === "ok" ? sortPlansOldestFirst(r.data) : [];
+  async getStateHistory(caseId: string): Promise<Outcome<StateVersionMetaVM[]>> {
+    const r = await apiGet<StateVersionMetaDTO[]>(`/cases/${caseId}/states`);
+    return r.kind === "ok" ? ok(r.data.map(toStateMeta), "real") : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async getCurrentState(caseId: string): Promise<Outcome<IncidentSnapshotVM>> {
+    const r = await apiGet<IncidentStateDTO>(`/cases/${caseId}/state`);
+    return r.kind === "ok" ? ok(toSnapshot(r.data), "real") : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async getStateVersion(caseId: string, version: number): Promise<Outcome<IncidentSnapshotVM>> {
+    const r = await apiGet<IncidentStateDTO>(`/cases/${caseId}/states/${version}`);
+    return r.kind === "ok" ? ok(toSnapshot(r.data), "real") : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async createAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM>> {
+    const r = await apiPost<AnalysisRunDTO>(`/cases/${caseId}/analysis-runs`);
+    if (r.kind === "http_error" && r.status === 409) {
+      const active = await this.getActiveAnalysisRun(caseId);
+      if (active.kind === "ok" && active.value.data) return ok(active.value.data, "real");
+    }
+    return r.kind === "ok" ? ok(toAnalysisRun(r.data), "real") : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async getActiveAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM | null>> {
+    const r = await apiGet<AnalysisRunDTO | null>(`/cases/${caseId}/analysis-runs/active`);
+    return r.kind === "ok"
+      ? ok(r.data ? toAnalysisRun(r.data) : null, "real")
+      : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async getAnalysisRun(caseId: string, runId: string): Promise<Outcome<AnalysisRunVM>> {
+    const r = await apiGet<AnalysisRunDTO>(`/cases/${caseId}/analysis-runs/${runId}`);
+    if (r.kind === "ok" && r.data.status === "completed") {
+      this.planReads.delete(caseId);
+      this.actionReads.delete(caseId);
+    }
+    return r.kind === "ok" ? ok(toAnalysisRun(r.data), "real") : fromApi(r as ApiResult<never>, "real");
   }
 
   async getCaseHeader(caseId: string): Promise<Outcome<CaseHeaderVM>> {
     const caseR = await apiGet<CaseDTO>(`/cases/${caseId}`);
     if (caseR.kind !== "ok") return fromApi<CaseHeaderVM>(caseR as ApiResult<never>, "real");
+    const plansR = await this.readPlans(caseId);
+    if (plansR.kind !== "ok") return fromApi<CaseHeaderVM>(plansR as ApiResult<never>, "real");
     const state = await this.loadState(caseId);
-    const plans = await this.loadPlans(caseId);
+    const plans = sortPlansOldestFirst(plansR.data);
     const vm: CaseHeaderVM = {
       caseId: caseR.data.case_id,
       title: caseR.data.title,
       status: caseR.data.status,
-      severity: null,
+      severity: plans.length ? mapSeverity(plans[plans.length - 1].analysis?.severity) : null,
       stage: stageFromPlans(plans),
       recoveryStatus: recoveryFromState(state),
       updatedAt: caseR.data.updated_at,
-      agentState: plans.length > 0 ? `Plan v${plans.length} ready` : null,
+      agentState: plans.length > 0 ? isStale(plans[plans.length - 1].based_on_state_version, caseR.data.current_state_version)
+        ? `Plan v${plans.length} needs review` : `Plan v${plans.length} ready` : null,
     };
     return ok(vm, "real");
   }
@@ -282,7 +333,10 @@ export class RealProvider implements DataProvider {
     const caseR = await apiGet<CaseDTO>(`/cases/${caseId}`);
     if (caseR.kind !== "ok") return fromApi<CaseFacts>(caseR as ApiResult<never>, "real");
     const evR = await apiGet<EvidenceItemDTO[]>(`/cases/${caseId}/evidence`);
-    const plans = await this.loadPlans(caseId);
+    if (evR.kind !== "ok") return fromApi<CaseFacts>(evR as ApiResult<never>, "real");
+    const plansR = await this.readPlans(caseId);
+    if (plansR.kind !== "ok") return fromApi<CaseFacts>(plansR as ApiResult<never>, "real");
+    const plans = plansR.data;
     const state = await this.loadState(caseId);
     const hasEvidence = evR.kind === "ok" && evR.data.length > 0;
     const hasPlan = plans.length > 0;
@@ -290,6 +344,7 @@ export class RealProvider implements DataProvider {
     const facts: CaseFacts = {
       evidenceUploaded: hasEvidence,
       timelineReconstructed: !!state && state.timeline.length > 0,
+      stateVersion: caseR.data.current_state_version,
       planningRunStarted: hasPlan,
       proposalExists: hasPlan,
       actionAwaitingDecision: actionAwaiting,
@@ -321,16 +376,9 @@ export class RealProvider implements DataProvider {
   async getAnalysis(caseId: string): Promise<Outcome<AnalysisVM>> {
     const state = await apiGet<IncidentStateDTO>(`/cases/${caseId}/state`);
     if (state.kind !== "ok") return fromApi<AnalysisVM>(state as ApiResult<never>, "real");
-    const s = state.data;
-    const vm: AnalysisVM = {
-      classification: s.findings[0]?.summary ?? null,
-      confidence: { value: null, basis: `${s.findings.length} findings on record`, advisory: true },
-      affectedEntities: s.entities.map((e) => ({ id: e.id, type: e.type, name: e.name })),
-      attackTechniques: s.attack_mapping,
-      missingEvidence: s.missing_evidence,
-      hypotheses: s.hypotheses,
-    };
-    return ok(vm, "real");
+    const plans = await this.readPlans(caseId);
+    if (plans.kind !== "ok") return fromApi<AnalysisVM>(plans as ApiResult<never>, "real");
+    return ok(analysisFromRecords(state.data, plans.data), "real");
   }
 
   async getPlans(caseId: string): Promise<Outcome<PlanVM[]>> {
@@ -481,12 +529,13 @@ export class RealProvider implements DataProvider {
     return ok({ caseId: r.data.case_id }, "real");
   }
 
-  async uploadEvidence(caseId: string, file: File): Promise<Outcome<{ accepted: number }>> {
+  async uploadEvidence(caseId: string, file: File): Promise<Outcome<{ accepted: number; newStateVersion?: number | null }>> {
     const form = new FormData();
     form.append("file", file);
     const r = await apiPostForm<EvidenceUploadResultDTO>(`/cases/${caseId}/evidence`, form);
     if (r.kind !== "ok") return fromApi<{ accepted: number }>(r as ApiResult<never>, "real");
-    return ok({ accepted: r.data.item_count }, "real");
+    this.casesRead = null;
+    return ok({ accepted: r.data.item_count, newStateVersion: r.data.new_state_version }, "real");
   }
 
   async countEvidence(caseId: string): Promise<Outcome<{ count: number; sources: string[] }>> {

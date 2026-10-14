@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from app.schemas.incident_state import IncidentState
-from app.schemas.plan import PlanProposal, ProposedAction, Stage
+from app.schemas.plan import PlanAnalysis, PlanProposal, ProposedAction, ProposedFinding, Stage
 
 
 class PlannerAdapter(Protocol):
@@ -34,11 +34,19 @@ class FakePlannerAdapter:
     def generate_plan(
         self, incident_state: IncidentState, approved_guidance: dict | None = None
     ) -> PlanProposal:
-        host = next(
-            (e for e in incident_state.entities if e.type.value == "host"), None
-        )
+        hosts = [e for e in incident_state.entities if e.type.value == "host"]
+        # Use the most evidenced host rather than arbitrary lexical order:
+        # multi-host synthetic batches include benign background workstations.
+        host = sorted(hosts, key=lambda e: (-len(e.evidence_ids), e.id))[0] if hosts else None
         actions: list[ProposedAction] = []
-        if host is not None:
+        # A signed process launched by an administrator-created scheduled task
+        # warrants verification before disruption in the synthetic backup case.
+        # This does not weaken the backend's role/evidence policy checks.
+        needs_verification = (
+            any("scheduled_task_created" in e.description for e in incident_state.timeline)
+            and any("signed=true" in e.description for e in incident_state.timeline)
+        )
+        if host is not None and not needs_verification:
             ev_ids = [
                 ev_id
                 for rel in incident_state.relationships
@@ -56,8 +64,25 @@ class FakePlannerAdapter:
                     validation_checks=["Verify suspicious outbound traffic stops."],
                 )
             )
+        # Deterministic synthetic analysis derived only from stored timeline
+        # records. This exercises the same persisted contract as the live
+        # planner without changing its prompts or validation path.
+        findings = [
+            ProposedFinding(summary=event.description, evidence_ids=event.evidence_ids,
+                            confidence=0.6)
+            for event in incident_state.timeline if event.evidence_ids
+        ]
+        signal = any("network_upload" in event.description for event in incident_state.timeline)
         return PlanProposal(
             based_on_state_version=incident_state.version,
             stage=Stage.CONTAINMENT,
             actions=actions,
+            analysis=PlanAnalysis(
+                incident_type="other" if signal else "",
+                scope=host.name if host else "",
+                severity="medium" if signal else "",
+                confidence=0.6 if signal else 0.0,
+                findings=findings,
+                attack_techniques=incident_state.attack_mapping,
+            ),
         )

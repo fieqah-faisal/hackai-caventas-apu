@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { getProvider } from "@/lib/api";
-import { useOutcome } from "@/lib/useOutcome";
+import { useOutcome, outcomeMessage } from "@/lib/useOutcome";
 import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 import { Icon, type IconName } from "@/components/icons/Icon";
 import { Mono } from "@/components/ui/Mono";
@@ -8,6 +9,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { evidenceCategoryLabel, relativeTime } from "@/lib/format";
 import { cx } from "@/lib/types";
 import type { EvidenceCategory, EvidenceItemVM } from "@/lib/types";
+import { isStale } from "@/lib/mapping/incidentState";
 import { useWorkspace } from "../context";
 import { DetailPanel } from "../DetailPanel";
 
@@ -32,16 +34,80 @@ const CATEGORY_ICON: Record<EvidenceCategory, IconName> = {
 };
 
 export function EvidenceTab() {
-  const { caseId } = useWorkspace();
-  const evidence = useOutcome<EvidenceItemVM[]>(() => p.getEvidence(caseId), [caseId]);
+  const { caseId, reloadKey, refresh, facts } = useWorkspace();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const evidence = useOutcome<EvidenceItemVM[]>(() => p.getEvidence(caseId), [caseId, reloadKey]);
+  const currentState = useOutcome(() => p.getCurrentState(caseId), [caseId, reloadKey]);
+  const plans = useOutcome(() => p.getPlans(caseId), [caseId, reloadKey]);
   const [filter, setFilter] = useState<EvidenceCategory | "all">("all");
+  const input = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [feedback, setFeedback] = useState<string[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [confirmedVersion, setConfirmedVersion] = useState<number | null>(null);
+  const [stale, setStale] = useState<{ plan: number; bound: number } | null>(null);
   const [selected, setSelected] = useState<EvidenceItemVM | null>(null);
 
   const items = evidence.value?.data ?? [];
-  const shown = useMemo(() => (filter === "all" ? items : items.filter((i) => i.category === filter)), [items, filter]);
+  const evidenceId = params.get("evidence");
+  const shown = useMemo(() => evidenceId ? items.filter((i) => i.evidenceId === evidenceId)
+    : filter === "all" ? items : items.filter((i) => i.category === filter), [items, filter, evidenceId]);
+  const latestPlan = plans.value?.data[plans.value.data.length - 1];
+  const stalePlan = stale ?? (latestPlan && isStale(latestPlan.basedOnStateVersion, facts.stateVersion ?? 0)
+    ? { plan: latestPlan.version, bound: latestPlan.basedOnStateVersion } : null);
+
+  async function upload(files: FileList | null) {
+    if (!files || uploading) return;
+    setUploading(true);
+    setUploadError(null);
+    const messages: string[] = [];
+    let increased = false;
+    let latest = facts.stateVersion ?? 0;
+    for (const file of Array.from(files)) {
+      if (!/\.(csv|json|txt)$/i.test(file.name) || file.size > 10 * 1024 * 1024) {
+        messages.push(`${file.name}: rejected — CSV, JSON or TXT up to 10 MB only.`);
+        continue;
+      }
+      const out = await p.uploadEvidence(caseId, file);
+      if (out.kind !== "ok") { messages.push(`${file.name}: rejected — ${outcomeMessage(out)}`); continue; }
+      const state = await p.getCurrentState(caseId);
+      if (state.kind !== "ok") { setUploadError(`Upload accepted, but state confirmation failed: ${outcomeMessage(state)}`); continue; }
+      if (state.value.data.version <= latest) {
+        setUploadError(`${file.name}: upload was accepted, but the incident-state version did not advance. Retry the state read before re-analysis.`);
+        continue;
+      }
+      latest = state.value.data.version;
+      increased = true;
+      messages.push(`${file.name}: accepted ${out.value.data.accepted} records; State v${latest}.`);
+    }
+    setFeedback(messages);
+    if (increased) {
+      setConfirmedVersion(latest);
+      const plans = await p.getPlans(caseId);
+      if (plans.kind === "ok") {
+        const last = plans.value.data[plans.value.data.length - 1];
+        setStale(last && isStale(last.basedOnStateVersion, latest) ? { plan: last.version, bound: last.basedOnStateVersion } : null);
+      } else setUploadError(`Evidence ingested; plan status unavailable: ${outcomeMessage(plans)}`);
+      refresh();
+    }
+    if (input.current) input.current.value = "";
+    setUploading(false);
+  }
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3 rounded border border-border-subtle bg-surface p-3">
+        <button disabled={uploading} onClick={() => input.current?.click()} className="rounded border border-accent/50 px-3 py-1 text-accent disabled:opacity-50">{uploading ? "Uploading evidence…" : "Upload more evidence"}</button>
+        <span className="text-meta text-text-muted">CSV, JSON, TXT · 10 MB per file</span>
+        <input ref={input} type="file" multiple accept=".csv,.json,.txt" className="sr-only" aria-label="Additional evidence files" onChange={(e) => void upload(e.target.files)} />
+      </div>
+      {feedback.length > 0 && <ul aria-live="polite" className="text-sm text-text-secondary">{feedback.map((line, i) => <li key={i}>{line}</li>)}</ul>}
+      {uploadError && <p role="alert" className="text-status-danger">{uploadError}</p>}
+      {(confirmedVersion ?? (currentState.value?.data.createdFrom === "evidence_upload" && currentState.value.data.version > 1
+        ? currentState.value.data.version : null)) != null &&
+        <p role="status" className="text-accent">Evidence ingested — State v{confirmedVersion ?? currentState.value?.data.version} created</p>}
+      {stalePlan && <div role="alert" className="rounded border border-status-warning/40 p-3 text-status-warning">New evidence changed the incident state. Plan v{stalePlan.plan} is based on State v{stalePlan.bound} and must be reviewed. <button className="underline" onClick={() => navigate(`/cases/${caseId}/analysis`)}>Analyze new evidence</button></div>}
       <div className="flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
           <button

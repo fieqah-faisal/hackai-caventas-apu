@@ -17,7 +17,7 @@
 > `feat/bl-020-untrusted-evidence` adds DEC-016.
 > `docs/report-schema-v1.3` adds DEC-017 and BL-040..BL-042.
 > `chore/final-integration-fieqah` adds BL-043.
-> Next free IDs: **BL-044** and **DEC-018**.
+> Next free IDs: **BL-046** and **DEC-019**.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
 > (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done
@@ -46,7 +46,10 @@
   pending UX behaved correctly, no plan/action was persisted, deterministic
   planner/API tests pass, and an earlier same-day live plan is persisted and
   renders correctly. Do not infer an application fix or spend another live call
-  without a separately approved diagnostic run. — open / backend
+   without a separately approved diagnostic run. — open / backend
+- BL-044 — Recover or expire queued/running `analysis_runs` after a FastAPI
+  process interruption. A durable worker/lease is needed before running this
+  prototype contract in a multi-worker service. — open / Raaj
 
 ### P2
 - BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
@@ -69,6 +72,12 @@
   (SALES-LT-07, FS-01, …). — open / Aida + Aidan
 - BL-039 — Align the simulator catalogue with policy pack v1.0: trigger
   event types and tool gaps (`purge_email`, `restore_host`). — open / Aidan
+- BL-045 — Define evidence-grounded rules for populating `attack`-category
+  relationships in GAS-lite; current evidence-derived edges are context,
+  response edges come from recorded results, and the synthetic frontend
+  fixture demonstrates the renderer's attack/inferred presentation. Never
+  classify arbitrary network activity as malicious solely by event name.
+  — open / Raaj + Aidan
 - BL-040 — Report: write the v1.3 action fields (tool_name, target_id,
   policy_refs, required_approver from required_role, approver_role from
   decided_by_role, policy_check), planner_model, findings[].status

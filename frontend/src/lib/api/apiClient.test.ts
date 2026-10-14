@@ -541,4 +541,36 @@ describe("RealProvider contract (real backend bodies)", () => {
     await provider.getReport("CASE-TEST0001");
     expect(setItem).not.toHaveBeenCalled();
   });
+
+  it("reads immutable state/history endpoints without fixture fallback", async () => {
+    const fetchMock = routeFetch({
+      "GET /api/cases/CASE-TEST0001/states": { status: 200, body: [{ version: 1, parent_version: null, created_from: "evidence_upload", change_reason: null, created_at: null, entity_count: 1, relationship_count: 0, timeline_count: 1 }] },
+      "GET /api/cases/CASE-TEST0001/states/1": { status: 404, body: { detail: "version not found" } },
+    });
+    globalThis.fetch = fetchMock;
+    const provider = new RealProvider();
+    const history = await provider.getStateHistory("CASE-TEST0001");
+    expect(history.kind).toBe("ok");
+    if (history.kind === "ok") expect(history.value.data[0].entityCount).toBe(1);
+    expect(await provider.getStateVersion("CASE-TEST0001", 1)).toEqual({ kind: "http_error", status: 404, detail: "version not found" });
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual(["/api/cases/CASE-TEST0001/states", "/api/cases/CASE-TEST0001/states/1"]);
+  });
+
+  it("recovers the persisted active run after a duplicate create conflict", async () => {
+    const run = { run_id: "RUN-EXISTING", case_id: "CASE-TEST0001", status: "running", stage: "running_planner",
+      message: "Planner is processing the incident state.", based_on_state_version: 2, plan_id: null,
+      created_at: "2026-10-14T00:00:00Z", updated_at: "2026-10-14T00:00:01Z", completed_at: null, error: null };
+    const fetchMock = routeFetch({
+      "POST /api/cases/CASE-TEST0001/analysis-runs": { status: 409, body: { detail: { message: "analysis already in progress", run_id: run.run_id } } },
+      "GET /api/cases/CASE-TEST0001/analysis-runs/active": { status: 200, body: run },
+    });
+    globalThis.fetch = fetchMock;
+    const result = await new RealProvider().createAnalysisRun("CASE-TEST0001");
+    expect(result.kind).toBe("ok");
+    if (result.kind === "ok") expect(result.value.data.runId).toBe("RUN-EXISTING");
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      "/api/cases/CASE-TEST0001/analysis-runs",
+      "/api/cases/CASE-TEST0001/analysis-runs/active",
+    ]);
+  });
 });

@@ -92,6 +92,7 @@ cases/{case_id}
     evidence/{evidence_id}
     state_versions/{state_id}
     plans/{plan_id}
+    analysis_runs/{run_id}       # queued/running/completed/failed, plus _active marker
     actions/{action_id}
     approvals/{approval_id}
     action_results/{exec_id}
@@ -119,9 +120,14 @@ policies/{policy_id}
 - `app/` never reads `scenarios/*/evaluator_only/` (answer keys); a test
   enforces this.
 - Incident state is versioned and never overwritten in place.
+- Analysis-run stages are persisted at real service boundaries; a presentation
+  animation or elapsed timer never asserts planner completion. A run is bound
+  to the exact state version captured when it was queued.
 - Do not store large raw files inside Firestore documents (1 MiB limit).
   Store originals on the local filesystem; keep path + SHA-256 in Firestore.
 - The React UI never accesses Firestore directly. Flow is:
   React/Vite → FastAPI → Firebase Admin SDK → Firestore.
+- The read-only Incident Graph uses `@xyflow/react` to display the immutable
+  `IncidentState.entities` and `.relationships` created by pure `gas_lite.py`.
 - API mode resolves stored plan actions through the read-only `/actions`
   endpoint and reads persistent simulator outcomes from `/action-results`.

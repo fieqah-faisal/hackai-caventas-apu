@@ -68,10 +68,10 @@ export function TopBar({
           </span>
         )}
         <button
-          onClick={() => navigate("/approvals")}
+          onClick={() => navigate("/cases")}
           className="relative grid h-9 w-9 place-items-center rounded text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180"
           aria-label={`Pending approvals: ${count}`}
-          title="Pending approvals"
+          title="View cases with pending approvals"
         >
           <Icon name="bell" size={20} />
           {count > 0 && (

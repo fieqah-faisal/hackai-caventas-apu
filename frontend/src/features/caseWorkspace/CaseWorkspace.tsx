@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useParams, useLocation } from "react-router-dom";
 import { getProvider } from "@/lib/api";
 import { useOutcome } from "@/lib/useOutcome";
@@ -15,6 +15,7 @@ import { SkeletonRows } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/Region";
 import { outcomeMessage } from "@/lib/useOutcome";
 import { WorkspaceContext } from "./context";
+import { useAnalysisRuns } from "@/features/analysisRuns/AnalysisRunContext";
 
 const p = getProvider();
 
@@ -23,7 +24,17 @@ export function CaseWorkspace() {
   const navigate = useNavigate();
   const location = useLocation();
   const [reloadKey, setReloadKey] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const { getEntry } = useAnalysisRuns();
+  const completedRun = getEntry(caseId).run;
+  const refreshedRun = useRef<string | null>(null);
   const refresh = useCallback(() => setReloadKey((k) => k + 1), []);
+
+  useEffect(() => {
+    if (completedRun?.status !== "completed" || !completedRun.planId || refreshedRun.current === completedRun.runId) return;
+    refreshedRun.current = completedRun.runId;
+    refresh();
+  }, [completedRun?.status, completedRun?.planId, completedRun?.runId, refresh]);
 
   // Presenter-only reveal control (fixture mode, Infostealer scenario).
   const canReveal = typeof p.revealNextEvidenceBatch === "function";
@@ -62,7 +73,7 @@ export function CaseWorkspace() {
   const statuses = tabAvailability(f);
 
   return (
-    <WorkspaceContext.Provider value={{ caseId, header: h, facts: f, synthetic: p.synthetic, refresh }}>
+    <WorkspaceContext.Provider value={{ caseId, header: h, facts: f, synthetic: p.synthetic, refresh, reloadKey }}>
       <div className="space-y-5">
         {/* Persistent header */}
         <header className="rounded-md border border-border-subtle bg-surface p-5">
@@ -72,6 +83,15 @@ export function CaseWorkspace() {
                 <Icon name="chevronRight" size={18} className="rotate-180" /> Cases
               </button>
               <h1 className="text-xl font-bold text-text-primary">{h.title}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-meta text-text-secondary">
+                <span className="mono">Case ID: {h.caseId}</span>
+                <button className="rounded border border-border-subtle px-2 py-0.5 hover:text-text-primary" aria-label="Copy case ID"
+                  onClick={async () => { try { await navigator.clipboard.writeText(h.caseId); setCopied(true); } catch { setCopied(false); } }}>
+                  Copy ID
+                </button>
+                {copied && <span role="status">Case ID copied</span>}
+                <span>State v{f.stateVersion ?? "—"}</span>
+              </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <StatusBadge>{caseStatusLabel[h.status]}</StatusBadge>
                 {h.severity && <StatusBadge tone={h.severity === "high" || h.severity === "critical" ? "danger" : "warning"}>{h.severity} severity</StatusBadge>}
@@ -90,7 +110,7 @@ export function CaseWorkspace() {
                   onClick={onReveal}
                   disabled={revealBusy}
                   leadingIcon={<Icon name="reload" size={18} />}
-                  title="Presenter control: reveal the next batch of synthetic evidence to trigger the re-plan"
+                  title="Presenter control: reveal synthetic evidence; re-analysis remains an explicit analyst action"
                 >
                   {revealBusy ? "Revealing…" : "Reveal next evidence (demo)"}
                 </Button>

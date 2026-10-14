@@ -3,6 +3,76 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-14 Global analysis recovery and directed graph repair (DONE)
+
+- Added case-scoped active-run discovery backed by the existing atomic Firestore marker. Duplicate async-run creation remains HTTP 409 but now exposes the existing run ID; API mode resolves that conflict to the persisted run without scheduling another planner task. A shell-level provider owns runs by case, one poll loop per active run, completion refresh, route/refresh recovery and a persistent minimisable/reopenable accessible Caventas robot dialog. The adapted presentation uses only Caventas tokens, real run fields and reduced-motion-safe CSS; Create Case and Analysis share the same run truth.
+- Replaced type-column graph placement with a dependency-ranked deterministic left-to-right layout that preserves stored source/target direction. Custom nodes have explicit left target/right source handles; edges have large category-coloured closed arrowheads, observed/inferred styling, labels and a legend. Selection emphasizes the immediate neighbourhood and dims unrelated elements; fit bounds and accessible list/detail direction remain available. Cyclic components stay in a deterministic shared rank rather than reversing stored relationships. No layout dependency was added.
+- Verification: backend **223 passed**; frontend strict typecheck, **95 tests in 17 files**, and production build passed; Compose config and `git diff --check` passed. Isolated API-mode browser acceptance used synthetic `agent_inputs` and explicitly injected `FakePlannerAdapter`, delayed only to exercise active state: duplicate conflict returned the same run ID, modal minimisation/reopening survived Dashboard navigation, backend active state recovered after a full Dashboard refresh using only a session-stored watched case ID, directed arrow rendering and legend were present, and the existing v1/v2 plans, v3 response edge and PDF workflow passed (13,174 bytes). No live planner call, commit, push, merge, rebase or user-managed service restart.
+
+### 2026-10-14 Effective runtime configuration clarification (DONE)
+
+- Initial preflight checked process environment only. A later status-only check of backend settings established that the planner key and Firestore emulator are configured through runtime settings (credential-path setting not configured); no configuration values or file contents were printed or copied. The first new async-run test accidentally selected that live adapter and timed out; it made no verified live success and was immediately corrected to inject `FakePlannerAdapter`. Every subsequent test and isolated browser run was deterministic and did not intentionally contact the live provider. BL-043 stays open.
+- `git diff --check` passed, no files are staged, and the branch remains at local merge HEAD `7b1ff06`, 18 ahead/0 behind its remote tracking branch. Existing navigation-cleanup changes and this slice remain uncommitted; no push/merge/rebase or user-managed service restart.
+
+### 2026-10-14 Immutable fixture-history regression (DONE)
+
+- Fixture-mode reveal no longer auto-replans. A new synthetic state is appended on evidence reveal or bounded action result; the stored event sequence determines snapshots so earlier versions remain byte-for-byte unchanged. Post-simulation states without authored synthetic plans return an explicit unsupported outcome instead of a fabricated re-plan. Added a regression test for immutable v1, explicit v2 re-analysis and a response edge in v3.
+- Final frontend gate: typecheck and production build passed; Vitest **94 passed in 17 files**. Isolated API-mode browser acceptance still passed after the fixture changes (two state-bound runs, state v3 response edge, report/PDF `%PDF-`, 13,164 bytes). Full backend gate remains **222 passed**. No user-managed services were restarted or stopped; no commit/merge/push.
+
+### 2026-10-14 GAS-lite integration final gate after fake-planner refinement (DONE)
+
+- Reverified after the final deterministic planner/fixture/read-failure changes: full backend `pytest -q` **222 passed**, frontend `npm run test` **93 passed in 16 files**, strict typecheck and production build passed, Compose config passed. Final isolated Playwright workflow again passed with two state-bound plans, state v3 response edge, all tabs/refresh and PDF `%PDF-` (13,166 bytes). Short fake runs expose `completed` to browser polling; backend tests assert real intermediate stages. Existing local navigation cleanup remains intact and uncommitted.
+- The fake planner now withholds disruptive action only when stored synthetic timeline contains both a created scheduled task and a signed process, preserving policy enforcement tests for isolated FS-01 evidence. Aidan-owned fake evaluation snapshot remains 1/12 (0/5 scenarios); no live evaluation output changed. No commit/push/merge or user-managed service restart.
+
+### 2026-10-14 Fixture explicit re-analysis and final safety review (DONE)
+
+- Fixture presenter reveal now creates only synthetic State v2; synthetic Plan v1 remains stale until an explicit analyst-triggered run creates Plan v2. Case graph fallback gained a retryable parent fetch and a keyboard-accessible list when the canvas fails. API-mode header/facts surface failed plan/evidence reads rather than treating them as no data.
+- Regenerated only Aidan-owned deterministic fake evaluation output/summary after Airil-owned fake planner began selecting the most evidenced workstation and persisting evidence-grounded analysis. The synthetic false-alarm server FS-01 is not blindly isolated; fake evaluation remains a weak calibration planner (1/12 checkpoints, 0/5 scenarios; live results unchanged). No live request was intentionally made in final acceptance.
+
+### 2026-10-14 Final GAS-lite integration verification (DONE)
+
+- On `chore/final-integration-fieqah` at local merge HEAD `7b1ff06`, verified `pytest -q` **222 passed**, targeted backend **41 passed**, frontend `npm run typecheck` passed, `npm run test` **93 passed in 16 files**, `npm run build` passed and `docker compose -f compose.yaml config --quiet` passed.
+- Final deterministic browser walkthrough on an isolated fake-Firestore FastAPI process with an explicitly injected FakePlannerAdapter passed: synthetic agent_inputs batches created immutable states 1/2; two actual persisted async runs created plans bound to 1/2; selected graph history/list/parent diff and mobile text fallback; stale warning and re-analysis; IT-manager approval and bounded simulation produced response edge and state 3; report survived reload and `%PDF-` downloaded (12,677 bytes). All case tabs loaded after refresh. Intermediate backend stages were verified in tests; short deterministic browser runs exposed only `completed` on polling. No live model claim.
+- Documentation, DEC-018, BL-044/045 and the new spec task statuses updated. Navigation cleanup from the prior session remains intact. No repo commit, merge, rebase or push, and no user-managed service was stopped or restarted; only the isolated acceptance subprocess was started/stopped. BL-043 live 502 remains open.
+
+### 2026-10-14 GAS-lite integration deterministic verification (DONE)
+
+- Focused backend pytest: **40 passed**; complete backend pytest: **221 passed** after regenerating only the deterministic `fake` evaluation snapshot and its summary (Aidan-owned results, live results untouched). Frontend typecheck and production build passed; after updating the new graph-tab gating expectation, frontend suite passed **87 tests** before component additions. Compose config passed. The remaining new component tests are undergoing final rerun.
+- Full isolated API-mode Playwright workflow with a local in-memory Firestore server and actual `FakePlannerAdapter` (no browser-mocked planning response): created a synthetic case, uploaded only sc01 `agent_inputs` batches 1 and 2, observed immutable States v1/v2, graph/list/diff, two persisted analysis runs bound to v1/v2, stale-plan warning, explicit re-analysis, an IT-manager-approved bounded simulation, response edge/State v3, persisted report and valid `%PDF-` download (12,674 bytes), then refreshed the case. The browser observed terminal `completed`; unit tests observed all intermediate persisted stages. The isolated server was stopped by its own test harness; user-managed services were not restarted or stopped.
+- DEC-018 records renderer/progress architecture; BL-044 covers durable run recovery; BL-045 covers evidence-grounded attack-edge classification. Regenerated Aidan-owned `backend/evaluation/results/fake.json` and `SUMMARY.md` after minimally changing Airil-owned deterministic planner analysis and host selection; live prompts, policy guard and evaluation/live results were not touched. No commit/merge/push.
+
+### 2026-10-14 GAS-lite integration implementation (IN PROGRESS)
+
+- Added typed state history/snapshots, deterministic graph layout/immutable diff, React Flow read-only Incident Graph with provenance details and keyboard/mobile list; plan analysis now uses stored plan `analysis` and explicitly marks missing analysis. Added case ID/copy and authoritative overview, additional evidence upload, stale-plan warning, explicit re-analysis and persisted agent-stage UI. Two-version synthetic fixture graph remains separate from API mode.
+- Added additive persisted `POST /analysis-runs` and `GET /analysis-runs/{run_id}` with case-scoped duplicate marker, sanitized terminal failure, state binding and real progress callbacks. The synchronous `/runs` is unchanged. Raaj-owned files touched: planning API/service, repository; Airil-owned `FakePlannerAdapter` minimally supplies deterministic, evidence-grounded typed analysis. Live prompts untouched. Aidan-owned simulator/report code untouched.
+- Focused fake-Firestore backend tests: `40 passed`. The first new run test attempted to select a live adapter from backend-local configuration and timed out; the test now explicitly injects `FakePlannerAdapter` and passes (`3 passed`). No further live calls are permitted. Frontend first pass: 86 passed, one tab-availability test expected only the original seven tabs; test updated and rerun pending.
+
+### 2026-10-14 GAS-lite frontend integration specification (DONE; implementation IN PROGRESS)
+
+- On `chore/final-integration-fieqah` at `7b1ff06`, preflight confirmed the eight existing uncommitted navigation/doc changes exactly match the prior session; no unexpected overlapping teammate edits. No commit/merge/push or user-service restart.
+- Created `.kiro/specs/caventas-gas-lite-frontend/` (requirements, design, tasks, config) and linked it from the Core GAS-lite follow-on. The state-history API already exists; the frontend currently omits graph provenance and persisted plan analysis. Fake planner returns no analysis; synchronous `/runs` has no persisted progress contract.
+- Architecture: React Flow renders the immutable Firestore-backed GAS-lite graph; graph-maker/Neo4j/second LLM rejected. Evidence-triggered re-analysis is explicit; progress must come from backend-persisted stages. Extended the frontend Docker context credential exclusions to match the repository/backend rules. No tests run yet for this new slice; next: implement contracts and tests.
+
+### 2026-10-14 Post-merge browser acceptance and navigation cleanup (DONE)
+
+- Merge commit `7b1ff06` was created locally with parents `84d91e5` and
+  `f6f002e`; it was not pushed. The synchronized worktree was then exercised
+  against the existing API-mode services without restarting or stopping them.
+- Removed unsupported Approvals, Guidance, Reports, Activity and Settings
+  destinations from primary navigation. Dashboard actions and the approval
+  bell now lead to the persisted Cases surface, and old direct URLs redirect
+  there instead of displaying placeholder pages.
+- Assertion-backed browser acceptance passed end to end: responsive Evidence
+  Review actions, exactly one mocked pending planning request, persisted
+  Dashboard/Cases data, direct-refresh evidence with 20 records, all seven
+  workspace tabs, placeholder-free navigation, report reload and PDF download
+  (HTTP 200, `application/pdf`, 11,299 bytes, `%PDF-`). The expected console
+  503 came only from the deterministic mocked planning failure; there were no
+  failed browser requests. The live provider was not retried.
+- Post-cleanup frontend strict typecheck, **83 tests in 11 files** and the
+  production build passed. These navigation-cleanup changes and this record
+  remain uncommitted; no push was performed.
+
 ### 2026-10-14 Synchronize final integration with main (DONE)
 
 - Fetched `origin/main` at `f6f002e` and merged it into

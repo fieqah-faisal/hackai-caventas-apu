@@ -28,6 +28,7 @@ import {
   type SetupState,
 } from "@/lib/setup/stepMachine";
 import { DEMO_ORGANISATION } from "@/lib/scenario/config";
+import { useAnalysisRuns } from "@/features/analysisRuns/AnalysisRunContext";
 
 const p = getProvider();
 const ACCEPTED = [".csv", ".json", ".txt"];
@@ -44,6 +45,7 @@ export function CreateCasePage() {
   const navigate = useNavigate();
   const { notify } = useToast();
   const mode = useDataMode();
+  const analysisRuns = useAnalysisRuns();
   const [s, setS] = useState<SetupState>(initialSetupState);
   const [caseId, setCaseId] = useState<string | null>(null);
   const [sources, setSources] = useState<string[]>([]);
@@ -100,16 +102,16 @@ export function CreateCasePage() {
     runPendingRef.current = true;
     setRunPending(true);
     setBusy(true);
-    const out = await p.startRun(caseId);
+    const run = await analysisRuns.start(caseId);
     setBusy(false);
     setRunPending(false);
     runPendingRef.current = false;
-    if (out.kind === "ok") {
+    if (run) {
       setS((prev) => markRunStarted(prev));
-      notify({ tone: "success", title: "Analysis started", detail: "Opening the case workspace." });
-      navigate(`/cases/${caseId}`);
+      notify({ tone: "info", title: "Analysis queued", detail: "Follow the persisted agent progress in the case workspace." });
+      navigate(`/cases/${caseId}/analysis`);
     } else {
-      notify({ tone: "error", title: "Could not start analysis", detail: outcomeMessage(out) });
+      notify({ tone: "error", title: "Could not start analysis", detail: analysisRuns.getEntry(caseId).error ?? "The analysis run could not be started." });
     }
   }
 
@@ -325,7 +327,7 @@ function StepBody({
       <Button variant="primary" size="sm" disabled={busy || runPending || s.runStarted} onClick={onStart} leadingIcon={<Icon name="running" size={18} />}>
         {s.runStarted ? "Analysis started" : runPending ? "Analyzing evidence…" : "Start analysis"}
       </Button>
-      {runPending && <p role="status" className="text-meta text-text-muted">Planning is in progress and can take up to 120 seconds. Keep this page open.</p>}
+      {runPending && <p role="status" className="text-meta text-text-muted">Requesting a persisted analysis run…</p>}
     </div>
   );
 }

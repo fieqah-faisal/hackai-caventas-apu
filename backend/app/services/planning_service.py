@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 from app.ai.langgraph_planner import PlannerError, get_planner_adapter, load_guidance
 from app.database import repositories
@@ -25,7 +25,11 @@ class PlanningError(RuntimeError):
         self.kind = kind
 
 
-def run_planning(case_id: str) -> dict[str, Any]:
+def run_planning(
+    case_id: str,
+    progress: Callable[[str, int], None] | None = None,
+    expected_state_version: int | None = None,
+) -> dict[str, Any]:
     """Run the planner for a case and persist the resulting plan + actions."""
     case = repositories.get_case(case_id)
     if case is None:
@@ -36,21 +40,31 @@ def run_planning(case_id: str) -> dict[str, Any]:
         raise PlanningError(
             "case has no incident state yet; upload evidence first", "no_state"
         )
+    if expected_state_version is not None and version != expected_state_version:
+        raise PlanningError("incident state changed before analysis began", "no_state")
+    if progress:
+        progress("loading_state", version)
     state = state_manager.get_current_state(case_id)
     if state is None:
         raise PlanningError("incident state not available", "no_state")
 
-    adapter = get_planner_adapter()
+    if progress:
+        progress("loading_guidance", state.version)
     guidance = load_guidance()
+    adapter = get_planner_adapter()
+    if progress:
+        progress("running_planner", state.version)
     try:
         proposal = adapter.generate_plan(state, guidance)
     except PlannerError as exc:
-        raise PlanningError(f"planner failed: {exc}", "planner") from exc
+        raise PlanningError("planner request failed", "planner") from exc
 
     if proposal.based_on_state_version != state.version:
         raise PlanningError(
             "planner proposal is based on a stale state version", "planner"
         )
+    if progress:
+        progress("persisting_plan", state.version)
 
     plan_id = f"PLAN-{uuid.uuid4().hex[:12]}"
     entity_ids = {entity.id for entity in state.entities}

@@ -1,5 +1,9 @@
 .env
 .env.*
+secrets/
+*serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
 node_modules/
 dist/
 coverage/

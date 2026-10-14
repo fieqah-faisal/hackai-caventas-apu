@@ -8,19 +8,23 @@ import { Mono } from "@/components/ui/Mono";
 import { cx } from "@/lib/types";
 import type { AnalysisVM } from "@/lib/types";
 import { useWorkspace } from "../context";
+import { AgentRunPanel } from "../AgentRunPanel";
 
 const p = getProvider();
 
 export function AnalysisTab() {
-  const { caseId } = useWorkspace();
-  const analysis = useOutcome<AnalysisVM>(() => p.getAnalysis(caseId), [caseId]);
+  const { caseId, reloadKey } = useWorkspace();
+  const analysis = useOutcome<AnalysisVM>(() => p.getAnalysis(caseId), [caseId, reloadKey]);
 
   return (
+    <div className="space-y-4"><AgentRunPanel />
     <AsyncBoundary outcome={analysis}>
       {(a) => (
         <div className="space-y-4">
           <Section title="Current classification">
-            <p className="text-base text-text-primary">{a.classification ?? "Not yet classified."}</p>
+            <p className="text-base text-text-primary">{a.unavailableReason ?? a.classification ?? "Not yet classified."}</p>
+            {a.severity && <p>Severity: {a.severity}</p>}
+            {a.scope && <p>Scope: {a.scope}</p>}
           </Section>
 
           <Section title="Confidence">
@@ -45,6 +49,10 @@ export function AnalysisTab() {
             )}
           </Section>
 
+          <Section title="Findings">
+            {a.findings?.length ? <ul className="list-disc pl-5">{a.findings.map((f, i) => <li key={i}>{f.summary} ({f.evidenceIds.join(", ")})</li>)}</ul> : <p>No stored findings.</p>}
+          </Section>
+
           <Section title="ATT&CK techniques">
             {a.attackTechniques.length === 0 ? (
               <p className="text-meta text-text-muted">None mapped.</p>
@@ -60,6 +68,7 @@ export function AnalysisTab() {
         </div>
       )}
     </AsyncBoundary>
+    </div>
   );
 }
 

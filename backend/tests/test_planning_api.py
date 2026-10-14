@@ -50,7 +50,7 @@ def test_run_planning_creates_plan_and_persists_actions(client, monkeypatch):
     assert resp.status_code == 200, resp.text
     plan = resp.json()
     assert plan["plan_id"].startswith("PLAN-")
-    assert "analysis" not in plan  # the fake adapter produces no analysis
+    assert plan["analysis"]["findings"]  # deterministic planner persists grounded analysis
     assert plan["case_id"] == case_id
     assert plan["based_on_state_version"] == 1
     assert plan["stage"] == "containment"

@@ -2,7 +2,7 @@
 
 React + Vite + TypeScript + Tailwind analyst workspace for the Caventas IR
 Planner. Progressive-disclosure UI: a Dashboard, a Create Case flow, and a
-Case Workspace with seven tabs (Overview, Evidence, Timeline, Analysis,
+Case Workspace with eight tabs (Overview, Evidence, Timeline, Incident Graph, Analysis,
 Response Plan, Approvals, Report).
 
 The UI talks to the FastAPI backend over HTTP only, never Firestore directly.
@@ -43,8 +43,12 @@ contract**, so the full workflow is demonstrable without a running backend:
 - Separate simulation and validation steps.
 - A structured, section-complete report (PDF marked unavailable).
 - The Infostealer scenario with a presenter control
-  ("Reveal next evidence (demo)") that reveals evidence batch 2 live and
-  drives the v1 to v2 re-plan.
+  ("Reveal next evidence (demo)") that reveals evidence batch 2 live;
+  Plan v1 stays stale until the analyst explicitly requests the synthetic v2 re-plan.
+- Immutable synthetic GAS-lite snapshots v1/v2, provenance, observed/inferred
+  and attack/response relationships, and a parent-version comparison. A
+  bounded synthetic simulation appends another snapshot; earlier versions stay
+  unchanged. No synthetic plan is invented for an unauthored later state.
 
 Every surface backed by this provider is visibly flagged **"Synthetic demo
 data"**. It never claims to have come from the real backend or to have
@@ -81,9 +85,22 @@ Known backend gaps are surfaced explicitly rather than faked:
   analyst clicks Generate / Regenerate. Each `POST /reports` stores a new
   report version, PDF and audit event.
 - Persisted `GET /cases` backs the Cases page and API-mode dashboard. Planning
-  and decision summaries are derived from stored plans/actions; active-run
-  status remains explicitly unavailable because the backend has no run-status
-  contract.
+  and decision summaries are derived from stored plans/actions. Case-scoped
+  `POST /analysis-runs`, `GET /analysis-runs/active` and
+  `GET /analysis-runs/{run_id}` provide persisted agent progress. Shell-level
+  case-keyed polling and backend discovery keep the minimisable agent indicator
+  active across routes and full refreshes; only watched case IDs are retained
+  in session storage, never run status. The dashboard aggregate still has no
+  list-runs endpoint.
+- Incident Graph reads immutable GAS-lite state history; `@xyflow/react` is a
+  read-only renderer with deterministic left-to-right dependency ranks,
+  explicit directional handles/arrowheads, semantic edge styles,
+  neighbourhood emphasis, a keyboard/mobile list, node/edge provenance and a
+  pure parent diff. GAS-lite remains the only deterministic graph builder.
+- Evidence can be uploaded again from a case (CSV/JSON/TXT; 10 MiB/file). The
+  analyst explicitly starts re-analysis when a stored plan's state binding is
+  stale. Overview and Analysis prefer the newest plan's persisted analysis;
+  old plans without it are labelled unavailable instead of guessed.
 
 Point API mode at a backend by running the FastAPI app on `:8000`; the Vite
 dev server proxies `/api` to it (see `vite.config.ts`). The two modes are a
@@ -91,7 +108,8 @@ hard boundary: fixture and API data are never combined within one case.
 
 ## Structure
 
-- `src/app` — router (`App`), About/credits, 404, placeholder pages
+- `src/app` — router (`App`), About/credits and 404; retired global routes
+  redirect to the persisted Cases surface instead of rendering placeholders
 - `src/components/shell` — TopBar, Sidebar (+ mobile drawer), AppShell, ConnectionBanner
 - `src/components/icons` — CoreUI icon registry + inline `Icon` renderer
 - `src/components/ui` — Button, StatusBadge, Region/states, Skeleton, Mono, Toast, SyntheticBadge, AsyncBoundary

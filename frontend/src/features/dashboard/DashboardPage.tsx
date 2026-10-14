@@ -158,7 +158,7 @@ function ActivityBody({ data }: { data: CaseActivityVM }) {
 
 function AgentPlanningCard({ outcome }: { outcome: ReturnType<typeof useOutcome<AgentPlanningVM>> }) {
   return (
-    <Card title="Agent planning" icon="analysis" to="/activity" cta="View activity">
+    <Card title="Agent planning" icon="analysis" to="/cases" cta="View cases">
       {outcome.state === "loading" ? (
         <CardSkeleton />
       ) : outcome.state === "error" || !outcome.value ? (
@@ -204,7 +204,7 @@ function PlanningBody({ data }: { data: AgentPlanningVM }) {
 
 function HumanDecisionsCard({ outcome }: { outcome: ReturnType<typeof useOutcome<HumanDecisionsVM>> }) {
   return (
-    <Card title="Human decisions" icon="humanDecision" to="/approvals" cta="Review approvals">
+    <Card title="Human decisions" icon="humanDecision" to="/cases" cta="Review cases">
       {outcome.state === "loading" ? (
         <CardSkeleton />
       ) : outcome.state === "error" || !outcome.value ? (

@@ -11,8 +11,8 @@ Owner: Raaj (Backend, Incident State, Data & Integration).
 The backend currently supports evidence ingestion, immutable GAS-lite incident
 state, stage-scoped policy retrieval, DeepSeek planning, deterministic policy
 enforcement, analyst approval, bounded simulation, audit history and structured
-JSON/PDF reporting. The latest merged-main backend baseline is **212 passing
-tests**.
+JSON/PDF reporting. The final integration branch passes **222 backend tests**
+(2026-10-14); live-provider availability is tracked separately in BL-043.
 
 **Functional now:**
 
@@ -46,6 +46,9 @@ AI planning (BL-002):
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | POST | `/cases/{case_id}/runs` | Run the planner; persist a plan + proposed actions |
+| POST | `/cases/{case_id}/analysis-runs` | Queue a persisted background analysis run; returns 202 and run ID |
+| GET | `/cases/{case_id}/analysis-runs/active` | Discover the case's active run for navigation/refresh recovery; returns the run or `null` |
+| GET | `/cases/{case_id}/analysis-runs/{run_id}` | Read stored stage, state binding, terminal plan or sanitized failure |
 | GET | `/cases/{case_id}/plans` | List stored plans for a case |
 
 The planner runs behind `app/ai/langgraph_planner.py` (LangGraph over the
@@ -54,6 +57,19 @@ retrieves stage-relevant policy passages, and returns proposals only; the
 backend validates every id before persisting. With no
 `OPENCODE_GO_API_KEY` configured it falls back to `FakePlannerAdapter`, so
 the backend works without a key.
+
+Only one background analysis run may be active per case. A duplicate queue
+request returns HTTP 409 with the existing `run_id`; clients resume that run
+rather than scheduling the planner again.
+
+Asynchronous runs prevent a second active run for the same case via an
+atomic Firestore claim, expose only actual service boundaries (loading state,
+loading guidance, running planner, persisting plan), and store a sanitized
+failure rather than provider response text. The original synchronous `/runs`
+remains supported. A FastAPI process restart during a background run can leave
+its queued/running record nonterminal; durable worker recovery is follow-on.
+The deterministic adapter now emits evidence-grounded typed analysis for
+synthetic/offline verification; this is not evidence that the live model works.
 
 The planner also returns a validated analysis block — incident type, severity,
 confidence, findings (each citing stored evidence ids) and ATT&CK technique
