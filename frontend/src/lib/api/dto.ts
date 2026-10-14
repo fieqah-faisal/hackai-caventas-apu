@@ -192,9 +192,13 @@ export interface RunResponseDTO extends PlanDocDTO {
 
 // ---- Approvals ------------------------------------------------------------
 
+/** Declared prototype approver role (policy-pack roles only). */
+export type ApproverRoleDTO = "soc_analyst" | "it_manager" | "dpo";
+
 export interface DecisionRequestDTO {
   decision: DecisionDTO;
   analyst: string;
+  approver_role?: ApproverRoleDTO;
   reason?: string;
 }
 
@@ -210,6 +214,8 @@ export interface ApprovalRecordDTO {
    */
   decision: "approved" | "rejected";
   analyst: string;
+  approver_role?: ApproverRoleDTO;
+  required_role?: ApproverRoleDTO | null;
   reason: string;
   created_at: string;
 }

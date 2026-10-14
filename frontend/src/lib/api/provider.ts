@@ -1,3 +1,4 @@
+import type { ApproverRoleDTO } from "./dto";
 /**
  * The DataProvider boundary.
  *
@@ -114,6 +115,7 @@ export interface DataProvider {
     decision: DecisionKind,
     analyst: string,
     reason: string,
+    approverRole?: ApproverRoleDTO,
   ): Promise<Outcome<{ state: string }>>;
   executeAction(caseId: string, actionId: string): Promise<Outcome<ExecutionResultVM>>;
   /** Generate a new report version (explicit analyst action; one request per call). */
