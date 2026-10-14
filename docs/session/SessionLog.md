@@ -3,6 +3,16 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-14 Report schema v1.3 added to docs/ (DONE)
+
+- Branch `docs/report-schema-v1.3`: `docs/report-schema/` (README.md,
+  report_schema_v1.3.json, lifecycle.png). Docs only; no code changed.
+- Checked against `reporting.py` on main: every written key is covered
+  except `pdf_path`; findings use `summary` (DEC-015).
+- DEC-017; BL-040 (Raaj), BL-041 (Airil), BL-042 (Syafieqah).
+- Backend suite unchanged: 212 passed. Policy pack checker: all PASS.
+- Next: BL-040 / BL-033 (Raaj); BL-035 asset list (Aida + Aidan).
+
 ### 2026-10-14 README post-merge refresh (DONE)
 
 - Audited all five repository README files against the current backend,

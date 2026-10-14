@@ -15,7 +15,8 @@
 > `feat/bl-031-verify-before-contain` adds DEC-014;
 > `feat/bl-017-analysis-persistence` adds DEC-015;
 > `feat/bl-020-untrusted-evidence` adds DEC-016.
-> Next free IDs: **BL-040** and **DEC-017**.
+> `docs/report-schema-v1.3` adds DEC-017 and BL-040..BL-042.
+> Next free IDs: **BL-043** and **DEC-018**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
@@ -71,6 +72,16 @@
   v1.0: rule IDs, roles, tool names, asset IDs. — open / Syafieqah
 - BL-039 — Align the simulator catalogue with policy pack v1.0: trigger
   event types and tool gaps (`purge_email`, `restore_host`). — open / Aidan
+- BL-040 — Report: write the v1.3 action fields (tool_name, target_id,
+  policy_refs, required_approver from required_role, approver_role from
+  decided_by_role, policy_check), planner_model, findings[].status
+  (default hypothesis) and affected[].evidence_ids. See
+  docs/report-schema/README.md. — open / Raaj
+- BL-041 — Planner: limit incident_type to the schema values
+  (infostealer_session_hijack | phishing_account_takeover |
+  not_an_incident | other). — open / Airil
+- BL-042 — Frontend: add the v1.3 report fields to dto.ts (typed
+  findings, action policy fields, planner_model). — open / Syafieqah
 
 ### P3
 
