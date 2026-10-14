@@ -192,8 +192,13 @@ def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
         "you judge it benign or a false positive (for example, an "
         "administrator-created scheduled task is still T1053.005); never "
         "invent techniques the evidence does not support, and never invent "
-        "entity ids, evidence ids or ATT&CK technique ids. "
-        "Return ONLY a JSON object with keys: incident_type, scope, severity "
+        "entity ids, evidence ids or ATT&CK technique ids. Classify "
+        "incident_type as exactly one of: infostealer_session_hijack "
+        "(credential theft or stolen sessions), phishing_account_takeover "
+        "(phishing that led to account access), not_an_incident (benign or "
+        "planned activity, e.g. an approved change), other. Return ONLY a "
+        "JSON object with keys: incident_type (infostealer_session_hijack|"
+        "phishing_account_takeover|not_an_incident|other), scope, severity "
         "(low|medium|high|critical), confidence, sufficient, missing_evidence, "
         "stage (assessment|preservation|containment|eradication|hardening|"
         "restoration), findings (list of {\"summary\": <string>, "
@@ -263,6 +268,20 @@ def _collect_evidence_ids(incident: dict[str, Any]) -> set[str]:
 
 
 ATTACK_TECHNIQUE_ID = re.compile(r"^T\d{4}(\.\d{3})?$")
+
+
+INCIDENT_TYPES = (
+    "infostealer_session_hijack",
+    "phishing_account_takeover",
+    "not_an_incident",
+    "other",
+)
+
+
+def _incident_type(raw: Any) -> str:
+    """Coerce the model's incident type to the report-schema v1.3 enum."""
+    text = str(raw).strip().lower() if raw is not None else ""
+    return text if text in INCIDENT_TYPES else "other"
 
 
 def _confidence(raw: Any) -> float:
@@ -435,7 +454,7 @@ class LangGraphPlannerAdapter:
         evidence_ids = _collect_evidence_ids(incident)
         analysis_raw = final.get("analysis") or {}
         analysis = PlanAnalysis(
-            incident_type=str(analysis_raw.get("incident_type", "")),
+            incident_type=_incident_type(analysis_raw.get("incident_type")),
             scope=str(analysis_raw.get("scope", "")),
             severity=str(analysis_raw.get("severity", "")),
             confidence=_confidence(analysis_raw.get("confidence")),

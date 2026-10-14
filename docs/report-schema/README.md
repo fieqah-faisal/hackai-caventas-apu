@@ -224,7 +224,7 @@ Checked against `backend/app/services/reporting.py` on `main`. "Filled" means th
 | --- | --- | --- | --- |
 | 1 | Header | Partly | `planner_model` is not written yet; the value is in `config.py` (`opencode_go_model`). Raaj |
 | 2 | Executive summary | Partly | A one-line count of entities, evidence, actions and questions. The LLM summary is future work |
-| 3 | Classification | Partly | Type, severity, confidence and ATT&CK come from the planner (DEC-015). Status is always `suspected`; closure fields are empty. The planner returns free-text `incident_type`, so it should be limited to the four values above. Airil |
+| 3 | Classification | Partly | Type, severity, confidence and ATT&CK come from the planner (DEC-015); the type is limited to the four schema values (BL-041, 14 Oct). Status is always `suspected`; closure fields are empty. |
 | 4 | Affected assets | Partly | One row per entity. Owner, criticality and data classification are empty, type is the entity type, and `evidence_ids` is empty although GAS-lite entities now carry their evidence IDs. Needs the asset list (BL-033, Raaj) and the missing hosts added to it (BL-035, Aida + Aidan) |
 | 5 | Exposed credentials | Empty | Future work |
 | 6 | Timeline | Partly | Rows and evidence IDs are filled; `source` is always `analyst_note` and `attack_technique` is `null` |
@@ -241,14 +241,14 @@ Checked against `backend/app/services/reporting.py` on `main`. "Filled" means th
 | 17 | Sign-off | Empty | No sign-off endpoint yet, so reports stay `draft` |
 | A | Evidence index | Filled | Source file, line, time, hash and the untrusted flag |
 
-Three notes. The generator also adds `pdf_path`, a file path on the server; it is not report content and the UI must never show it as a link. The stored action uses `required_role` and `decided_by_role`, which the report shows as `required_approver` and `approver_role` (the policy pack's and the approval record's names). And report `status` stays `final`, which is what the evaluation harness checks (`report_not_final_without_sign_off`); the incident state's report-status block calls the same step `finalized`.
+Three notes. The generator also adds `pdf_path`, a file path on the server; it is not report content and the UI must never show it as a link. The stored action uses `required_role` and `decided_by_role`, which the report shows as `required_approver` and `approver_role` (the policy pack's and the approval record's names). And report `status` stays `draft` while there is no sign-off endpoint; the evaluation harness checks this (`report_not_final_without_sign_off`); the incident state's report-status block calls the same step `finalized`.
 
 ## Open questions for the team
 
 - [ ] **Confidence threshold.** Is 0.6 the right cut-off for sending a finding to Open questions? (Airil)
 - [ ] **Severity scale.** Four levels with a reason, as proposed, or a 1-to-10 score like Alkhudari's? Four levels are easier to defend.
 - [x] **Schema fit.** Checked on 14 Oct: every key `reporting.py` writes is in the schema, apart from `pdf_path` (see the notes under the table). The data for the v1.3 action fields is already stored; see [What the code fills today](#what-the-code-fills-today-14-oct).
-- [ ] **Incident type values.** Limit the planner's `incident_type` to the four schema values. (Airil)
+- [x] **Incident type values.** Done (BL-041, 14 Oct): the planner is limited to the four schema values.
 - [x] **Who signs off.** Resolved by policy pack v1.0: a SOC analyst (POL-15).
 - [ ] **Trigger facts.** Which log events mark personal data exposed, a stolen session cookie and a compromised mailbox, so POL-03, POL-11 and POL-12 can fire? (Aidan, Raaj)
 - [ ] **Exports.** Which sections go into the CSV export (for Power BI, if we use it), and which only into the PDF?

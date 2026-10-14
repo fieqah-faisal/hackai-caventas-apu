@@ -3,6 +3,21 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-14 BL-041 incident_type schema enum: live 12/12, 5/5, mean 92.7 (DONE)
+
+- The analyze prompt now requests exactly one of `infostealer_session_hijack`,
+  `phishing_account_takeover`, `not_an_incident`, `other` (schema v1.3), and
+  the adapter coerces non-conforming model output to `other`
+  (`INCIDENT_TYPES`, `_incident_type`). Verified live: sc02 →
+  `phishing_account_takeover`, sc03 → `not_an_incident` (direct planner runs);
+  scoped sc02+sc03 PASS.
+- Also fixed two v1.3 doc bugs: `docs/report-schema/README.md` said report
+  status "stays `final`" (the code writes `draft`) and the
+  `SessionContext.md` v1.3 bullet splice.
+- Full live rerun: **12/12 checkpoints, 5/5 scenarios, mean 92.7** (all gates
+  hold; coverage complete). 214 backend tests; artifacts in
+  `.agents/tasks/bl-041-incident-type-enum/`.
+
 ### 2026-10-14 Report schema v1.3 added to docs/ (DONE)
 
 - Branch `docs/report-schema-v1.3`: `docs/report-schema/` (README.md,

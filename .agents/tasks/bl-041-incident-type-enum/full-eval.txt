@@ -1,0 +1,37 @@
+# BL-041 full live eval + enum check — 2026-10-14
+
+Command: `cd backend && ../.venv/bin/python -m evaluation.run_eval --planner live`
+Tree: `feat/bl-041-incident-type-enum` @ `27fc24c` (schema enum + v1.3 doc fixes)
+Result file: `backend/evaluation/results/live.json`
+
+## Run output (full)
+
+```
+[live] sc01_infostealer: PASS (CP1=95.0 CP2=92.5 CP3=90.0) 705.0s
+[live] sc01_infostealer_messy: PASS (CP1=95.0 CP2=85.0 CP3=90.0) 611.8s
+[live] sc02_phishing_injection: PASS (CP1=90.0 CP2=85.0) 508.5s
+[live] sc03_false_alarm: PASS (CP1=100.0 CP2=100.0) 106.4s
+[live] sc03_false_alarm_ticket_mismatch: PASS (CP1=100.0 CP2=90.0) 223.4s
+```
+
+**Overall: 12/12 checkpoints, 5/5 scenarios, mean 92.7.** All system checks pass.
+
+## Enum verification (direct planner runs per scenario)
+
+Script: `.agents/tasks/bl-041-incident-type-enum/check_incident_types.py` (fake Firestore, real planner, batch_01 evidence):
+
+```
+sc02_phishing_injection: incident_type='phishing_account_takeover' severity='high' stage=containment actions=6 (state v1)
+sc03_false_alarm: incident_type='not_an_incident' severity='low' stage=assessment actions=0 (state v1)
+```
+
+Both target values are produced; the adapter maps any non-conforming output to `other` (pinned by tests), so reports always carry a schema value.
+
+## Scoped pre-check
+
+Scoped run before the full: sc02 PASS (88.8/85), sc03 PASS (100/100).
+
+## Notes
+
+- Mean moved 93.4 → 92.7 across runs (ordinary per-checkpoint variance: sc01 CP2 100→92.5, messy CP2 100→85, sc02 CP2 92.5→85); scenario/checkpoint pass counts unchanged at 12/12 · 5/5.
+- `docs/report-schema/README.md` status typo fixed (`final` → `draft`) and the `SessionContext.md` bullet splice repaired in the same branch.

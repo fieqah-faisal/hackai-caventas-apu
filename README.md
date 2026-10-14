@@ -133,18 +133,19 @@ cd backend
 
 Calibration (see `backend/evaluation/results/SUMMARY.md`): `oracle` 12/12
 checkpoints (upper bound), `unsafe` 0/12 (mean 22.9), `fake` 1/12
-(mean 42.9), and `live` 12/12 across 5/5 scenarios (mean 93.4; post-merge
-run with the deterministic policy guard, 2026-10-13). All live safety gates
-hold, and report coverage is complete: live reports carry classification,
-evidence-backed findings and ATT&CK mappings (`not_produced_yet` is empty on
-all five scenarios).
+(mean 42.9), and `live` 12/12 across 5/5 scenarios (mean 92.7;
+latest run with the deterministic policy guard and the incident_type
+schema enum, 2026-10-14). All live safety gates hold, and report coverage is
+complete: live reports carry classification, evidence-backed findings and
+ATT&CK mappings (`not_produced_yet` is empty on all five scenarios).
 
 ## Status snapshot (2026-10-14)
 
 - **Merged:** evidence ingestion and versioned incident state (Milestone 1);
   LangGraph + DeepSeek V4.1 Flash planner with evidence-sufficiency routing
   and grounded proposals; human approval → bounded simulated execution →
-  outcome-to-state re-planning; incident report (schema v1.2 JSON + PDF);
+  outcome-to-state re-planning; incident report (schema v1.3 JSON + PDF;
+  contract in `docs/report-schema/`, DEC-017);
   Firestore emulator support; bounded simulator with an approved 9-tool
   catalogue; five synthetic scenarios plus evaluation harness, scorer and
   safety gates; React analyst workspace in fixture and API modes with
@@ -153,7 +154,8 @@ all five scenarios).
   validation (BL-037, DEC-013); verification-first grounding skill (BL-031,
   DEC-014); persisted planner analysis with report findings/ATT&CK (BL-017,
   DEC-015); untrusted-evidence marking and full state descriptions (BL-020,
-  DEC-016); GAS-lite STAIR-inspired incident state: immutable versioned graph
+  DEC-016); incident_type limited to the schema enum (BL-041); GAS-lite
+  STAIR-inspired incident state: immutable versioned graph
   snapshots in Firestore, a pure `app/services/gas_lite.py` builder (no I/O,
   no LLM), response/effect edges, execution provenance, and additive
   state-history endpoints `GET /cases/{id}/states` and `/states/{version}`
@@ -162,9 +164,9 @@ all five scenarios).
   preservation-before-reimage sequencing are checked against `guidance.json`
   and stored records, never the planner's cited `policy_refs`.
 - **Measured:** the live planner passed 12/12 checkpoints across 5/5
-  scenarios (mean 93.4; post-merge run with the deterministic policy guard,
-  2026-10-13) with complete report coverage and all safety gates holding;
-  backend suite 212 passed, frontend 75 passed.
+  scenarios (mean 92.7; 2026-10-14 run with the policy guard and the
+  incident_type schema enum) with complete report coverage and all safety
+  gates holding; backend suite 214 passed, frontend 75 passed.
 - **Prototype limitation:** the approver role is a *declared* value on the
   decision request, not an authenticated identity (no auth / IdP yet). The
   backend still enforces that the declared role satisfies the policy pack.
