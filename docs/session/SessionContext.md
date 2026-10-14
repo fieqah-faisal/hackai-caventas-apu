@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-13 (GAS-lite merge + policy enforcement).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-13 (GAS-lite merged; deterministic policy enforcement).
 
 ## Project
 
@@ -116,6 +116,7 @@ Firestore; no credentials needed).
   `.kiro/specs/caventas-gas-lite/`; decisions in DEC-010. Follow-on:
   planner-populated routing/assessment, report-section invalidation,
   non-material version suppression, frontend graph visualisation.
+- Deterministic policy enforcement (BL-032/018/019, merged into `feat/gas-lite-state-fieqah`): `app/services/policy_service.py` derives the required approver role, target asset type, evidence validity and POL-01 preserve-before-reimage from `guidance.json` + stored records — never the planner's `policy_refs`. `approver_role` (soc_analyst|it_manager|dpo) is on the decision request, approval record and audit; approval returns 403 on an insufficient role, execution re-checks role/evidence/sequencing (409 + audit, no result), unknown assets fail closed. Declared-role prototype (no auth yet). Backend 205 passed, frontend 75 passed, build green.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

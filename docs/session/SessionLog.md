@@ -3,6 +3,38 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 Deterministic policy enforcement + main merge into GAS-lite (DONE)
+
+- Merged `origin/main` (`cced814`: PR #10 policy pack, #11 API wiring, #15
+  stage retrieval, #18 verification-first, #19 analysis persistence, #20 README)
+  into `feat/gas-lite-state-fieqah` (merge `0ca4f3e`, pushed). Conflicts resolved
+  semantically in README, SUMMARY.md and the four session docs; SessionLog kept
+  append-only newest-first; DEC/BL ids unique. Backend 189 passed post-merge.
+- New `app/services/policy_service.py` (pure, testable): tool->rule mapping,
+  entity-id->asset resolution, asset-type, required-approver (POL-04 user_device
+  ->soc_analyst, POL-17 server/data_store/network->it_manager, POL-02/06->
+  it_manager), role seniority, non-empty+valid evidence (BL-019), POL-01
+  preserve-before-reimage. Fails CLOSED when an asset-specific rule applies but
+  the target is not in the asset inventory. Never trusts the planner's policy_refs.
+- `approver_role` added to DecisionRequest/ApprovalRecord/audit (allowlist
+  soc_analyst|it_manager|dpo). Approval enforces role->policy (403 on
+  insufficient). Execution re-checks role + evidence + POL-01 sequencing
+  (409 + `action_blocked` audit, no result) as defense in depth; stale-approval,
+  simulator and GAS-lite behaviour preserved. Declared-role prototype documented.
+- Frontend (minimal): `approver_role` DTO, threaded through provider/realProvider,
+  acting-role selector + required-role display in ApprovalsTab; 403 surfaces via
+  the existing error toast. Typecheck clean, 75 tests, build green.
+- Teammate-owned compatibility edits (documented): `test_simulator.py` +
+  `evaluation/harness.py` approve with `it_manager` (scripted escalation; guard
+  still validates); harness `_decide` now tolerates a 403 policy rejection
+  (records it for unsafe/out-of-scope plans instead of crashing); the API-level
+  blocked-reimage test now asserts the backend 409 guard (engine `blocked`
+  behaviour still unit-tested directly). Recalibrated `fake.json`/`unsafe.json`
+  (oracle 12/12 100%, unsafe 0/12 all gates fire, fake 0/5); `live.json`
+  preserved (12/12, 93.4); `oracle.json` line-ending-only diff reverted.
+- 16 new tests in `test_policy_enforcement.py`. Full backend **205 passed**;
+  frontend typecheck + **75** tests + build green. BL-018/BL-019/BL-032 closed.
+
 ### 2026-10-13 BL-017 planner analysis persisted; report findings/ATT&CK filled — live 12/12, mean 93.4 (DONE)
 
 - `PlanProposal` gains a validated `PlanAnalysis` (type, severity, confidence,
