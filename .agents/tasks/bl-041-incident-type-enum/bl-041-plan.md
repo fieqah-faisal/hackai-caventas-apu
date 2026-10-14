@@ -168,6 +168,8 @@ with:
 
 - [ ] **Step 3:** Commit both: `docs(report): fix v1.3 status note and SessionContext bullet splice`.
 
+- [ ] **Step 4 (added post-review):** Update the two stale enum-status claims in `docs/report-schema/README.md` (section-3 table cell; the incident-type open question becomes checked) and correct the SessionContext suite line to "214 on this branch (212 on main)"; pin the enum contract with one adapter test. Covered by the final-review fix wave commit.
+
 ### Task 3: Live verification + notebook + PR (coordinator)
 
 - [ ] **Step 1: Scoped acceptance run** (the two semantics-interesting scenarios):
