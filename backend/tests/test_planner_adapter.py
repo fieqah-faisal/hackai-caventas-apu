@@ -561,3 +561,19 @@ def test_non_finite_confidence_is_rejected():
     plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
 
     assert plan.analysis.confidence == 0.0
+
+
+def test_incident_type_is_limited_to_the_schema_enum():
+    llm = ScriptedLLM([_analysis(incident_type="A novel rootkit drama"), _proposal()])
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert plan.analysis.incident_type == "other"
+
+
+def test_incident_type_matches_case_insensitively():
+    llm = ScriptedLLM(
+        [_analysis(incident_type="Phishing_Account_Takeover"), _proposal()]
+    )
+    plan = LangGraphPlannerAdapter(llm_call=llm).generate_plan(_state(), GUIDANCE)
+
+    assert plan.analysis.incident_type == "phishing_account_takeover"
