@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-13 (GAS-lite merged; deterministic policy enforcement).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (README refresh; verification rerun).
 
 ## Project
 
@@ -89,8 +89,8 @@ Firestore; no credentials needed).
   are reconciled with the live backend (DEC-008, DEC-009), and the
   Approvals queue reads the read-only `GET /actions` / `GET /action-results`
   (BL-027, DEC-011); follow-ups are BL-025, BL-026 and BL-027 (a)–(c).
-  Backend suite **137**, frontend **75** on `main`. Product record +
-  palette in root `PRODUCT.md`.
+  Fresh local verification on this branch: backend **212**, frontend **75**;
+  production build green. Product record + palette in root `PRODUCT.md`.
 - Frontend↔backend link (`link`, merged via PR #11 `5e53c66`): API mode verified
   end to end on the Firestore emulator (2026-10-09 S6). All 7 case tabs
   load real data; approve/reject/execute/report run from the UI with

@@ -1,4 +1,4 @@
-# IR Planner — Backend (Base Layer)
+# IR Planner - Backend
 
 Human-in-the-loop incident-response backend: the system of record for cases,
 evidence, versioned incident state, approvals, bounded simulated execution,
@@ -6,7 +6,13 @@ audit trail and reports.
 
 Owner: Raaj (Backend, Incident State, Data & Integration).
 
-## Status: Milestone 1, planning, approval, execution and reporting working
+## Status: Core workflow implemented
+
+The backend currently supports evidence ingestion, immutable GAS-lite incident
+state, stage-scoped policy retrieval, DeepSeek planning, deterministic policy
+enforcement, analyst approval, bounded simulation, audit history and structured
+JSON/PDF reporting. The latest merged-main backend baseline is **212 passing
+tests**.
 
 **Functional now:**
 
@@ -43,8 +49,9 @@ AI planning (BL-002):
 | GET | `/cases/{case_id}/plans` | List stored plans for a case |
 
 The planner runs behind `app/ai/langgraph_planner.py` (LangGraph over the
-OpenCode Go gateway, model `deepseek-v4.1-flash`). It returns proposals only;
-the backend validates every id before persisting. With no
+OpenCode Go gateway, model `deepseek-v4.1-flash`). It analyzes the incident,
+retrieves stage-relevant policy passages, and returns proposals only; the
+backend validates every id before persisting. With no
 `OPENCODE_GO_API_KEY` configured it falls back to `FakePlannerAdapter`, so
 the backend works without a key.
 
@@ -83,8 +90,8 @@ and a replacement action rather than silent re-use. The proposal, approval,
 execution and validation records are each stored and immutable; GAS-lite adds
 an `action_attempted_on` response edge referencing the stored `action_id` and
 `execution_id` without replacing those records. Execution goes through
-`simulator_adapter` (currently `FakeSimulatorAdapter`; the real simulator drops
-in behind the same interface). There is no report list endpoint yet (see BL-025
+`BoundedSimulatorAdapter`; `FakeSimulatorAdapter` is used only by tests that
+need a fixed outcome. There is no report list/latest endpoint yet (see BL-025
 in `docs/session/Backlog.md`).
 
 ## Architecture
@@ -105,7 +112,8 @@ data model):
 app/
   api/        FastAPI routers
   schemas/    Pydantic models (case, evidence, incident_state, plan, report)
-  services/   ingestion, state_manager, audit, planning, approval, execution, reporting
+  services/   ingestion, state_manager, gas_lite, policy_service, planning,
+              approval, execution, audit, reporting
   database/   firebase.py (client), repositories.py (all Firestore access)
   ai/         planner_adapter.py (Protocol + fake), langgraph_planner.py (real adapter)
   simulator/  bounded action simulator: catalog.py, engine.py, environment.json,
@@ -179,10 +187,15 @@ Never upload or index `scenarios/*/evaluator_only/`: those are the answer keys.
 
 ## Next steps (handoff)
 
-1. Smoke-test against the Firestore emulator (tests use a fake only).
+1. Re-run the Firestore emulator smoke path after backend changes; the latest
+   recorded full flow passed (BL-004), while unit tests continue to use the
+   in-memory fake.
 2. Add the read endpoints the UI still lacks (BL-025 report list; BL-013
-   global case list).
-3. Follow-on GAS-lite work: planner-populated routing / assessment fields,
+   global case list and historical plan detail).
+3. Fill report notifications, policy conformance and asset criticality from
+   `guidance.json` (BL-033), then align the simulator catalogue and frontend
+   fixtures with the policy pack (BL-035/BL-036/BL-039).
+4. Follow-on GAS-lite work: planner-populated routing / assessment fields,
    report-section invalidation, non-material version suppression, and frontend
    graph visualisation of the state history. (Policy-aware retrieval and
    deterministic backend policy enforcement are implemented — see above.)

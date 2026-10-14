@@ -64,8 +64,10 @@ Known backend gaps are surfaced explicitly rather than faked:
   endpoint).
 - `/execute` renders `execution_status` and `validation_status` separately;
   the UI never calls a non-existent `/validate` endpoint.
-- `GET /plans` returns only action IDs, so plans are ordered by `created_at`
-  and their actions render as an honest "N actions unavailable" count.
+- `GET /plans` returns plan metadata with action IDs but no action detail, so
+  plans are ordered by `created_at` and their actions render as an honest
+  "N actions unavailable" count. Historical plan detail is unavailable in API
+  mode because the backend has no plan-detail endpoint.
   The Approvals queue reads `GET /actions` (BL-027, DEC-011): actions
   awaiting a decision, plus approved actions not yet simulated, with a
   stale pre-warning when the action's state version is older than the
