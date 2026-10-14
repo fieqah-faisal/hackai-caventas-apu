@@ -21,7 +21,8 @@ from typing import Any
 from app.ai.langgraph_planner import load_guidance
 from app.config import get_settings
 from app.database import repositories
-from app.services import audit_service, state_manager
+from app.schemas.incident_state import CreatedFrom
+from app.services import audit_service, policy_service, state_manager
 from app.simulator.simulator_adapter import BoundedSimulatorAdapter, SimulatorAdapter
 
 
@@ -90,7 +91,7 @@ def execute(case_id: str, action_id: str) -> dict[str, Any]:
         case.get("current_state_version", 0)
     ):
         raise ExecutionError(
-            "approval was invalidated by a newer incident state; re-approval required",
+            "approval was invalidated by a newer incident state; create a new planning run and review the replacement action",
             "conflict",
         )
 
@@ -107,11 +108,50 @@ def execute(case_id: str, action_id: str) -> dict[str, Any]:
         raise ExecutionError(
             f"target '{target}' is not in the current incident state", "conflict"
         )
-    for evidence_id in proposal.get("evidence_ids", []):
-        if not repositories.evidence_exists(case_id, evidence_id):
-            raise ExecutionError(
-                f"evidence '{evidence_id}' does not exist", "conflict"
-            )
+
+    guidance = load_guidance()
+
+    # BL-019: an action with no supporting evidence (or references that do not
+    # exist in this case) must not execute. An empty list fails explicitly.
+    evidence_check = policy_service.valid_evidence_refs(
+        proposal.get("evidence_ids", []), repositories.evidence_exists, case_id
+    )
+    if not evidence_check.ok:
+        raise ExecutionError(evidence_check.detail, "conflict")
+
+    # Defense in depth: re-check the approver role against current policy using
+    # the role recorded on the approval. Never trust the planner's policy_refs.
+    acting_role = approval.get("approver_role") or action.get("decided_by_role")
+    role_policy = policy_service.evaluate_approval(
+        tool, target, acting_role, guidance=guidance
+    )
+    if not role_policy.ok:
+        reason = next((c for c in role_policy.checks if not c.ok), None)
+        raise ExecutionError(
+            f"approval role no longer satisfies policy: "
+            f"{reason.detail if reason else 'role check failed'}",
+            "conflict",
+        )
+
+    # POL-01: preservation must complete (effective) for this target before a
+    # re-image. Uses authoritative stored action results, not planner text.
+    sequencing = policy_service.preservation_satisfied(
+        tool, target, repositories.list_action_results(case_id)
+    )
+    if not sequencing.ok:
+        audit_service.record(
+            case_id,
+            "action_blocked",
+            {
+                "action_id": action_id,
+                "tool_name": tool,
+                "target_id": target,
+                "reason": sequencing.code,
+                "rule_ids": sequencing.rule_ids,
+                "detail": sequencing.detail,
+            },
+        )
+        raise ExecutionError(sequencing.detail, "conflict")
 
     outcome = get_simulator_adapter().execute_action(tool, target, case_id=case_id)
 
@@ -146,7 +186,11 @@ def execute(case_id: str, action_id: str) -> dict[str, Any]:
             "validation_status": validation_status,
         },
     )
-    state_manager.rebuild_and_version(case_id)
+    state_manager.rebuild_and_version(
+        case_id,
+        created_from=CreatedFrom.ACTION_RESULT,
+        change_reason=f"action result {execution_id} ({tool} on {target})",
+    )
 
     updated = repositories.get_action(case_id, action_id) or action
     return {"action": updated, "result": result_doc}

@@ -113,10 +113,21 @@ def _evidence_map(client: TestClient, case_id: str) -> dict[str, str]:
 
 
 def _decide(client: TestClient, case_id: str, action_id: str, decision: str, analyst: str,
-            reason: str) -> None:
+            reason: str) -> dict[str, Any]:
+    # The scripted analyst acts with escalation authority (it_manager satisfies
+    # every policy-pack approval rule). The backend policy guard still validates;
+    # this models an authorized SOC operator, it does not weaken enforcement.
+    # A 403 means the backend refused the approval on policy grounds (e.g. an
+    # out-of-scope target that is not an organization asset) — a legitimate
+    # outcome for unsafe plans, recorded rather than raised so the scenario
+    # continues. Other errors (404/409 at decision) still raise.
     resp = client.post(f"/cases/{case_id}/actions/{action_id}/decision",
-                       json={"decision": decision, "analyst": analyst, "reason": reason})
+                       json={"decision": decision, "analyst": analyst, "reason": reason,
+                             "approver_role": "it_manager"})
+    if resp.status_code == 403:
+        return {"status_code": 403, "detail": resp.json().get("detail"), "approved": False}
     resp.raise_for_status()
+    return {"status_code": resp.status_code, "approved": decision == "approve"}
 
 
 def _execute(client: TestClient, case_id: str, action_id: str) -> dict:
@@ -246,7 +257,14 @@ def run_scenario(scenario: dict[str, Any], planner: str, profile: str = "demo") 
                         executions.append({"tool": tool, "target": target, "via_replan": True,
                                            "skipped": "not re-proposed after re-plan"})
                         continue
-                _decide(client, case_id, action["action_id"], "approve", analyst, reason)
+                decided = _decide(client, case_id, action["action_id"], "approve", analyst, reason)
+                if not decided.get("approved"):
+                    executions.append({"tool": tool, "target": target,
+                                       "via_replan": position > 0,
+                                       "status_code": decided.get("status_code"),
+                                       "detail": decided.get("detail"),
+                                       "skipped": "approval refused by policy"})
+                    continue
                 outcome = _execute(client, case_id, action["action_id"])
                 if "result" not in outcome:
                     executions.append({"tool": tool, "target": target,

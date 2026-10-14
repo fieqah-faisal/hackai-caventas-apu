@@ -23,9 +23,17 @@ FILE_SUFFIXES = {"exe", "zip", "csv", "json", "txt"}
 NAMES = {"soc.lead", "soc.analyst", "it.manager", "ravi.adm", "threat.intel", "hakim.backup"}
 
 
-def _generated(root: Path) -> dict[str, bytes]:
+def _generated(root: Path) -> dict[str, str]:
+    """Map each generated file to its newline-normalized text content.
+
+    Compares text content, not raw bytes, so a checkout that materializes the
+    committed files with CRLF line endings (Windows + core.autocrlf) is still
+    considered current against the LF content the builder writes. All generated
+    scenario files are text (.json/.csv/.md); a genuine content change still
+    differs after normalization and fails the freshness check. See BL-031.
+    """
     return {
-        str(p.relative_to(root)): p.read_bytes()
+        str(p.relative_to(root)): p.read_text(encoding="utf-8").replace("\r\n", "\n")
         for p in root.rglob("*")
         if p.is_file()
         and p.suffix != ".py"
@@ -52,6 +60,25 @@ def test_generated_files_are_up_to_date(tmp_path):
     assert _generated(tmp_path) == _generated(ROOT), (
         "scenario files are stale: run `python -m scenarios.build_scenarios` from backend/"
     )
+
+
+def test_freshness_check_is_newline_insensitive_but_content_sensitive(tmp_path):
+    """BL-031: the freshness check must ignore LF-vs-CRLF-only differences while
+    still detecting a genuine content change."""
+    build_scenarios.build(tmp_path)
+    # Rewrite every generated file with CRLF line endings: equivalent content,
+    # different bytes. This must still read as "up to date".
+    for file in tmp_path.rglob("*"):
+        if file.is_file() and file.suffix != ".py" and "__pycache__" not in file.parts \
+                and file != tmp_path / "README.md":
+            text = file.read_text(encoding="utf-8")
+            file.write_bytes(text.replace("\n", "\r\n").encode("utf-8"))
+    assert _generated(tmp_path) == _generated(ROOT), "CRLF-only difference must be treated as current"
+
+    # A real content change must still be detected.
+    victim = next(p for p in tmp_path.rglob("*.json") if p.is_file())
+    victim.write_text(victim.read_text(encoding="utf-8") + "\nSTALE-MARKER\n", encoding="utf-8")
+    assert _generated(tmp_path) != _generated(ROOT), "a genuine content change must fail the check"
 
 
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=lambda s: s["scenario_id"])

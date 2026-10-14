@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -21,9 +23,23 @@ class Decision(str, Enum):
     REJECT = "reject"
 
 
+class ApproverRole(str, Enum):
+    """Declared analyst role for an approval (prototype RBAC).
+
+    This is a *declared* role on the decision request, not an authenticated
+    identity: Caventas has no auth / identity-provider integration yet, so the
+    role is asserted by the caller. The backend still enforces that the declared
+    role satisfies the policy pack's required_approver for the action."""
+
+    SOC_ANALYST = "soc_analyst"
+    IT_MANAGER = "it_manager"
+    DPO = "dpo"
+
+
 class DecisionRequest(BaseModel):
     decision: Decision
     analyst: str = Field(min_length=1)
+    approver_role: ApproverRole = ApproverRole.SOC_ANALYST
     reason: str = ""
 
 
@@ -35,5 +51,7 @@ class ApprovalRecord(BaseModel):
     state_version: int
     decision: str
     analyst: str
+    approver_role: str = ApproverRole.SOC_ANALYST.value
+    required_role: Optional[str] = None
     reason: str = ""
     created_at: datetime = Field(default_factory=_now)

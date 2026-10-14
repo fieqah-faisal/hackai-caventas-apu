@@ -3,6 +3,38 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-13 Deterministic policy enforcement + main merge into GAS-lite (DONE)
+
+- Merged `origin/main` (`cced814`: PR #10 policy pack, #11 API wiring, #15
+  stage retrieval, #18 verification-first, #19 analysis persistence, #20 README)
+  into `feat/gas-lite-state-fieqah` (merge `0ca4f3e`, pushed). Conflicts resolved
+  semantically in README, SUMMARY.md and the four session docs; SessionLog kept
+  append-only newest-first; DEC/BL ids unique. Backend 189 passed post-merge.
+- New `app/services/policy_service.py` (pure, testable): tool->rule mapping,
+  entity-id->asset resolution, asset-type, required-approver (POL-04 user_device
+  ->soc_analyst, POL-17 server/data_store/network->it_manager, POL-02/06->
+  it_manager), role seniority, non-empty+valid evidence (BL-019), POL-01
+  preserve-before-reimage. Fails CLOSED when an asset-specific rule applies but
+  the target is not in the asset inventory. Never trusts the planner's policy_refs.
+- `approver_role` added to DecisionRequest/ApprovalRecord/audit (allowlist
+  soc_analyst|it_manager|dpo). Approval enforces role->policy (403 on
+  insufficient). Execution re-checks role + evidence + POL-01 sequencing
+  (409 + `action_blocked` audit, no result) as defense in depth; stale-approval,
+  simulator and GAS-lite behaviour preserved. Declared-role prototype documented.
+- Frontend (minimal): `approver_role` DTO, threaded through provider/realProvider,
+  acting-role selector + required-role display in ApprovalsTab; 403 surfaces via
+  the existing error toast. Typecheck clean, 75 tests, build green.
+- Teammate-owned compatibility edits (documented): `test_simulator.py` +
+  `evaluation/harness.py` approve with `it_manager` (scripted escalation; guard
+  still validates); harness `_decide` now tolerates a 403 policy rejection
+  (records it for unsafe/out-of-scope plans instead of crashing); the API-level
+  blocked-reimage test now asserts the backend 409 guard (engine `blocked`
+  behaviour still unit-tested directly). Recalibrated `fake.json`/`unsafe.json`
+  (oracle 12/12 100%, unsafe 0/12 all gates fire, fake 0/5); `live.json`
+  preserved (12/12, 93.4); `oracle.json` line-ending-only diff reverted.
+- 16 new tests in `test_policy_enforcement.py`. Full backend **205 passed**;
+  frontend typecheck + **75** tests + build green. BL-018/BL-019/BL-032 closed.
+
 ### 2026-10-13 BL-017 planner analysis persisted; report findings/ATT&CK filled — live 12/12, mean 93.4 (DONE)
 
 - `PlanProposal` gains a validated `PlanAnalysis` (type, severity, confidence,
@@ -297,6 +329,58 @@
   BL-013, scope): `.agents/tasks/link-e2e-2026-10-09/s1-report.md` (local,
   untracked). Next: S2 API-mode end-to-end run on the Firestore emulator.
 
+### 2026-10-12 GAS-lite Tasks 4-8: state-manager integration, state-history API, response/effect, full green (DONE)
+
+- Merged PR #9 earlier as `2301bc2` (simulator/scenarios/evaluation); then
+  completed GAS-lite Core Tasks 4-8 on `feat/gas-lite-state-fieqah`.
+- **Task 4** (done earlier this slice): `state_manager._reconstruct`
+  delegates the entity/relationship/response/effect graph to the pure
+  `gas_lite.build_graph`, keeping the record-field timeline and PR #9's
+  timezone-aware sort + `simulated_at` ordering. `rebuild_and_version` carries
+  provenance (`created_from`, `parent_version`, `change_reason`) with the
+  three prior-state cases (unknown case -> abort; v0 -> v1 parent None; pointer
+  >=1 but snapshot missing -> abort, pointer untouched). Callers pass the
+  trigger (ingestion -> evidence_upload, execution -> action_result). Added the
+  always-True `_is_material` hook (non-material suppression is Follow-on).
+- **Task 5**: new `app/api/state.py` with additive read-only
+  `GET /cases/{id}/states` (version-ordered `StateVersionMeta`, [] not 404 for
+  a case with no versions, 404 for unknown case) and
+  `GET /cases/{id}/states/{version}` (full immutable `IncidentState`, distinct
+  404s). Registered in `main.py`; `GET /cases/{id}/state` unchanged. Thin
+  `state_manager.list_states` computes counts from stored docs without loading
+  full snapshots. 9 tests in `test_state_history_api.py`.
+- **Task 6**: verified approve->execute (Fake simulator: completed/ineffective)
+  produces an `action_attempted_on` response edge carrying `action_id` /
+  `execution_id` with NO positive condition change, while proposal/approval/
+  result records stay intact; focused unit proves a synthetic `effective`
+  result mutates only the target entity's `condition`. 3 tests in
+  `test_response_effect_integration.py`.
+- **Task 7**: targeted suites + full backend suite **162 passed, 0 failed**.
+  `git diff --check` clean, no conflict markers, no secrets/env/service-account/
+  cache/frontend in the change set, no live LLM / real infra (Fake adapters +
+  in-memory fake Firestore).
+- **Evaluation recalibration** (accepted): GAS-lite now enriches the entity set
+  (IP/domain/process/file), so the `fake`/`unsafe` planners propose against
+  different in-state targets and their committed scores changed. Regenerated
+  Aidan-owned `evaluation/results/{fake,unsafe}.json` + `SUMMARY.md` via
+  `python -m evaluation.run_eval --planner fake oracle unsafe`. Oracle
+  unchanged 12/12 100%; unsafe still 0/12 (all gates fire); fake mean
+  48.2 -> 42.9, still 0/5 scenarios; new `no_collateral_targets` failure on
+  sc01 is expected (richer out-of-scope entities); `sc03 CP2` for fake flipped
+  no->yes (85.0) but the scenario set still fails. `oracle.json` had only a
+  line-ending diff and was reverted to avoid a meaningless change. Informational
+  for Aidan; closes BL-016 (DOMAIN/IP now extracted).
+- **BL-031 fixed**: `tests/test_scenarios.py::_generated` now compares
+  newline-normalized text instead of raw bytes, so a CRLF Windows checkout of
+  the LF-written generated files reads as current; added a regression test
+  proving LF/CRLF equivalence AND that a genuine content change still fails.
+  No scenario regeneration, no repo-wide renormalization, no weakening of
+  content validation. Scenario suite 35 passed twice (deterministic).
+- Docs: `backend/README.md` (state-history endpoints, gas_lite, execution!=
+  effectiveness, stale-approval->replan), `.kiro/steering/structure.md`
+  (`app/api/state.py`, `app/services/gas_lite.py`). `tasks.md` Tasks 4-8 marked
+  done.
+
 ### 2026-10-12 PR #9 review changes: clean default, approval change deferred (DONE)
 
 - Simulator default profile is now `clean` (`config.py`, `.env.example`,
@@ -363,6 +447,87 @@
 - ATT&CK IDs not re-checked online (attack.mitre.org blocked here) - see
   `scenarios/README.md`.
 
+### 2026-10-09 GAS-lite Core Tasks 1-3 implemented (DONE; 4.x/6.x gated)
+
+- Committed the corrected spec checkpoint (`f4a964f`, notebook-only: BL-024
+  renumber + the actual Backlog entry that had been missing; item later
+  renamed BL-024->BL-030 at the PR #9 merge). Not pushed.
+- Task 1 (schema foundation): extended `app/schemas/incident_state.py`
+  backward-compatibly — added `EntityType.SESSION`; new enums
+  `RelationshipType` (closed 11-value allowlist, now the type of
+  `Relationship.relation`), `RelationshipCategory`, `ResponseFocus`,
+  `RoutingTransition` (`re_enter`), `CreatedFrom` (Core three), `ReportStatus`;
+  enriched `Entity` (evidence_ids/first_seen/last_seen/condition) and
+  `Relationship` (id/category/first_seen/last_seen/attributes/action_id/
+  execution_id); `IncidentState` provenance + response-situation + report
+  blocks (carried, not computed); added `StateVersionMeta`. All new fields
+  optional/defaulted.
+- Task 2 (pure graph service): created `app/services/gas_lite.py` — pure,
+  deterministic, no Firestore I/O, no LLM. Type-aware deterministic
+  `entity_id` (host UPPER, account/domain lower, ip canonical,
+  process/file host-prefixed + path-normalized; composite PROCESS/FILE/
+  SESSION prefix handled); `extract_entities` (host/account/process/FILE from
+  path/domain/ip; SESSION only from explicit `session_id`/`session_cookie_id`,
+  never fabricated); `extract_relationships` (allowlisted observed
+  context edges with evidence + deterministic `REL::` ids, no dangling edges);
+  `dedupe_and_merge` (idempotent); `build_response_edges`
+  (`action_attempted_on`, carries action_id/execution_id); effective-only
+  `apply_validated_effects` (ineffective never improves condition; effective
+  mutates only the target); deterministic id-ordered `build_graph`.
+- Task 3 (repository read): added read-only `list_state_versions(case_id)` to
+  `app/database/repositories.py` (existing functions untouched).
+- Tests: added `backend/tests/test_gas_lite.py` (20 tests) covering mandatory
+  obligations 1-6, 10-12 and backward-compat + determinism; full backend
+  suite **64 passed** (was 44). No regressions.
+- GATE respected: Tasks 4.x (state_manager integration) and 6.x
+  (execution-flow integration) NOT started — blocked on PR #9
+  (`state_manager.py`) merge + rebase; preserve PR #9's timezone-aware
+  timeline sorting and simulator-result behaviour. `state_manager.py` and
+  `execution_service.py` were NOT modified.
+- Not committed/pushed (implementation): awaiting explicit approval. Changed
+  files: `app/schemas/incident_state.py`, `app/services/gas_lite.py`,
+  `app/database/repositories.py`, `tests/test_gas_lite.py`, `tasks.md`,
+  session notebook. See BL-030, DEC-010 (item renamed BL-024->BL-030 at the PR #9 merge).
+### 2026-10-09 GAS-lite incident-state specification complete (SPEC DONE, IMPL PENDING)
+
+- Authored the GAS-lite (Graph-as-State, STAIR-inspired) spec at
+  `.kiro/specs/caventas-gas-lite/` (requirements.md, design.md, tasks.md,
+  .config.kiro). Requirements-first; all three documents pass spec-format
+  validation. This is a SPEC checkpoint only — no backend code written yet.
+- Scope: a backward-compatible extension of the existing versioned
+  incident state (Raaj's base layer: `app/schemas/incident_state.py`,
+  `app/services/state_manager.py`, `app/database/repositories.py`) plus a
+  new PURE `app/services/gas_lite.py` graph builder and two additive read
+  endpoints (`GET /cases/{id}/states`, `/states/{version}`). STAIR-inspired,
+  not a reproduction; no Firestore replacement, no graph DB, no six agents.
+- Key design decisions captured (see DEC-010): enriched Entity/Relationship
+  (evidence_ids, first/last_seen, condition; deterministic type-aware ids;
+  `RelationshipType` closed-allowlist enum; context/attack/response
+  categories); IncidentState provenance (`parent_version`, `change_reason`,
+  `created_from`) + optional response-situation and report-status blocks
+  CARRIED but not computed in Core; condition mutates only on
+  validated-effective results; three-case prior-state handling
+  (unknown→abort; v0→v1 parent=None; pointer≥1 missing snapshot→abort).
+- Correction pass applied before implementation: all 15 mandatory-obligation
+  tests are mandatory (no optional markers); `process_start.path`→FILE and
+  session only from an explicit `session_id`/`session_cookie_id` (never
+  fabricated; planner_smoke has no session field so a synthetic test record
+  is used); tool name corrected to `revoke_sessions`; response edges
+  reference the action-result record (no separate "validation record";
+  approval authoritative via `action_id`); assessment/routing population,
+  report-section invalidation, full action-lifecycle projection and
+  non-material version suppression all moved to Follow-on; `re_enter` used
+  consistently.
+- INTEGRATION WARNING: PR #9 modifies `state_manager.py` and must be
+  merged/rebased before the state-manager and execution-flow integration
+  (tasks 4.x, 6.x) are finalized; preserve PR #9's timezone-aware timeline
+  sorting and simulator-result behaviour. See BL-030.
+- Numbering note: DEC-010 is unique; the GAS-lite backlog item was renamed
+  BL-020->BL-030 at the PR #9 merge to avoid colliding with PR #9's
+  BL-014..BL-024 range.
+- Branch intended for implementation: `feat/gas-lite-state-fieqah`. Not yet
+  started; stopped at the corrected spec checkpoint for Syafieqah/Raaj review.
+
 ### 2026-10-09 Bounded action simulator wired into the backend (DONE)
 
 - `backend/app/simulator/`: `catalog.py` (9 tools = the planner's
@@ -379,6 +544,7 @@
 - Tests: `tests/test_simulator.py` (23); suite **66 passed**
   (`cd backend && ../.venv/bin/python -m pytest -q`).
 - Branch `security-scenario-simulation-evaluation-lead` (Aidan).
+
 ### 2026-10-08 PR #8 (frontend) merged; PR #7 synced (DONE)
 
 - PR #8 merged (`3a6a323`): React/Vite frontend — dashboard, create-case

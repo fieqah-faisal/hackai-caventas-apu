@@ -13,7 +13,7 @@ from app.services import approval_service
 
 router = APIRouter(prefix="/cases", tags=["approvals"])
 
-_STATUS_FOR_KIND = {"not_found": 404, "conflict": 409}
+_STATUS_FOR_KIND = {"not_found": 404, "conflict": 409, "forbidden": 403}
 
 
 @router.post("/{case_id}/actions/{action_id}/decision")

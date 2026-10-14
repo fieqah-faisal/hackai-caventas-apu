@@ -44,6 +44,7 @@ import {
 } from "../mapping";
 import type {
   ActionResultDTO,
+  ApproverRoleDTO,
   AuditEventDTO,
   CaseDTO,
   DecisionRequestDTO,
@@ -316,6 +317,7 @@ export class RealProvider implements DataProvider {
     decision: DecisionKind,
     analyst: string,
     reason: string,
+    approverRole?: ApproverRoleDTO,
   ): Promise<Outcome<{ state: string }>> {
     if (decision === "request_more_investigation") {
       return {
@@ -325,6 +327,7 @@ export class RealProvider implements DataProvider {
     }
     // Typed as the backend DecisionRequest so the compiler pins the enum.
     const body: DecisionRequestDTO = { decision, analyst, reason };
+    if (approverRole) body.approver_role = approverRole;
     const r = await apiPost<DecisionResponseDTO>(
       `/cases/${caseId}/actions/${actionId}/decision`,
       body,

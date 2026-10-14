@@ -85,7 +85,7 @@ def test_execute_rejected_action_conflicts(client, monkeypatch):
     assert resp.status_code == 409
 
 
-def test_execute_after_new_state_requires_reapproval(client, monkeypatch):
+def test_execute_after_new_state_requires_replanning(client, monkeypatch):
     case_id, action_id = _approved_action(client, monkeypatch)
     # new evidence creates state v2, invalidating the v1-bound approval
     client.post(

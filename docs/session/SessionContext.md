@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-12.
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-13 (GAS-lite merged; deterministic policy enforcement).
 
 ## Project
 
@@ -94,6 +94,29 @@ Firestore; no credentials needed).
   execution and validation shown apart; audit maps the real shape (no UI
   surface yet). Dashboard is honestly "unsupported" (BL-013). Open:
   BL-013, BL-025..BL-029.
+- GAS-lite incident-state (BL-030, **Core complete**): STAIR-inspired
+  (not a STAIR reproduction) enrichment of the versioned incident state.
+  All Core Tasks 1-8 implemented on `feat/gas-lite-state-fieqah`; merged with
+  the latest `main` (policy pack v1.0, API wiring, stage retrieval,
+  verification-first skill, analysis persistence). Caventas stores immutable,
+  versioned incident-state graph snapshots in Firestore (append-only, pointed
+  to by `current_state_version`); the graph is built by the pure
+  `app/services/gas_lite.py` (no Firestore I/O, no LLM) while `state_manager`
+  owns persistence + the record-field timeline (PR #9 timezone-aware sort /
+  `simulated_at` ordering preserved). Planning is bound to an exact state
+  version; a stale approval requires a new planning run and a replacement
+  action. Evidence and response relationships are record-grounded; AI
+  recommendations are not authorization; actions are bounded simulations;
+  execution and effectiveness are distinct (only a validated-`effective`
+  outcome applies its allowlisted condition change). Additive
+  `GET /cases/{id}/states[/{version}]` expose immutable history;
+  `GET /cases/{id}/state` is unchanged. Evaluation calibration regenerated
+  after entity enrichment (oracle 12/12, unsafe 0/12, fake mean 48.2->42.9).
+  Scenario freshness test made cross-platform (BL-031 closed). Spec at
+  `.kiro/specs/caventas-gas-lite/`; decisions in DEC-010. Follow-on:
+  planner-populated routing/assessment, report-section invalidation,
+  non-material version suppression, frontend graph visualisation.
+- Deterministic policy enforcement (BL-032/018/019, merged into `feat/gas-lite-state-fieqah`): `app/services/policy_service.py` derives the required approver role, target asset type, evidence validity and POL-01 preserve-before-reimage from `guidance.json` + stored records — never the planner's `policy_refs`. `approver_role` (soc_analyst|it_manager|dpo) is on the decision request, approval record and audit; approval returns 403 on an insufficient role, execution re-checks role/evidence/sequencing (409 + audit, no result), unknown assets fail closed. Declared-role prototype (no auth yet). Backend 205 passed, frontend 75 passed, build green.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

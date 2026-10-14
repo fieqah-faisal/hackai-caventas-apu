@@ -38,7 +38,6 @@
   and record the change. — open / team
 
 ### P2
-
 - BL-009 — Confirm with Syafieqah whether the cloud Firebase project was
   created; if so, obtain the project ID and have the service-account key
   placed at `backend/secrets/serviceAccount.json` (gitignored) to enable an
@@ -58,16 +57,8 @@
   per plan runs; the next needs a fresh plan). Re-approval prototype kept
   out of PR #9 (commit `abab1c4`, reverted). See DEC-007. — deferred /
   Raaj + Syafieqah + Aidan
-- BL-016 — Extract DOMAIN/IP entities into the incident state so
-  `block_domain` can be proposed. — open / Raaj
-- BL-018 — Approver roles so POL-02 (IT manager) is enforced. — open /
-  Raaj + Syafieqah
-- BL-019 — Refuse execution of actions that cite no evidence. — open / Raaj
 - BL-020 — Mark evidence as untrusted data in planner prompts (sc02
   prompt-injection test). — open / Airil
-- BL-032 — Policy check: enforce required_approver in approval_service
-  and order rules (POL-01) in execution_service; add approver_role to
-  the decision payload. — open / Raaj
 - BL-033 — Fill report notifications, policy_conformance and asset
   criticality from guidance.json. — open / Raaj
 - BL-035 — Confirm asset host names match the synthetic logs
@@ -145,7 +136,6 @@
   report tests redirect `report_path`. — open / Raaj
 
 ## Deferred
-
 - BL-006 (P3) — Add a thin `SKILL.md` wrapper pointing to
   `docs/session/README.md` only if a teammate's agent supports project
   skills and is not covered by `AGENTS.md` / steering. — deferred until a

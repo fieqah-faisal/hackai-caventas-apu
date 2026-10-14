@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useDataMode } from "@/lib/useDataMode";
 import { riskLabel, stageLabel } from "@/lib/format";
 import type { ApprovalItemVM, DecisionKind, ExecutionResultVM } from "@/lib/types";
+import type { ApproverRoleDTO } from "@/lib/api/dto";
 import { useWorkspace } from "../context";
 
 const p = getProvider();
@@ -44,6 +45,7 @@ function ApprovalCard({ item, caseId, onChanged }: { item: ApprovalItemVM; caseI
   const [comment, setComment] = useState("");
   const [result, setResult] = useState<ExecutionResultVM | null>(null);
   const [localState, setLocalState] = useState(item.state);
+  const [actingRole, setActingRole] = useState<ApproverRoleDTO>("soc_analyst");
 
   // Request-more-investigation is unavailable in API mode (backend supports
   // approve/reject only). Shown but disabled with an explanation there.
@@ -55,7 +57,7 @@ function ApprovalCard({ item, caseId, onChanged }: { item: ApprovalItemVM; caseI
       return;
     }
     setBusy(true);
-    const out = await p.submitDecision(caseId, item.actionId, decision, "Fieqah A.", comment.trim());
+    const out = await p.submitDecision(caseId, item.actionId, decision, "Fieqah A.", comment.trim(), actingRole);
     setBusy(false);
     if (out.kind === "ok") {
       setLocalState(out.value.data.state as typeof item.state);
@@ -136,6 +138,21 @@ function ApprovalCard({ item, caseId, onChanged }: { item: ApprovalItemVM; caseI
       {/* Actions */}
       {!decided ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-1.5 text-meta text-text-muted">
+            Acting as
+            <select
+              value={actingRole}
+              onChange={(e) => setActingRole(e.target.value as ApproverRoleDTO)}
+              disabled={busy}
+              className="rounded border border-border-subtle bg-canvas px-1.5 py-0.5 text-base text-text-primary focus-visible:outline-none"
+              aria-label="Acting approver role"
+            >
+              <option value="soc_analyst">SOC analyst</option>
+              <option value="it_manager">IT manager</option>
+              <option value="dpo">DPO</option>
+            </select>
+          </label>
+          <span className="text-meta text-text-muted">Required: {item.requiredApprover}</span>
           <Button variant="primary" size="sm" disabled={busy} onClick={() => decide("approve")} leadingIcon={<Icon name="success" size={18} />}>Approve</Button>
           <Button variant="secondary" size="sm" disabled={busy} onClick={() => decide("reject")} leadingIcon={<Icon name="blocked" size={18} />}>Reject</Button>
           <Button

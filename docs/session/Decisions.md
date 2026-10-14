@@ -170,6 +170,7 @@ calls in the live evaluation); approved-but-stale actions stay visible as
 
 **Links:** `backend/app/services/approval_service.py`,
 `backend/evaluation/harness.py`, BL-024.
+
 ## DEC-008: API-mode contract mismatches are reconciled in the frontend mapping layer (2026-10-12)
 
 **Context:** The `link` API-mode run against the Firestore emulator showed
@@ -425,3 +426,66 @@ scoring).
 `backend/app/ai/langgraph_planner.py`,
 `backend/app/services/planning_service.py`,
 `backend/app/services/reporting.py`, BL-017.
+
+## DEC-010: GAS-lite incident-state model (STAIR-inspired) (2026-10-09)
+
+**Context:** The incident state needed to become the complete, versioned
+understanding of an incident (entities, relationships, timeline, response
+situation, action outcomes, report status) rather than a thin snapshot, to
+support the Caventas Observe->Reconstruct->Analyze->Route->Propose->Approve
+->Validate->Re-plan->Report pipeline. STAIR (arXiv 2608.09524) is the
+conceptual reference; we adopt its Graph-as-State, immutable evolving state,
+and effect-validation ideas without copying its source or reproducing its
+six-agent / experience-DB machinery.
+
+**Options considered:** (1) a second/separate state system or a graph DB
+(Neo4j) — rejected, violates the Firestore decision (DEC-001) and the
+"extend, don't rebuild" constraint; (2) collapse observed status and
+recommended focus into the existing single `stage`-like field — rejected,
+conflates "what the org is doing" with "what we recommend"; (3) a
+backward-compatible extension of the existing `IncidentState` +
+`state_manager` + a new PURE `gas_lite.py` builder — chosen.
+
+**Decision:** Extend `app/schemas/incident_state.py` with optional/defaulted
+fields only: enriched `Entity` (evidence_ids, first/last_seen, condition)
+and `Relationship` (deterministic id, `RelationshipType` closed-allowlist
+enum, context/attack/response category, action/execution refs); provenance
+(`parent_version`, `change_reason`, `created_from`); and response-situation
++ report-status blocks that Core CARRIES but does not COMPUTE. Build the
+graph in a pure, deterministic, LLM-free `app/services/gas_lite.py`
+(entity extraction, type-aware deterministic ids, dedupe/merge, response
+edges, effect application, snapshot assembly). Rules: entity ids are
+type-aware normalized (host UPPER, account/domain lower, ip canonical,
+process/file path-normalized) with the readable value kept in `Entity.name`;
+SESSION only from an explicit `session_id`/`session_cookie_id` (never
+fabricated); a completed execution is never automatically effective —
+only a validated-effective action-result mutates the target entity
+`condition`; immutable append-only versions with three-case prior-state
+handling (unknown case -> abort; `current_state_version==0` -> create v1
+with `parent_version=None`; pointer>=1 with a missing prior snapshot ->
+abort as a data-integrity error, pointer unchanged). `created_from` uses an
+enum (Core: initial_reconstruction, evidence_upload, action_result);
+`RoutingTransition` uses the value `re_enter`. Action lifecycle is
+represented via separate decision/execution/validation fields that map to
+the existing backend status model (`awaiting_approval -> approved|rejected
+-> verified|failed`); the action-result record carries both
+`execution_status` and `validation_status` (there is no separate
+"validation record"), and the approval stays authoritative in the approvals
+collection, traceable via `action_id`.
+
+**Tradeoff:** Adds schema surface and a new service, and defers the
+behaviour that populates assessment/routing, computes report-section
+invalidation, projects the full action lifecycle, and suppresses
+non-material versions to Follow-on — so some new fields exist before they
+are populated. Accepted to keep Core small, backward-compatible and
+test-provable. Integration depends on PR #9 (state_manager.py); its
+timezone-aware timeline sorting and simulator-result behaviour must be
+preserved on rebase.
+
+**Numbering note:** DEC-010 (and the GAS-lite backlog item) were chosen with a deliberate gap
+to avoid colliding with DEC/BL numbers introduced by PR #9 / PR #10, which
+are not yet in this local tree. Reconcile on next `main` sync.
+
+**Links:** `.kiro/specs/caventas-gas-lite/` (requirements.md, design.md,
+tasks.md); `.kiro/steering/structure.md`, `.kiro/steering/tech.md`;
+DEC-001; BL-030; arXiv 2608.09524.
