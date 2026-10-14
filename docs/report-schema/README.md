@@ -241,7 +241,7 @@ Checked against `backend/app/services/reporting.py` on `main`. "Filled" means th
 | 17 | Sign-off | Empty | No sign-off endpoint yet, so reports stay `draft` |
 | A | Evidence index | Filled | Source file, line, time, hash and the untrusted flag |
 
-Three notes. The generator also adds `pdf_path`, a file path on the server; it is not report content and the UI must never show it as a link. The stored action uses `required_role` and `decided_by_role`, which the report shows as `required_approver` and `approver_role` (the policy pack's and the approval record's names). And report `status` stays `final`, which is what the evaluation harness checks (`report_not_final_without_sign_off`); the incident state's report-status block calls the same step `finalized`.
+Three notes. The generator also adds `pdf_path`, a file path on the server; it is not report content and the UI must never show it as a link. The stored action uses `required_role` and `decided_by_role`, which the report shows as `required_approver` and `approver_role` (the policy pack's and the approval record's names). And report `status` stays `draft` while there is no sign-off endpoint; the evaluation harness checks this (`report_not_final_without_sign_off`); the incident state's report-status block calls the same step `finalized`.
 
 ## Open questions for the team
 
