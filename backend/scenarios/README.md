@@ -84,11 +84,13 @@ event_time, event_type, host?, account?, source, <source-native fields...>, reco
 
 ## Policies used
 
-The policy ids are the ones in `fixtures/guidance.json` (Aida's pack):
-POL-01 preserve before re-image, POL-02 IT-manager approval to disable a
-staff account, POL-03 tell the DPO when customer personal data is accessed
-(a fictional company rule, not a statement of law), POL-04 a SOC analyst
-may isolate a laptop alone.
+The scenarios exercise these central rules from `fixtures/guidance.json`
+(Aida's policy pack v1.0): POL-01 preserve before re-image, POL-02 IT-manager
+approval to disable a staff account, POL-03 tell the DPO when customer
+personal data is accessed (a fictional company rule, not a statement of law),
+and POL-04 a SOC analyst may isolate a laptop alone. The full pack contains 19
+structured rules; the remaining rules are available to the planner and
+backend policy guard but are not all scenario-specific assertions.
 
 ## ATT&CK mapping
 

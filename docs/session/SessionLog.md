@@ -3,6 +3,23 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-14 README post-merge refresh (DONE)
+
+- Audited all five repository README files against the current backend,
+  frontend, scenarios, fixtures, routes, evaluation artifacts and notebook;
+  the session-protocol README required no content change.
+- Updated the root, backend, frontend and scenario READMEs for stage-scoped
+  retrieval, current simulator ownership, open handoff items, API-mode plan
+  limitations and the full 19-rule policy pack.
+- Branch `docs/readme-postmerge-refresh`, base `ef610fc`; documentation changes
+  remain uncommitted.
+- Verification: `git diff --check`; backend `../.venv/bin/python -m pytest -q`
+  (**212 passed**); frontend `npm run test` (**75 passed**) and `npm run build`
+  (green); evaluation fixtures confirmed 5 scenarios, 12 checkpoints, 19
+  rules, 8 assets, 9 tools and zero live report gaps.
+- Next: review and commit the documentation changes; open product follow-ups
+  remain tracked in `docs/session/Backlog.md`.
+
 ### 2026-10-13 BL-020 merged main (PR #22 policy guard) — post-merge live 12/12, mean 93.4 (DONE)
 
 - Merged `origin/main` (`70b6c56`, PR #22: GAS-lite + deterministic policy
