@@ -98,7 +98,7 @@ cp .env.example .env                           # fill values; the AI planner key
 
 # Local Firestore (no cloud project needed) — optional; run from the repo root:
 #   npx --yes firebase-tools emulators:start --only firestore
-#   then set FIRESTORE_EMULATOR_HOST=localhost:8080 in .env
+#   then set FIRESTORE_EMULATOR_HOST=localhost:8080 in backend/.env
 
 ../.venv/bin/uvicorn app.main:app --reload     # http://localhost:8000/docs
 ```
