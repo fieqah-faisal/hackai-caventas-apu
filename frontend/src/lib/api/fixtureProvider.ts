@@ -31,6 +31,7 @@ import type {
   AgentPlanningVM,
   AnalysisVM,
   AnalysisRunVM,
+  AnalystReviewVM,
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
@@ -61,6 +62,7 @@ import {
 } from "./provider";
 
 const minsAgo = (m: number) => new Date(NOW.getTime() - m * 60_000).toISOString();
+const caseEdits = new Map<string, { title: string; description: string }>();
 
 /**
  * Mutable demo state for the Infostealer case so the workflow advances:
@@ -75,6 +77,7 @@ interface DemoState {
   results: ExecutionResultVM[];
   runs: Record<string, AnalysisRunVM>;
   audit: AuditEventVM[];
+  reviews: AnalystReviewVM[];
 }
 
 const demo: DemoState = {
@@ -85,6 +88,7 @@ const demo: DemoState = {
   decisionNote: {},
   results: [],
   runs: {},
+  reviews: [],
   audit: [
     { eventId: "EV-A1", kind: "case_created", caseId: INFOSTEALER_CASE_ID, summary: "Case opened — Infostealer to session hijack", at: minsAgo(220) },
     { eventId: "EV-A2", kind: "evidence_ingested", caseId: INFOSTEALER_CASE_ID, summary: "4 endpoint/network records ingested (batch 1)", at: minsAgo(200) },
@@ -312,13 +316,15 @@ export class FixtureProvider implements DataProvider {
   async getCaseHeader(caseId: string): Promise<Outcome<CaseHeaderVM>> {
     const c = this.caseById(caseId);
     if (!c) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
+    const edit = caseEdits.get(caseId);
     const agentState = caseId === INFOSTEALER_CASE_ID
       ? this.currentVersion() > demo.revealedBatch ? `Plan v${demo.reanalysisDone ? 2 : 1} needs review` : demo.reanalysisDone ? "Plan v2 ready" : demo.revealedBatch === 2 ? "Plan v1 needs review" : "Plan v1 ready"
       : null;
     return ok(
       {
         caseId: c.caseId,
-        title: c.title,
+        title: edit?.title ?? c.title,
+        description: edit?.description ?? c.description ?? "",
         status: c.status,
         severity: c.severity,
         stage: c.stage,
@@ -362,7 +368,7 @@ export class FixtureProvider implements DataProvider {
   async getAnalysis(caseId: string): Promise<Outcome<AnalysisVM>> {
     if (caseId !== INFOSTEALER_CASE_ID) {
       return ok(
-        { classification: null, confidence: { value: null, basis: "No analysis yet", advisory: true }, affectedEntities: [], attackTechniques: [], missingEvidence: [], hypotheses: [] },
+        { classification: null, summary: null, confidence: { value: null, basis: "No model-reported confidence is stored.", advisory: true }, planner: { kind: "deterministic", adapter: "FixtureProvider", model: "deterministic-fixture-v1" }, affectedEntities: [], attackTechniques: [], missingEvidence: [], hypotheses: [] },
         "synthetic",
       );
     }
@@ -372,11 +378,11 @@ export class FixtureProvider implements DataProvider {
   async getPlans(caseId: string): Promise<Outcome<PlanVM[]>> {
     if (caseId !== INFOSTEALER_CASE_ID) return ok([], "synthetic");
     const plans: PlanVM[] = [
-      { planId: infostealerPlanV1.planId, version: 1, basedOnStateVersion: 1, stage: infostealerPlanV1.stage, createdAt: infostealerPlanV1.createdAt, missingEvidence: infostealerPlanV1.missingEvidence, actions: infostealerPlanV1Actions.map(fxActionToVM) },
+      { planId: infostealerPlanV1.planId, version: 1, basedOnStateVersion: 1, stage: infostealerPlanV1.stage, createdAt: infostealerPlanV1.createdAt, missingEvidence: infostealerPlanV1.missingEvidence, planner: { kind: "deterministic", adapter: "FixtureProvider", model: "deterministic-fixture-v1" }, actions: infostealerPlanV1Actions.map(fxActionToVM) },
     ];
     if (demo.reanalysisDone) {
       // v2 is the scenario's scripted re-plan after evidence batch 2.
-      plans.push({ planId: infostealerPlanV2.planId, version: 2, basedOnStateVersion: 2, stage: infostealerPlanV2.stage, createdAt: infostealerPlanV2.createdAt, missingEvidence: infostealerPlanV2.missingEvidence, actions: infostealerPlanV2Actions.map(fxActionToVM), replanExplanation: INFOSTEALER_REPLAN_EXPLANATION });
+      plans.push({ planId: infostealerPlanV2.planId, version: 2, basedOnStateVersion: 2, stage: infostealerPlanV2.stage, createdAt: infostealerPlanV2.createdAt, missingEvidence: infostealerPlanV2.missingEvidence, planner: { kind: "deterministic", adapter: "FixtureProvider", model: "deterministic-fixture-v1" }, actions: infostealerPlanV2Actions.map(fxActionToVM), replanExplanation: INFOSTEALER_REPLAN_EXPLANATION });
     }
     return ok(plans, "synthetic");
   }
@@ -446,6 +452,36 @@ export class FixtureProvider implements DataProvider {
     return this.buildReport(caseId);
   }
 
+  async getAnalystReviews(caseId: string): Promise<Outcome<AnalystReviewVM[]>> {
+    if (!this.caseById(caseId)) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
+    return ok(demo.reviews.filter((review) => review.caseId === caseId), "synthetic");
+  }
+
+  async createAnalystReview(
+    caseId: string,
+    input: Omit<AnalystReviewVM, "reviewId" | "caseId" | "createdAt">,
+  ): Promise<Outcome<AnalystReviewVM>> {
+    if (!this.caseById(caseId)) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
+    if (input.targetType !== "case" && input.targetType !== "plan") {
+      return { kind: "http_error", status: 422, detail: `review target type is not supported yet: ${input.targetType}` };
+    }
+    const review: AnalystReviewVM = {
+      ...input,
+      reviewId: `REVIEW-DEMO-${demo.reviews.length + 1}`,
+      caseId,
+      createdAt: new Date(NOW.getTime() + demo.reviews.length * 1000).toISOString(),
+    };
+    demo.reviews.push(review);
+    return ok(review, "synthetic");
+  }
+
+  async updateCase(caseId: string, input: { title: string; description: string }): Promise<Outcome<{ title: string; description: string }>> {
+    if (!this.caseById(caseId)) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
+    const updated = { title: input.title.trim(), description: input.description.trim() };
+    caseEdits.set(caseId, updated);
+    return ok(updated, "synthetic");
+  }
+
   private buildReport(caseId: string): Outcome<ReportVM> {
     const c = this.caseById(caseId);
     if (!c) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
@@ -512,6 +548,12 @@ export class FixtureProvider implements DataProvider {
         generatedAt: minsAgo(1),
         version: 1,
         plannerModel: "fixture-planner",
+        plannerKind: "deterministic",
+        evidenceCount: [...infostealerEvidenceBatch1, ...infostealerEvidenceBatch2].length,
+        analysisSummary: "Synthetic analysis: credential theft escalated to session hijack and CRM export (fixture data).",
+        confirmedByAnalyst: false,
+        signOff: null,
+        reviews: [],
         stateVersion: 2,
         recoveryStatus: "containing",
         planId: "PLAN-FIXTURE-02",

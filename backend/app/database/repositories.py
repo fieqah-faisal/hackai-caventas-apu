@@ -15,6 +15,7 @@ Firestore layout (see .kiro/steering/structure.md):
         action_results/{exec_id}
         audit_events/{audit_id}
         reports/{report_id}
+        analyst_reviews/{review_id}
 """
 from __future__ import annotations
 
@@ -33,6 +34,7 @@ ACTION_RESULTS = "action_results"
 REPORTS = "reports"
 AUDIT_EVENTS = "audit_events"
 ANALYSIS_RUNS = "analysis_runs"
+ANALYST_REVIEWS = "analyst_reviews"
 _fake_run_lock = Lock()  # test fake has no transaction; real Firestore uses one
 
 
@@ -128,6 +130,11 @@ def list_plans(case_id: str) -> list[dict[str, Any]]:
     return [d.to_dict() for d in docs]
 
 
+def get_plan(case_id: str, plan_id: str) -> dict[str, Any] | None:
+    snap = _case_ref(case_id).collection(PLANS).document(plan_id).get()
+    return snap.to_dict() if snap.exists else None
+
+
 def add_action(case_id: str, action_id: str, data: dict[str, Any]) -> None:
     _case_ref(case_id).collection(ACTIONS).document(action_id).set(data)
 
@@ -177,6 +184,17 @@ def get_report(case_id: str, report_id: str) -> dict[str, Any] | None:
 
 def list_reports(case_id: str) -> list[dict[str, Any]]:
     docs = _case_ref(case_id).collection(REPORTS).stream()
+    return [d.to_dict() for d in docs]
+
+
+# --- Analyst reviews -----------------------------------------------------
+
+def add_analyst_review(case_id: str, review_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(ANALYST_REVIEWS).document(review_id).set(data)
+
+
+def list_analyst_reviews(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(ANALYST_REVIEWS).stream()
     return [d.to_dict() for d in docs]
 
 

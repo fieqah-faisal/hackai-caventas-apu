@@ -154,6 +154,7 @@ export function toCaseHeaderVM(
   return {
     caseId: dto.case_id,
     title: dto.title,
+    description: dto.description,
     status: dto.status as CaseStatus,
     severity: null, // backend Case carries no severity; only analysis supplies it
     stage: stageFromPlans(plans),
@@ -293,6 +294,9 @@ export function toPlanVM(
     stage: run.stage,
     createdAt: run.created_at,
     missingEvidence: run.missing_evidence,
+    planner: run.planner
+      ? { kind: run.planner.kind, adapter: run.planner.adapter, model: run.planner.model ?? null }
+      : { kind: "unknown", adapter: "Not recorded", model: null },
     actions: run.actions.map((a) => toResponsePlanActionVM(a, run.stage, state)),
   };
 }
@@ -801,7 +805,30 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
     status: dto.status,
     generatedAt: dto.created_at,
     version: dto.version,
-    plannerModel: dto.planner_model || null,
+    plannerModel: analyst?.overview.planner_model || dto.planner_model || null,
+    plannerKind: analyst?.overview.planner_kind || "unknown",
+    evidenceCount: analyst?.overview.evidence_count ?? 0,
+    analysisSummary: analyst?.analysis_summary || "Analysis has not produced a summary yet.",
+    confirmedByAnalyst: dto.classification.confirmed_by_analyst,
+    signOff: dto.sign_off
+      ? {
+          analyst: dto.sign_off.analyst,
+          role: dto.sign_off.role,
+          at: dto.sign_off.at,
+          comments: dto.sign_off.comments || "",
+        }
+      : null,
+    reviews: (analyst?.analyst_reviews || []).map((review) => ({
+      reviewId: review.review_id,
+      analyst: review.analyst,
+      analystRole: review.analyst_role,
+      targetType: review.target_type,
+      targetId: review.target_id ?? null,
+      reviewType: review.review_type,
+      comment: review.comment,
+      stateVersion: review.state_version ?? null,
+      createdAt: review.created_at,
+    })),
     stateVersion: dto.current_state_version ?? null,
     recoveryStatus: dto.recovery_status ?? null,
     planId: dto.plan_id ?? null,

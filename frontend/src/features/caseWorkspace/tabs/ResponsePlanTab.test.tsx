@@ -14,6 +14,7 @@ const ctx: WorkspaceCtx = {
   header: {
     caseId: "CASE-TEST0001",
     title: "Synthetic login anomaly",
+    description: "Synthetic test case",
     status: "investigating",
     severity: null,
     stage: "containment",
@@ -53,6 +54,7 @@ function apiPlan(version: number): PlanVM {
     stage: "containment",
     createdAt: `2026-10-12T02:45:5${version}.000000+00:00`,
     missingEvidence: [],
+    planner: { kind: "unknown", adapter: "Not recorded", model: null },
     actions: [],
     actionsUnavailable: { count: 1, reason: UNAVAILABLE },
   };

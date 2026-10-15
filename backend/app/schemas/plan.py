@@ -14,6 +14,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -50,10 +52,19 @@ class ProposedFinding(BaseModel):
     confidence: float = 0.0
 
 
+class PlannerIdentity(BaseModel):
+    """Immutable provenance for the adapter that produced a stored plan."""
+
+    kind: Literal["live_ai", "deterministic", "unknown"] = "unknown"
+    adapter: str
+    model: str | None = None
+
+
 class PlanAnalysis(BaseModel):
     """The planner's persisted analysis (BL-017); the report reads this."""
 
     incident_type: str = ""
+    summary: str = ""
     scope: str = ""
     severity: str = ""
     confidence: float = 0.0

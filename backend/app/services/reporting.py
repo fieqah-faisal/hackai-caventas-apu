@@ -770,7 +770,7 @@ def _build_analyst_report(
     techniques: list[str],
     actions: list[dict[str, Any]],
     guidance: dict[str, Any],
-    planner_model: str,
+    reviews: list[dict[str, Any]],
 ) -> AnalystReport:
     evidence_by_id = {
         str(item.get("evidence_id")): item for item in evidence if item.get("evidence_id")
@@ -797,6 +797,10 @@ def _build_analyst_report(
         and entity.type in {"host", "account"}
     ][:4]
     plan_status = "stale" if plan_is_stale else "current" if plan else "not_available"
+    planner = (plan or {}).get("planner") if isinstance((plan or {}).get("planner"), dict) else {}
+    planner_kind = str(planner.get("kind") or "unknown")
+    if planner_kind not in {"live_ai", "deterministic", "unknown"}:
+        planner_kind = "unknown"
     overview = ReportOverview(
         case_id=str(case.get("case_id") or ""),
         case_status=str(case.get("status") or "unknown"),
@@ -813,7 +817,9 @@ def _build_analyst_report(
         plan_id=(plan or {}).get("plan_id"),
         plan_state_version=(plan or {}).get("based_on_state_version"),
         plan_status=plan_status,
-        planner_model=planner_model or None,
+        planner_model=str(planner.get("model")) if planner.get("model") else None,
+        planner_kind=planner_kind,
+        evidence_count=len(evidence),
     )
     gaps = _string_list((plan or {}).get("missing_evidence")) if not plan_is_stale else []
     summary, summary_source = _executive_summary(
@@ -860,6 +866,7 @@ def _build_analyst_report(
     )
     return AnalystReport(
         overview=overview,
+        analysis_summary=str(current_analysis.get("summary") or "Analysis has not produced a summary yet."),
         executive_summary=summary,
         executive_summary_source=summary_source,
         key_findings=key_findings,
@@ -868,6 +875,7 @@ def _build_analyst_report(
         response_actions=structured_actions,
         impact=ReportImpact(remaining_risk=remaining_risk),
         next_steps=next_steps,
+        analyst_reviews=reviews,
         appendices=ReportAppendices(
             evidence_index=_evidence_references(evidence),
             raw_chronology=timeline,
@@ -943,7 +951,6 @@ def generate_report(case_id: str) -> dict[str, Any]:
             ]
         )
     )
-    settings = get_settings()
     now = datetime.now(timezone.utc).isoformat()
     report_id = f"RPT-{uuid.uuid4().hex[:12]}"
 
@@ -975,7 +982,7 @@ def generate_report(case_id: str) -> dict[str, Any]:
             "version": guidance["playbook"]["version"],
         },
         "policy_pack_version": guidance["policy_pack_version"],
-        "planner_model": getattr(settings, "opencode_go_model", "unknown"),
+        "planner_model": ((plan or {}).get("planner") or {}).get("model"),
         "current_state_version": current_state_version,
         "recovery_status": state.recovery_status.value if state else None,
         "plan_id": (plan or {}).get("plan_id"),
@@ -998,7 +1005,13 @@ def generate_report(case_id: str) -> dict[str, Any]:
             "confidence": _float_or_zero(analysis.get("confidence")),
             "current_phase": phase,
             "attack_techniques": list(techniques),
-            "confirmed_by_analyst": False,
+            "confirmed_by_analyst": any(
+                review.get("review_type") == "confirm"
+                and review.get("state_version") == current_state_version
+                and review.get("target_type") in {"case", "plan"}
+                and (review.get("target_type") != "plan" or review.get("target_id") == (plan or {}).get("plan_id"))
+                for review in repositories.list_analyst_reviews(case_id)
+            ),
         },
         "affected": _affected_rows(state, guidance),
         "exposed_credentials": [],
@@ -1036,7 +1049,13 @@ def generate_report(case_id: str) -> dict[str, Any]:
             "analyst_decisions": len(repositories.list_approvals(case_id)),
         },
         "policy_conformance": [],
-        "sign_off": None,
+        "sign_off": next(({
+            "analyst": review.get("analyst", ""),
+            "role": review.get("analyst_role", ""),
+            "decision": "sign_off",
+            "at": review.get("created_at", ""),
+            "comments": review.get("comment", ""),
+        } for review in reversed(sorted(repositories.list_analyst_reviews(case_id), key=lambda item: item.get("created_at", ""))) if review.get("review_type") == "sign_off"), None),
         "evidence_index": [
             {
                 "evidence_id": item.get("evidence_id"),
@@ -1062,7 +1081,7 @@ def generate_report(case_id: str) -> dict[str, Any]:
         techniques=techniques,
         actions=actions,
         guidance=guidance,
-        planner_model=str(getattr(settings, "opencode_go_model", "unknown")),
+        reviews=repositories.list_analyst_reviews(case_id),
     )
     report["analyst_report"] = analyst_report.model_dump(mode="json")
     report["executive_summary"] = {

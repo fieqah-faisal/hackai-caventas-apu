@@ -31,7 +31,14 @@ from langgraph.graph import END, START, StateGraph
 from app.ai.planner_adapter import FakePlannerAdapter, PlannerAdapter
 from app.config import get_settings
 from app.schemas.incident_state import IncidentState
-from app.schemas.plan import PlanAnalysis, PlanProposal, ProposedAction, ProposedFinding, Stage
+from app.schemas.plan import (
+    PlanAnalysis,
+    PlannerIdentity,
+    PlanProposal,
+    ProposedAction,
+    ProposedFinding,
+    Stage,
+)
 from app.simulator.catalog import CATALOG
 
 LLMCall = Callable[[list[dict[str, Any]], str], str]
@@ -175,7 +182,8 @@ def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
         "You are an incident-response analysis assistant. Given a versioned "
         "incident state (entities, relationships, timeline, findings) "
         "derived from current evidence, determine the likely incident type, "
-        "scope, severity, confidence (0-1), and the recommended IR stage. "
+        "a concise evidence-grounded summary, scope, severity, model-reported "
+        "confidence (0-1), and the recommended IR stage. "
         "\"sufficient\" means: is there enough evidence to recommend an "
         "initial response focus? Indicators of active compromise (malicious "
         "execution, credential access, exfiltration, unauthorized sessions) "
@@ -201,7 +209,7 @@ def _analysis_messages(incident: dict[str, Any]) -> list[dict[str, Any]]:
         "(phishing that led to account access), not_an_incident (benign or "
         "planned activity, e.g. an approved change), other. Return ONLY a "
         "JSON object with keys: incident_type (infostealer_session_hijack|"
-        "phishing_account_takeover|not_an_incident|other), scope, severity "
+        "phishing_account_takeover|not_an_incident|other), summary, scope, severity "
         "(low|medium|high|critical), confidence, sufficient, missing_evidence, "
         "stage (assessment|preservation|containment|eradication|hardening|"
         "restoration), findings (list of {\"summary\": <string>, "
@@ -396,6 +404,14 @@ class LangGraphPlannerAdapter:
         graph.add_edge("propose", END)
         self._graph = graph.compile()
 
+    @property
+    def identity(self) -> PlannerIdentity:
+        return PlannerIdentity(
+            kind="live_ai",
+            adapter=type(self).__name__,
+            model=get_settings().opencode_go_model,
+        )
+
     def _analyze(self, state: PlannerState) -> PlannerState:
         incident = state["incident"]
         raw = self._llm_call(_analysis_messages(incident), incident["case_id"])
@@ -461,6 +477,7 @@ class LangGraphPlannerAdapter:
         analysis_raw = final.get("analysis") or {}
         analysis = PlanAnalysis(
             incident_type=_incident_type(analysis_raw.get("incident_type")),
+            summary=str(analysis_raw.get("summary", "")).strip(),
             scope=str(analysis_raw.get("scope", "")),
             severity=str(analysis_raw.get("severity", "")),
             confidence=_confidence(analysis_raw.get("confidence")),

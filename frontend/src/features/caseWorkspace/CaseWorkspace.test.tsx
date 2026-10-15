@@ -14,6 +14,9 @@ const p = vi.hoisted(() => ({
     proposalExists: false, actionAwaitingDecision: false, reportEligible: false,
   } } }),
   getActiveAnalysisRun: vi.fn().mockResolvedValue({ kind: "ok", value: { source: "real", data: null } }),
+  // CaseWorkspace mounts AnalystReviewsPanel, which reads reviews + plans.
+  getAnalystReviews: vi.fn().mockResolvedValue({ kind: "ok", value: { source: "real", data: [] } }),
+  getPlans: vi.fn().mockResolvedValue({ kind: "ok", value: { source: "real", data: [] } }),
 }));
 vi.mock("@/lib/api", () => ({ getProvider: () => p }));
 import { CaseWorkspace } from "./CaseWorkspace";

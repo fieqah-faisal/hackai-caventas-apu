@@ -468,6 +468,7 @@ def test_analyst_template_reuses_one_schema_across_distinct_scenarios(
     assert report["template_schema_version"] == "2.0"
     assert set(analyst) == {
         "overview",
+        "analysis_summary",
         "executive_summary",
         "executive_summary_source",
         "key_findings",
@@ -476,6 +477,7 @@ def test_analyst_template_reuses_one_schema_across_distinct_scenarios(
         "response_actions",
         "impact",
         "next_steps",
+        "analyst_reviews",
         "appendices",
     }
     assert analyst["appendices"]["evidence_index"]

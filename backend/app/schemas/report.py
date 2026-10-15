@@ -10,6 +10,8 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from app.schemas.analyst_review import AnalystReview
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -28,6 +30,8 @@ class ReportOverview(BaseModel):
     plan_state_version: int | None = None
     plan_status: Literal["current", "stale", "not_available"] = "not_available"
     planner_model: str | None = None
+    planner_kind: Literal["live_ai", "deterministic", "unknown"] = "unknown"
+    evidence_count: int = 0
 
 
 class ReportFinding(BaseModel):
@@ -153,6 +157,7 @@ class AnalystReport(BaseModel):
     """Presentation-neutral analyst report used by both UI and PDF renderers."""
 
     overview: ReportOverview
+    analysis_summary: str = "Analysis has not produced a summary yet."
     executive_summary: str = ""
     executive_summary_source: Literal[
         "current_state_analysis", "record_derived"
@@ -163,6 +168,7 @@ class AnalystReport(BaseModel):
     response_actions: list[ReportAction] = Field(default_factory=list)
     impact: ReportImpact = Field(default_factory=ReportImpact)
     next_steps: list[ReportNextStep] = Field(default_factory=list)
+    analyst_reviews: list[AnalystReview] = Field(default_factory=list)
     appendices: ReportAppendices = Field(default_factory=ReportAppendices)
 
 

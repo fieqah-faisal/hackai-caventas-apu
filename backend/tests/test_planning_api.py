@@ -51,6 +51,9 @@ def test_run_planning_creates_plan_and_persists_actions(client, monkeypatch):
     plan = resp.json()
     assert plan["plan_id"].startswith("PLAN-")
     assert plan["analysis"]["findings"]  # deterministic planner persists grounded analysis
+    assert plan["analysis"]["summary"]
+    assert plan["planner"]["kind"] == "deterministic"
+    assert plan["planner"]["adapter"] == "FakePlannerAdapter"
     assert plan["case_id"] == case_id
     assert plan["based_on_state_version"] == 1
     assert plan["stage"] == "containment"
@@ -129,6 +132,7 @@ def test_plan_analysis_is_persisted(client, monkeypatch):
                 actions=[],
                 analysis=PlanAnalysis(
                     incident_type="infostealer_session_hijack",
+                    summary="Evidence supports an infostealer incident on one laptop.",
                     scope="one laptop and the CRM session",
                     severity="high",
                     confidence=0.7,
@@ -150,6 +154,10 @@ def test_plan_analysis_is_persisted(client, monkeypatch):
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["analysis"]["severity"] == "high"
+    assert body["analysis"]["summary"] == (
+        "Evidence supports an infostealer incident on one laptop."
+    )
+    assert body["planner"]["kind"] == "unknown"
     assert body["analysis"]["attack_techniques"] == ["T1204.002"]
     assert body["analysis"]["findings"][0]["summary"] == (
         "Unsigned installer ran on SALES-LT-07."

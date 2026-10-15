@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/Region";
 import { Icon } from "@/components/icons/Icon";
 import { relativeTime } from "@/lib/format";
 import { cx } from "@/lib/types";
+import { FindingsTable } from "@/components/ui/FindingsTable";
 import type { ReportVM } from "@/lib/types";
 import { useWorkspace } from "../context";
 
@@ -91,6 +92,11 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
             {report.planId ? ` · plan ${report.planId}${report.planStateVersion == null ? "" : ` on state v${report.planStateVersion}`}` : " · no plan recorded"}
             {report.plannerModel ? ` · model ${report.plannerModel}` : ""}
           </p>
+          <p className="mt-1 text-meta text-text-muted">
+            Planner: {report.plannerKind === "live_ai" ? "Live AI planner" : report.plannerKind === "deterministic" ? "Deterministic planner" : "Planner identity unavailable"}
+            {` · ${report.evidenceCount} evidence record${report.evidenceCount === 1 ? "" : "s"}`}
+            {` · analyst confirmation: ${report.confirmedByAnalyst ? "confirmed for the current state" : "not established"}`}
+          </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
           <div className="text-right">
@@ -148,25 +154,49 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
         <p className="mt-2 text-2xs uppercase tracking-wide text-text-muted">Source: {report.executiveSummary.source.replaceAll("_", " ")}</p>
       </section>
 
+      <section aria-labelledby="analysis-summary" className="rounded-md border border-border-subtle bg-surface p-5">
+        <SectionHeading id="analysis-summary" eyebrow="Persisted analysis" title="Analysis summary" />
+        <p className="mt-3 max-w-5xl text-base leading-7 text-text-secondary">{report.analysisSummary}</p>
+        <p className="mt-2 text-2xs text-text-muted">Any confidence values are planner-reported, advisory, and not calibrated probabilities.</p>
+      </section>
+
+      <section aria-labelledby="analyst-reviews" className="rounded-md border border-border-subtle bg-surface p-5">
+        <SectionHeading id="analyst-reviews" eyebrow="Human oversight" title="Analyst reviews and sign-off" count={report.reviews.length} />
+        <p className="mt-3 text-meta text-text-secondary">
+          Sign-off: {report.signOff ? `${report.signOff.analyst} (${report.signOff.role})` : "No analyst sign-off recorded"}
+        </p>
+        {report.reviews.length ? (
+          <ul className="mt-3 space-y-2">
+            {report.reviews.map((review) => (
+              <li key={review.reviewId} className="rounded border border-border-subtle bg-surface-raised px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-text-primary">{review.analyst}</span>
+                  <span className="text-2xs text-text-muted">{review.analystRole}</span>
+                  <StatusBadge value={review.reviewType} />
+                </div>
+                {review.comment && <p className="mt-1 text-meta text-text-secondary">{review.comment}</p>}
+              </li>
+            ))}
+          </ul>
+        ) : <EmptyLine text="No analyst reviews recorded for this report snapshot." />}
+      </section>
+
       <section aria-labelledby="key-findings" className="rounded-md border border-border-subtle bg-surface p-5">
         <SectionHeading id="key-findings" eyebrow="Prioritized analysis" title="Key findings" count={report.findings.length} />
-        {report.findings.length ? (
-          <div className="mt-4 grid gap-3 lg:grid-cols-2">
-            {report.findings.map((finding) => (
-              <article key={finding.id} className="rounded border border-border-subtle bg-surface-raised p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h4 className="font-semibold text-text-primary">{finding.title}</h4>
-                  <StatusBadge value={finding.severity} />
-                </div>
-                <p className="mt-2 text-base leading-6 text-text-secondary">{finding.summary}</p>
-                <p className="mt-3 font-mono text-2xs text-text-muted">
-                  {finding.id} · {finding.status}{finding.confidence == null ? "" : ` · confidence ${Math.round(finding.confidence * 100)}%`}
-                </p>
-                {!!finding.evidenceIds.length && <p className="mt-1 font-mono text-2xs text-text-muted">Evidence: {finding.evidenceIds.join(", ")}</p>}
-              </article>
-            ))}
-          </div>
-        ) : <EmptyLine text="No prioritized current-state findings are available." />}
+        <div className="mt-4">
+          <FindingsTable
+            rows={report.findings.map((finding) => ({
+              key: finding.id,
+              title: finding.title,
+              summary: finding.summary,
+              status: finding.status,
+              severity: finding.severity,
+              affectedEntityIds: finding.affectedEntityIds,
+              evidenceIds: finding.evidenceIds,
+              confidence: finding.confidence,
+            }))}
+          />
+        </div>
       </section>
 
       <section aria-labelledby="key-timeline" className="rounded-md border border-border-subtle bg-surface p-5">

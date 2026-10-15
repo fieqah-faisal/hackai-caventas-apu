@@ -323,6 +323,7 @@ def render_report_pdf(report: dict[str, Any], output_path: Path) -> Path:
         ["Current phase", _label(overview.current_phase), "Primary assets", _refs(overview.primary_assets)],
         ["State version", overview.state_version or "Not recorded", "Plan status", _label(overview.plan_status)],
         ["Latest plan", overview.plan_id or "Not available", "Planner model", overview.planner_model or "Not recorded"],
+        ["Planner kind", _label(overview.planner_kind), "Evidence records", str(overview.evidence_count)],
     ]
     overview_table = Table(
         [[_cell(value, styles, mono=index in {1, 3}) for index, value in enumerate(row)] for row in overview_rows],
@@ -363,6 +364,30 @@ def render_report_pdf(report: dict[str, Any], output_path: Path) -> Path:
             styles["small"],
         )
     )
+
+    _section(story, "Persisted analysis summary", styles)
+    story.append(Paragraph(_text(analyst.analysis_summary), styles["body"]))
+    story.append(Paragraph("Any confidence values are planner-reported, advisory, and not calibrated probabilities.", styles["small"]))
+
+    _section(story, "Analyst reviews", styles)
+    if analyst.analyst_reviews:
+        story.append(
+            _table(
+                ["Time", "Analyst", "Target", "Review", "Comment"],
+                [[
+                    _time(review.created_at),
+                    f"{review.analyst}\n{review.analyst_role}",
+                    f"{_label(review.target_type)}\n{review.target_id or review.case_id}",
+                    _label(review.review_type),
+                    _bounded(review.comment),
+                ] for review in analyst.analyst_reviews],
+                [25 * mm, 35 * mm, 35 * mm, 25 * mm, width - 120 * mm],
+                styles,
+                mono_columns={0, 2},
+            )
+        )
+    else:
+        _empty(story, "No analyst reviews were recorded when this report snapshot was generated.", styles)
 
     _section(story, "Key findings", styles)
     if analyst.key_findings:

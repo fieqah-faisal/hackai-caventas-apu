@@ -5,7 +5,7 @@ services:
     environment:
       FIREBASE_PROJECT_ID: ir-planner-dev
       FIRESTORE_EMULATOR_HOST: host.docker.internal:8080
-      OPENCODE_GO_API_KEY: ""
+      OPENCODE_GO_API_KEY: ${OPENCODE_GO_API_KEY:-}
       SIMULATOR_PROFILE: clean
     extra_hosts:
       - "host.docker.internal:host-gateway"

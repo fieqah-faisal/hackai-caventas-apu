@@ -20,6 +20,7 @@ const ctx: WorkspaceCtx = {
   header: {
     caseId: "CASE-TEST0001",
     title: "Synthetic login anomaly",
+    description: "Synthetic test case",
     status: "investigating",
     severity: null,
     stage: "containment",

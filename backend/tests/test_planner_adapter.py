@@ -84,6 +84,7 @@ class ScriptedLLM:
 def _analysis(**overrides) -> str:
     payload = {
         "incident_type": "infostealer_session_hijack",
+        "summary": "Evidence supports credential access on one workstation.",
         "scope": "one laptop and the CRM session",
         "severity": "high",
         "confidence": 0.7,
@@ -124,6 +125,8 @@ def test_sufficient_analysis_produces_grounded_proposal():
     assert plan.stage is Stage.CONTAINMENT
     assert plan.based_on_state_version == 3
     assert plan.missing_evidence == []
+    assert plan.analysis is not None
+    assert plan.analysis.summary == "Evidence supports credential access on one workstation."
     assert len(plan.actions) == 1
     action = plan.actions[0]
     assert action.tool_name == "isolate_host"

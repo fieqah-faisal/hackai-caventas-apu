@@ -27,6 +27,7 @@ export const INFOSTEALER_CASE_ID = "CASE-INFOSTL01";
 export interface FxCase {
   caseId: string;
   title: string;
+  description?: string;
   status: CaseStatus;
   severity: Severity | null;
   classification: string | null;
@@ -243,7 +244,9 @@ export const infostealerTimelineBatch2: TimelineEventVM[] = [
 
 export const infostealerAnalysisBatch1: AnalysisVM = {
   classification: "Credential theft via infostealer",
-  confidence: { value: 0.72, basis: "4 observed endpoint/network events", advisory: true },
+  summary: "Synthetic records support credential access and outbound transfer from one workstation.",
+  confidence: { value: 0.72, basis: "Model-reported by the deterministic fixture; advisory and not a calibrated probability.", advisory: true },
+  planner: { kind: "deterministic", adapter: "FixtureProvider", model: "deterministic-fixture-v1" },
   affectedEntities: [
     { id: "HOST::SALES-LT-07", type: "host", name: "SALES-LT-07" },
     { id: "ACCOUNT::farah", type: "account", name: "farah" },
@@ -255,7 +258,9 @@ export const infostealerAnalysisBatch1: AnalysisVM = {
 
 export const infostealerAnalysisBatch2: AnalysisVM = {
   classification: "Credential theft escalating to session hijack + data exfiltration",
-  confidence: { value: 0.9, basis: "Session replay + CRM export confirm reuse", advisory: true },
+  summary: "Synthetic records support credential theft followed by session reuse and a CRM export.",
+  confidence: { value: 0.9, basis: "Model-reported by the deterministic fixture; advisory and not a calibrated probability.", advisory: true },
+  planner: { kind: "deterministic", adapter: "FixtureProvider", model: "deterministic-fixture-v1" },
   affectedEntities: [
     { id: "HOST::SALES-LT-07", type: "host", name: "SALES-LT-07" },
     { id: "ACCOUNT::farah", type: "account", name: "farah" },

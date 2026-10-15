@@ -49,10 +49,18 @@ export function analysisFromRecords(state: IncidentStateDTO, plans: PlanDocDTO[]
   const ordered = sortPlansOldestFirst(plans);
   const latest = ordered[ordered.length - 1];
   const a = latest?.analysis;
+  // When no plan analysis is persisted, fall back to a state-only
+  // classification derived from the first stored finding summary (honest,
+  // not a plan classification); the unavailableReason still flags the gap.
+  const stateFallbackClassification = state.findings[0]?.summary?.trim() || null;
   return {
-    classification: a?.incident_type || state.findings[0]?.summary || null,
+    classification: a?.incident_type || stateFallbackClassification,
+    summary: a?.summary?.trim() || null,
     severity: mapSeverity(a?.severity), scope: a?.scope || null,
-    confidence: { value: a ? a.confidence : null, basis: a ? "Persisted plan analysis (advisory)" : "No persisted analysis confidence", advisory: true },
+    confidence: { value: a ? a.confidence : null, basis: a ? "Model-reported by the stored planner; advisory and not a calibrated probability." : "No model-reported confidence is stored.", advisory: true },
+    planner: latest?.planner
+      ? { kind: latest.planner.kind, adapter: latest.planner.adapter, model: latest.planner.model ?? null }
+      : { kind: "unknown", adapter: "Not recorded", model: null },
     findings: a ? a.findings.map((f) => ({ summary: f.summary, evidenceIds: f.evidence_ids, confidence: f.confidence }))
       : state.findings.map((f) => ({ summary: f.summary, evidenceIds: f.evidence_ids, confidence: null })),
     affectedEntities: state.entities.map((e) => ({ id: e.id, type: e.type, name: e.name })),

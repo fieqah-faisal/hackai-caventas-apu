@@ -14,6 +14,7 @@ import type {
   AgentPlanningVM,
   AnalysisVM,
   AnalysisRunVM,
+  AnalystReviewVM,
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
@@ -118,6 +119,7 @@ export interface DataProvider {
    * action (generateReport).
    */
   getReport(caseId: string): Promise<Outcome<ReportVM | null>>;
+  getAnalystReviews(caseId: string): Promise<Outcome<AnalystReviewVM[]>>;
 
   // Mutations
   submitDecision(
@@ -131,6 +133,11 @@ export interface DataProvider {
   executeAction(caseId: string, actionId: string): Promise<Outcome<ExecutionResultVM>>;
   /** Generate a new report version (explicit analyst action; one request per call). */
   generateReport(caseId: string): Promise<Outcome<ReportVM>>;
+  createAnalystReview(
+    caseId: string,
+    input: Omit<AnalystReviewVM, "reviewId" | "caseId" | "createdAt">,
+  ): Promise<Outcome<AnalystReviewVM>>;
+  updateCase(caseId: string, input: { title: string; description: string }): Promise<Outcome<{ title: string; description: string }>>;
 
   /**
    * Presenter-only: advance the synthetic scenario by revealing the next

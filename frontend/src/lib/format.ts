@@ -101,3 +101,19 @@ export const riskLabel: Record<Risk, string> = {
   moderate: "Moderate risk",
   high: "High risk",
 };
+
+export function readableValue(value: string | null | undefined): string {
+  if (!value || value.toLowerCase() === "unknown") return "Not established";
+  if (value.toLowerCase() === "other") return "Other / Unclassified";
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export function plannerLabel(kind: "live_ai" | "deterministic" | "unknown"): string {
+  if (kind === "live_ai") return "Live AI planner";
+  if (kind === "deterministic") return "Deterministic demo/test planner";
+  return "Planner identity not recorded";
+}
+
+export function modelReportedConfidence(value: number | null): string {
+  return value == null ? "Not recorded" : `${Math.round(value * 100)}% model-reported`;
+}

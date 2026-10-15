@@ -3,6 +3,12 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Integration quality and analyst review pass (IN PROGRESS)
+
+- Confirmed `chore/final-integration-fieqah` starts at expected HEAD `c2d5f6752db99f2859c6b0a9b130508323c4d803` with no pre-existing worktree edits and no merge from `main` required or permitted.
+- Removed accidentally tracked `gitleaks-report.json` without reading it and added `gitleaks-report*.json` to the repository ignore rules. Initial sensitive-path tracking audit found no tracked `.env`, `.venv`, service-account or credential file; full tracked-content and changed-diff scans remain part of the final gate.
+- Next: persist honest planner provenance/analysis summaries, structured findings, analyst reviews and editable case metadata, then complete report linkage and deterministic acceptance. No commit or push.
+
 ### 2026-10-15 Typed analyst report and professional PDF (DONE, UNCOMMITTED)
 
 - Added additive report template schema 2.0 without removing or renaming v1.3 fields. A typed `analyst_report` now derives current posture, evidence-grounded findings, categorized material chronology, entity relevance, approval/execution/validation outcomes, impact/risk, next steps and appendices from stored records. Stale analysis is excluded from current findings and retained with provenance; old persisted reports receive conservative frontend compatibility defaults.

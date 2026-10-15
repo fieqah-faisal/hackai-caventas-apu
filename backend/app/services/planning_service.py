@@ -13,7 +13,7 @@ from typing import Any, Callable
 
 from app.ai.langgraph_planner import PlannerError, get_planner_adapter, load_guidance
 from app.database import repositories
-from app.schemas.plan import StoredAction
+from app.schemas.plan import PlannerIdentity, StoredAction
 from app.services import audit_service, state_manager
 
 
@@ -99,6 +99,13 @@ def run_planning(
         "missing_evidence": list(proposal.missing_evidence),
         "action_ids": [action["action_id"] for action in actions],
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "planner": (
+            adapter.identity.model_dump(mode="json")
+            if isinstance(getattr(adapter, "identity", None), PlannerIdentity)
+            else PlannerIdentity(
+                kind="unknown", adapter=type(adapter).__name__
+            ).model_dump(mode="json")
+        ),
     }
     if proposal.analysis is not None:
         plan_doc["analysis"] = proposal.analysis.model_dump(mode="json")

@@ -113,6 +113,7 @@ export interface CaseSummary {
 export interface CaseHeaderVM {
   caseId: string;
   title: string;
+  description: string;
   status: CaseStatus;
   severity: Severity | null;
   stage: Stage | null;
@@ -183,9 +184,31 @@ export interface TimelineEventVM {
 
 // ---- Analysis view models -------------------------------------------------
 
+export interface PlannerIdentityVM {
+  kind: "live_ai" | "deterministic" | "unknown";
+  adapter: string;
+  model: string | null;
+}
+
+export interface AnalystReviewVM {
+  reviewId: string;
+  caseId: string;
+  targetType: "case" | "plan" | "finding" | "action" | "report";
+  targetId: string | null;
+  reviewType: "note" | "confirm" | "dispute" | "request_more_evidence" | "sign_off";
+  analyst: string;
+  analystRole: string;
+  comment: string;
+  stateVersion: number;
+  planVersion: number | null;
+  createdAt: string;
+}
+
 export interface AnalysisVM {
   classification: string | null;
+  summary: string | null;
   confidence: { value: number | null; basis: string; advisory: true };
+  planner: PlannerIdentityVM;
   affectedEntities: { id: string; type: EntityType; name: string }[];
   attackTechniques: string[];
   missingEvidence: string[];
@@ -308,6 +331,7 @@ export interface PlanVM {
   stage: Stage;
   createdAt: string;
   missingEvidence: string[];
+  planner: PlannerIdentityVM;
   actions: ResponsePlanActionVM[];
   /**
    * Set when a plan references actions the provider could not resolve.
@@ -476,6 +500,18 @@ export interface ReportEvidenceReferenceVM {
   untrusted: boolean;
 }
 
+export interface ReportReviewVM {
+  reviewId: string;
+  analyst: string;
+  analystRole: string;
+  targetType: string;
+  targetId: string | null;
+  reviewType: string;
+  comment: string;
+  stateVersion: number | null;
+  createdAt: string;
+}
+
 export interface ReportVM {
   reportId: string;
   caseId: string;
@@ -485,6 +521,12 @@ export interface ReportVM {
   generatedAt: string;
   version: number;
   plannerModel: string | null;
+  plannerKind: "live_ai" | "deterministic" | "unknown";
+  evidenceCount: number;
+  analysisSummary: string;
+  confirmedByAnalyst: boolean;
+  signOff: { analyst: string; role: string; at: string; comments: string } | null;
+  reviews: ReportReviewVM[];
   stateVersion: number | null;
   recoveryStatus: string | null;
   planId: string | null;

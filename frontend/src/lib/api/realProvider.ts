@@ -21,7 +21,7 @@
  *   GET  /cases/{id}/reports/{rid}/pdf       -> application/pdf
  * NOT available: run-status, request_more_investigation decision, /validate.
  */
-import { apiGet, apiPost, apiPostForm, type ApiResult } from "./apiClient";
+import { apiGet, apiPatch, apiPost, apiPostForm, type ApiResult } from "./apiClient";
 import {
   analysisFromRecords,
   toAnalysisRun,
@@ -54,6 +54,8 @@ import {
 import type {
   ActionResultDTO,
   AnalysisRunDTO,
+  AnalystReviewCreateDTO,
+  AnalystReviewDTO,
   ApproverRoleDTO,
   AuditEventDTO,
   CaseDTO,
@@ -73,6 +75,7 @@ import type {
   AgentPlanningVM,
   AnalysisRunVM,
   AnalysisVM,
+  AnalystReviewVM,
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
@@ -318,6 +321,7 @@ export class RealProvider implements DataProvider {
     const vm: CaseHeaderVM = {
       caseId: caseR.data.case_id,
       title: caseR.data.title,
+      description: caseR.data.description,
       status: caseR.data.status,
       severity: plans.length ? mapSeverity(plans[plans.length - 1].analysis?.severity) : null,
       stage: stageFromPlans(plans),
@@ -403,6 +407,9 @@ export class RealProvider implements DataProvider {
         stage: p.stage,
         createdAt: p.created_at,
         missingEvidence: p.missing_evidence,
+        planner: p.planner
+          ? { kind: p.planner.kind, adapter: p.planner.adapter, model: p.planner.model ?? null }
+          : { kind: "unknown", adapter: "Not recorded", model: null },
         actions,
         ...(unresolved > 0
           ? { actionsUnavailable: { count: unresolved, reason: PLAN_ACTIONS_UNAVAILABLE } }
@@ -481,10 +488,66 @@ export class RealProvider implements DataProvider {
     return ok(toReportVM(r.data), "real");
   }
 
+  async getAnalystReviews(caseId: string): Promise<Outcome<AnalystReviewVM[]>> {
+    const r = await apiGet<AnalystReviewDTO[]>(`/cases/${caseId}/reviews`);
+    if (r.kind !== "ok") return fromApi<AnalystReviewVM[]>(r as ApiResult<never>, "real");
+    return ok(r.data.map((review) => ({
+      reviewId: review.review_id,
+      caseId: review.case_id,
+      targetType: review.target_type,
+      targetId: review.target_id ?? null,
+      reviewType: review.review_type,
+      analyst: review.analyst,
+      analystRole: review.analyst_role,
+      comment: review.comment,
+      stateVersion: review.state_version,
+      planVersion: review.plan_version ?? null,
+      createdAt: review.created_at,
+    })), "real");
+  }
+
   async generateReport(caseId: string): Promise<Outcome<ReportVM>> {
     const r = await apiPost<StructuredReportDTO>(`/cases/${caseId}/reports`);
     if (r.kind !== "ok") return fromApi<ReportVM>(r as ApiResult<never>, "real");
     return ok(toReportVM(r.data), "real");
+  }
+
+  async createAnalystReview(
+    caseId: string,
+    input: Omit<AnalystReviewVM, "reviewId" | "caseId" | "createdAt">,
+  ): Promise<Outcome<AnalystReviewVM>> {
+    const body: AnalystReviewCreateDTO = {
+      target_type: input.targetType,
+      target_id: input.targetId,
+      review_type: input.reviewType,
+      analyst: input.analyst,
+      analyst_role: input.analystRole,
+      comment: input.comment,
+      state_version: input.stateVersion,
+      plan_version: input.planVersion,
+    };
+    const r = await apiPost<AnalystReviewDTO>(`/cases/${caseId}/reviews`, body);
+    if (r.kind !== "ok") return fromApi<AnalystReviewVM>(r as ApiResult<never>, "real");
+    return ok({
+      reviewId: r.data.review_id,
+      caseId: r.data.case_id,
+      targetType: r.data.target_type,
+      targetId: r.data.target_id ?? null,
+      reviewType: r.data.review_type,
+      analyst: r.data.analyst,
+      analystRole: r.data.analyst_role,
+      comment: r.data.comment,
+      stateVersion: r.data.state_version,
+      planVersion: r.data.plan_version ?? null,
+      createdAt: r.data.created_at,
+    }, "real");
+  }
+
+  async updateCase(caseId: string, input: { title: string; description: string }): Promise<Outcome<{ title: string; description: string }>> {
+    const r = await apiPatch<CaseDTO>(`/cases/${caseId}`, input);
+    if (r.kind !== "ok") return fromApi<{ title: string; description: string }>(r as ApiResult<never>, "real");
+    this.casesRead = null;
+    return ok({ title: r.data.title, description: r.data.description }, "real");
   }
 
   // ---- Mutations ----------------------------------------------------------
@@ -567,6 +630,9 @@ export function planFromRunResponse(
     stage: run.stage,
     createdAt: run.created_at,
     missingEvidence: run.missing_evidence,
+    planner: run.planner
+      ? { kind: run.planner.kind, adapter: run.planner.adapter, model: run.planner.model ?? null }
+      : { kind: "unknown", adapter: "Not recorded", model: null },
     actions: run.actions.map((a) => toResponsePlanActionVM(a, run.stage, state)),
   };
 }

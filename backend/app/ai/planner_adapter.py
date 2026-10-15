@@ -19,10 +19,20 @@ from __future__ import annotations
 from typing import Protocol
 
 from app.schemas.incident_state import IncidentState
-from app.schemas.plan import PlanAnalysis, PlanProposal, ProposedAction, ProposedFinding, Stage
+from app.schemas.plan import (
+    PlanAnalysis,
+    PlannerIdentity,
+    PlanProposal,
+    ProposedAction,
+    ProposedFinding,
+    Stage,
+)
 
 
 class PlannerAdapter(Protocol):
+    @property
+    def identity(self) -> PlannerIdentity: ...
+
     def generate_plan(
         self, incident_state: IncidentState, approved_guidance: dict | None = None
     ) -> PlanProposal: ...
@@ -30,6 +40,14 @@ class PlannerAdapter(Protocol):
 
 class FakePlannerAdapter:
     """Deterministic planner for integration testing without an LLM."""
+
+    @property
+    def identity(self) -> PlannerIdentity:
+        return PlannerIdentity(
+            kind="deterministic",
+            adapter=type(self).__name__,
+            model="deterministic-rules-v1",
+        )
 
     def generate_plan(
         self, incident_state: IncidentState, approved_guidance: dict | None = None
@@ -73,13 +91,25 @@ class FakePlannerAdapter:
             for event in incident_state.timeline if event.evidence_ids
         ]
         signal = any("network_upload" in event.description for event in incident_state.timeline)
+        summary = (
+            f"Stored evidence includes network upload activity involving {host.name}; "
+            "the evidence-linked findings require analyst review."
+            if signal and host
+            else (
+                f"Stored evidence produced {len(findings)} evidence-linked observation(s); "
+                "no supported incident classification was established."
+                if findings
+                else ""
+            )
+        )
         return PlanProposal(
             based_on_state_version=incident_state.version,
             stage=Stage.CONTAINMENT,
             actions=actions,
             analysis=PlanAnalysis(
                 incident_type="other" if signal else "",
-                scope=host.name if host else "",
+                summary=summary,
+                scope=f"Primary observed host: {host.name}" if host else "",
                 severity="medium" if signal else "",
                 confidence=0.6 if signal else 0.0,
                 findings=findings,

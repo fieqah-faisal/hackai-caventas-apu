@@ -116,6 +116,26 @@ export interface EntityDTO {
   condition?: string | null;
 }
 
+export type ReviewTargetTypeDTO = "case" | "plan" | "finding" | "action" | "report";
+export type ReviewTypeDTO = "note" | "confirm" | "dispute" | "request_more_evidence" | "sign_off";
+
+export interface AnalystReviewCreateDTO {
+  target_type: ReviewTargetTypeDTO;
+  target_id?: string | null;
+  review_type: ReviewTypeDTO;
+  analyst: string;
+  analyst_role: string;
+  comment: string;
+  state_version: number;
+  plan_version?: number | null;
+}
+
+export interface AnalystReviewDTO extends AnalystReviewCreateDTO {
+  review_id: string;
+  case_id: string;
+  created_at: string;
+}
+
 export interface RelationshipDTO {
   id?: string | null;
   source: string;
@@ -238,8 +258,14 @@ export interface PlanDocDTO {
   missing_evidence: string[];
   action_ids: string[];
   created_at: string;
+  planner?: {
+    kind: "live_ai" | "deterministic" | "unknown";
+    adapter: string;
+    model?: string | null;
+  } | null;
   analysis?: {
     incident_type: string;
+    summary?: string;
     scope: string;
     severity: string;
     confidence: number;
@@ -483,6 +509,8 @@ export interface AnalystReportOverviewDTO {
   plan_state_version?: number | null;
   plan_status: "current" | "stale" | "not_available";
   planner_model?: string | null;
+  planner_kind?: "live_ai" | "deterministic" | "unknown";
+  evidence_count?: number;
 }
 
 export interface AnalystReportFindingDTO {
@@ -575,8 +603,10 @@ export interface AnalystEvidenceReferenceDTO {
 
 export interface AnalystReportDTO {
   overview: AnalystReportOverviewDTO;
+  analysis_summary?: string;
   executive_summary: string;
   executive_summary_source: "current_state_analysis" | "record_derived";
+  analyst_reviews?: AnalystReviewDTO[];
   key_findings: AnalystReportFindingDTO[];
   key_timeline: AnalystReportTimelineEventDTO[];
   entities: AnalystReportEntityDTO[];
