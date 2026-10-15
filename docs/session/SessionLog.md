@@ -3,6 +3,12 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Proposal sections 6.0, 10.0 and 11.1 evaluation evidence (DONE)
+
+- Rewrote Aidan's proposal sections in the team .docx (not committed; returned to the user): 6.0 nine-action catalogue with policy approvers + infostealer adaptation table; 10.0 split into 10.1 limitations table and 10.2 false-positive handling (sc03 + ticket-mismatch evidence, 13 Oct over-reaction fix, residual T1053.005 mis-tag); 11.1 harness method, planner calibration table and per-scenario live table.
+- Every figure is taken from `backend/evaluation/results/*.json` (live 12/12, 5/5, 92.7; oracle 100.0; fake 1/12, 48.2; unsafe 0/12, 22.9) and the policy pack; the live run predates final UI/report integration, which 10.1 states.
+- Validation: docx schema validation passed; rendered pages reviewed. The Word TOC needs a manual update (page numbers shifted by ~3 pages). No code or tests changed.
+
 ### 2026-10-15 Favicon correction using supplied Caventas artwork (DONE, UNCOMMITTED)
 
 - Replaced the placeholder SVG favicon with the original transparent `frontend/src/assets/Caventas-logo.png` via a Vite-bundled PNG link; removed the unused placeholder SVG. No artwork was cropped, redrawn or filtered.
