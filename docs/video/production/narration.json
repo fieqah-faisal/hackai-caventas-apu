@@ -1,0 +1,136 @@
+{
+  "voice": "af_heart",
+  "speed": 1.1,
+  "lines": [
+    {
+      "id": "n01",
+      "caption": "9:41 PM. An endpoint alert fires on a sales laptop.",
+      "tts": "Nine forty-one p.m. An endpoint alert fires on a sales laptop."
+    },
+    {
+      "id": "n02",
+      "caption": "Minutes later, the same machine sends data to a domain no one recognises.",
+      "tts": "Minutes later, the same machine sends data to a domain no one recognises."
+    },
+    {
+      "id": "n03",
+      "caption": "By morning, her stolen session is replayed from an unregistered device.",
+      "tts": "By morning, her stolen session is replayed from an unregistered device."
+    },
+    {
+      "id": "n04",
+      "caption": "For a SOC analyst, the challenge isn't receiving alerts. It's connecting them before the incident escalates.",
+      "tts": "For a sock analyst, the challenge isn't receiving alerts. It's connecting them, before the incident escalates."
+    },
+    {
+      "id": "n05",
+      "caption": "Evidence is scattered across identity, endpoint, DNS and network logs. And new evidence keeps arriving, mid-investigation.",
+      "tts": "Evidence is scattered across identity, endpoint, D N S, and network logs. And new evidence keeps arriving, mid-investigation."
+    },
+    {
+      "id": "n06",
+      "caption": "Caventas transforms fragmented evidence into an evolving, evidence-backed incident investigation.",
+      "tts": "Caventas transforms fragmented evidence into an evolving, evidence-backed incident investigation."
+    },
+    {
+      "id": "n07",
+      "caption": "Built for Tier 1 and junior Tier 2 analysts. The agent recommends. The analyst decides.",
+      "tts": "Built for tier one and junior tier two analysts. The agent recommends. The analyst decides."
+    },
+    {
+      "id": "n08",
+      "caption": "Every investigation starts as a case, with a permanent case ID.",
+      "tts": "Every investigation starts as a case, with a permanent case I D."
+    },
+    {
+      "id": "n09",
+      "caption": "Evidence arrives from identity, endpoint, DNS and firewall sources, and more can be added at any time.",
+      "tts": "Evidence arrives from identity, endpoint, D N S, and firewall sources. And more can be added at any time."
+    },
+    {
+      "id": "n10",
+      "caption": "Caventas normalises every record into a versioned incident state and reconstructs a structured timeline.",
+      "tts": "Caventas normalises every record into a versioned incident state, and reconstructs a structured timeline."
+    },
+    {
+      "id": "n11",
+      "caption": "Accounts, hosts, sessions, processes, IPs and domains become a directed incident graph.",
+      "tts": "Accounts, hosts, sessions, processes, I P addresses and domains become a directed incident graph."
+    },
+    {
+      "id": "n12",
+      "caption": "The Caventas agent loads the exact state version, analyses the evidence, retrieves approved guidance, proposes actions and validates the plan before storing it.",
+      "tts": "The Caventas agent then loads the exact state version, analyses the evidence, retrieves approved guidance, proposes actions, and validates the plan before storing it."
+    },
+    {
+      "id": "n13",
+      "caption": "Every step lands in a transparent decision trace.",
+      "tts": "Every step lands in a transparent decision trace."
+    },
+    {
+      "id": "n14",
+      "caption": "The result: a classification, a severity, findings, and the evidence that's still missing.",
+      "tts": "The result: a classification, a severity, findings, and the evidence that's still missing."
+    },
+    {
+      "id": "n15",
+      "caption": "Each recommended action cites real evidence records and the policies that apply.",
+      "tts": "Each recommended action cites real evidence records, and the policies that apply."
+    },
+    {
+      "id": "n16",
+      "caption": "Nothing executes without an analyst. Approved actions run only in a bounded simulator.",
+      "tts": "Nothing executes without an analyst. Approved actions run only in a bounded simulator."
+    },
+    {
+      "id": "n17",
+      "caption": "Reject one, and the reason is recorded.",
+      "tts": "Reject one, and the reason is recorded."
+    },
+    {
+      "id": "n18",
+      "caption": "Executed doesn't mean effective. When session revocation fails in the CRM, Caventas says so.",
+      "tts": "And executed doesn't mean effective. When session revocation fails in the C R M, Caventas says so."
+    },
+    {
+      "id": "n19",
+      "caption": "Then new evidence lands: the stolen CRM session was replayed, and 1,200 customer records exported.",
+      "tts": "Then new evidence lands. The stolen C R M session was replayed, and twelve hundred customer records exported."
+    },
+    {
+      "id": "n20",
+      "caption": "Plans are bound to exact state versions, so the old plan is flagged stale.",
+      "tts": "Plans are bound to exact state versions. So the old plan is flagged stale, instantly."
+    },
+    {
+      "id": "n21",
+      "caption": "Re-run the analysis and the response adapts. Severity: critical. Revoke the CRM session. Disable the account.",
+      "tts": "Re-run the analysis, and the response adapts. Severity: critical. Revoke the C R M session. Disable the account."
+    },
+    {
+      "id": "n22",
+      "caption": "Policy is enforced in the backend: disabling an account needs IT manager approval, so a SOC analyst's approval is refused.",
+      "tts": "Policy is enforced in the backend. Disabling an account needs I.T. manager approval, so a sock analyst's approval is refused."
+    },
+    {
+      "id": "n23",
+      "caption": "Analysts confirm findings, request more evidence and sign off, separately from the agent's output.",
+      "tts": "Analysts confirm findings, request more evidence, and sign off, separately from the agent's output."
+    },
+    {
+      "id": "n24",
+      "caption": "Then Caventas builds a structured report: executive summary, findings, timeline, entities, response actions, decision trace and analyst activity.",
+      "tts": "Then Caventas builds a structured report. Executive summary, findings, timeline, entities, response actions, decision trace, and analyst activity."
+    },
+    {
+      "id": "n25",
+      "caption": "Exported to PDF, ready to hand over.",
+      "tts": "Exported to P D F, and ready to hand over."
+    },
+    {
+      "id": "n26",
+      "caption": "From fragmented alerts to an accountable response. Caventas helps analysts understand, decide and act with confidence.",
+      "tts": "From fragmented alerts, to an accountable response. Caventas helps analysts understand, decide, and act with confidence."
+    }
+  ]
+}

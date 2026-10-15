@@ -26,6 +26,16 @@ report, not a chatbot answer.
 > (RFC 5737 documentation IPs, `.example` domains). Nothing here touches
 > real systems.
 
+## Product film
+
+[![Caventas product film](docs/video/caventas-product-film-poster.jpg)](docs/video/caventas-product-film.mp4)
+
+A three-minute walkthrough of one synthetic incident in the real workspace —
+from scattered alerts to an approved, simulated response and the final
+report: [`docs/video/caventas-product-film.mp4`](docs/video/caventas-product-film.mp4).
+How it was produced, and what was arranged for the recording, is in
+[`docs/video/README.md`](docs/video/README.md).
+
 ## How the pieces fit
 
 ![Caventas workflow: observe and reconstruct the incident, analyse evidence sufficiency, route through IR phases, retrieve approved guidance, propose actions, human decision, bounded simulation, effect validation, update the incident state and re-plan or report](docs/assets/caventas-workflow.png)
