@@ -8,7 +8,7 @@
 - Replaced the ASCII architecture diagram with the supplied workflow image (`docs/assets/caventas-workflow.png`) plus a components paragraph (workspace → API → Firestore → planner → policy guard → simulator → report, Compose deployment). Added the light/dark Caventas logo block (`docs/assets/caventas-logo-bw.png` + the existing transparent asset) and layout rows for `compose.yaml` / `firebase.json`.
 - Rewrote Getting started on verified paths: prerequisites, cross-platform venv note, `npx --yes firebase-tools emulators:start --only firestore` from the repo root, `docker compose --env-file backend/.env config --quiet` / `up -d --build` / `ps`, and the planner-check one-liner with expected output. Removed the "Original project timeline (planning record)" section.
 - Verification: `docker compose --env-file backend/.env config --quiet` exit 0; the planner-check expression printed `Live AI planner` locally; backend **257 passed**; frontend **111 passed in 21 files** after `npm ci`; README path check found no missing repo-relative targets; `git diff --check` clean; the deliverable commit contains only `README.md` and the two PNGs (no `.env`).
-- Branch `docs/readme-post-pr28` from `3f599df` (current `main`); commit `b4c4b95` plus a follow-up review fix for the emulator-note path. No PR opened by request; branch not pushed.
+- Branch `docs/readme-post-pr28` from `3f599df` (current `main`); commit `b4c4b95` plus a follow-up review fix for the emulator-note path. PR **#29** opened on request (pushed).
 
 ### 2026-10-15 Frontend Caventas branding acceptance (DONE, UNCOMMITTED)
 
