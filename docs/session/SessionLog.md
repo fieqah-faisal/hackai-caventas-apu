@@ -3,6 +3,11 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Favicon correction using supplied Caventas artwork (DONE, UNCOMMITTED)
+
+- Replaced the placeholder SVG favicon with the original transparent `frontend/src/assets/Caventas-logo.png` via a Vite-bundled PNG link; removed the unused placeholder SVG. No artwork was cropped, redrawn or filtered.
+- Verified the production HTML points to the hashed logo image under `/assets/` and the image is present in `dist`. Frontend **111 passed in 21 files**, typecheck, production build and `git diff --check` passed. Changes are unstaged on `feat/investigation-audit-ui-fieqah`; no commit, merge or push.
+
 ### 2026-10-15 Frontend Caventas branding acceptance (DONE, UNCOMMITTED)
 
 - Final checks: focused About suite **2 passed**; full frontend **111 passed in 21 files**; `npm run typecheck`, `npm run build`, and `git diff --check` passed. Final worktree is on `feat/investigation-audit-ui-fieqah`; no files are staged and no credential/service-account paths are tracked.
