@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-15 (investigation timeline and auditable decision trace).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-15 (post-#28 root README refresh).
 
 ## Project
 
@@ -178,6 +178,9 @@ Firestore; no credentials needed).
   backend plus nginx-served API-mode frontend (`:8088`), with `/api` proxying,
   health checks and Windows-host emulator access through
   `host.docker.internal:8080`. Build contexts exclude credentials and `.env`.
+- Root README refreshed after PR #28 (branch `docs/readme-post-pr28`):
+  supplied workflow diagram + light/dark logo, verified Docker/emulator setup
+  path, timeline section removed; frontend suite now **111 tests in 21 files**.
 - Final verification (2026-10-14): backend **206 passed**; frontend strict
   typecheck, **80 tests** and production build passed; Compose config, both
   image builds/health checks, full and abbreviated emulator-backed API-mode
@@ -219,7 +222,8 @@ Firestore; no credentials needed).
   1/2/3, plans bound to 1/2, response edge, persisted state-v3/plan-v2 stale
   report disclosure, per-action provenance, refresh recovery and a valid
   13,405-byte PDF. No live planner request was made; BL-043 remains open.
-- Timeline: internal feature freeze 8/10; submission 15/10 (root README).
+- Timeline: internal feature freeze 8/10; submission 15/10. The planning
+  table was removed from the root README in the post-#28 docs refresh.
 
 ## Architecture
 
