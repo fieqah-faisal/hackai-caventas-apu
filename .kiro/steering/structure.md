@@ -94,6 +94,7 @@ cases/{case_id}
     state_versions/{state_id}
     plans/{plan_id}
     analysis_runs/{run_id}       # queued/running/completed/failed, plus _active marker
+        trace_steps/{step_id}    # append-only safe operational trace, ordered by sequence
     actions/{action_id}
     approvals/{approval_id}
     action_results/{exec_id}
@@ -124,6 +125,12 @@ policies/{policy_id}
 - Analysis-run stages are persisted at real service boundaries; a presentation
   animation or elapsed timer never asserts planner completion. A run is bound
   to the exact state version captured when it was queued.
+- `timeline_projection.py` and `investigation_activity.py` are pure read models
+  over authoritative stored records. They never replace incident state,
+  reviews, approvals, action results or audit events.
+- Agent trace-step schemas use closed fields and create-only persistence. They
+  store executed operations, timings, safe summaries and record references,
+  never prompts, responses, provider payloads or hidden reasoning.
 - Do not store large raw files inside Firestore documents (1 MiB limit).
   Store originals on the local filesystem; keep path + SHA-256 in Firestore.
 - The React UI never accesses Firestore directly. Flow is:
@@ -134,4 +141,6 @@ policies/{policy_id}
   endpoint and reads persistent simulator outcomes from `/action-results`.
 - Reports retain the v1.3 top-level contract and add a typed `analyst_report`
   view (`template_schema_version: 2.0`) shared by the React Report tab and the
-  ReportLab renderer. Renderers consume typed fields rather than parsing prose.
+  ReportLab renderer. Each report copies its structured timeline, trace,
+  investigation activity and sign-off so later source records cannot rewrite
+  history. Renderers consume typed fields rather than parsing prose.

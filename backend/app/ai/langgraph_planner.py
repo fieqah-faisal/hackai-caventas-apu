@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import math
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional, TypedDict
 
@@ -31,6 +32,7 @@ from langgraph.graph import END, START, StateGraph
 from app.ai.planner_adapter import FakePlannerAdapter, PlannerAdapter
 from app.config import get_settings
 from app.schemas.incident_state import IncidentState
+from app.schemas.agent_decision_trace import TraceStep, TraceStepDraft
 from app.schemas.plan import (
     PlanAnalysis,
     PlannerIdentity,
@@ -390,6 +392,7 @@ class LangGraphPlannerAdapter:
 
     def __init__(self, llm_call: Optional[LLMCall] = None) -> None:
         self._llm_call = llm_call or _default_llm_call
+        self._trace_callback: Callable[[TraceStepDraft], None] | None = None
         graph = StateGraph(PlannerState)
         graph.add_node("analyze", self._analyze)
         graph.add_node("retrieve", self._retrieve)
@@ -404,6 +407,13 @@ class LangGraphPlannerAdapter:
         graph.add_edge("propose", END)
         self._graph = graph.compile()
 
+    def set_trace_callback(self, callback: Callable[[TraceStepDraft], None]) -> None:
+        self._trace_callback = callback
+
+    def _trace(self, draft: TraceStepDraft) -> None:
+        if self._trace_callback:
+            self._trace_callback(draft)
+
     @property
     def identity(self) -> PlannerIdentity:
         return PlannerIdentity(
@@ -413,6 +423,7 @@ class LangGraphPlannerAdapter:
         )
 
     def _analyze(self, state: PlannerState) -> PlannerState:
+        started = datetime.now(timezone.utc)
         incident = state["incident"]
         raw = self._llm_call(_analysis_messages(incident), incident["case_id"])
         try:
@@ -421,27 +432,74 @@ class LangGraphPlannerAdapter:
             # Models occasionally emit malformed JSON; one retry covers it.
             raw = self._llm_call(_analysis_messages(incident), incident["case_id"])
             analysis = _extract_json(raw)
+        sufficient = bool(analysis.get("sufficient", False))
+        valid_evidence = _collect_evidence_ids(incident)
+        findings = analysis.get("findings") if isinstance(analysis.get("findings"), list) else []
+        cited = sorted({
+            str(item)
+            for finding in findings if isinstance(finding, dict)
+            for item in finding.get("evidence_ids", []) if str(item) in valid_evidence
+        })
+        completed = datetime.now(timezone.utc)
+        self._trace(TraceStepDraft(
+            step=TraceStep.ANALYZE,
+            message="Live planner returned a structurally parsed analysis.",
+            started_at=started,
+            completed_at=completed,
+            duration_ms=max(0, int((completed - started).total_seconds() * 1000)),
+            evidence_ids=cited,
+            decision_summary=f"Analysis cited {len(cited)} stored evidence record(s); evidence was {'sufficient' if sufficient else 'insufficient'}.",
+            planner_kind="live_ai",
+            planner_adapter=type(self).__name__,
+            planner_model=self.identity.model,
+        ))
         return {
             "analysis": analysis,
-            "sufficient": bool(analysis.get("sufficient", False)),
+            "sufficient": sufficient,
             "stage": str(analysis.get("stage", Stage.ASSESSMENT.value)),
             "missing_evidence": _str_list(analysis.get("missing_evidence")),
         }
 
     def _route_after_analyze(self, state: PlannerState) -> str:
-        return "retrieve" if state.get("sufficient") else "end"
+        started = datetime.now(timezone.utc)
+        route = "retrieve" if state.get("sufficient") else "end"
+        self._trace(TraceStepDraft(
+            step=TraceStep.ROUTE,
+            message="Selected the next implemented planner path.",
+            started_at=started,
+            completed_at=datetime.now(timezone.utc),
+            decision_summary=f"Routed to {route} because evidence was {'sufficient' if state.get('sufficient') else 'insufficient'}.",
+            planner_kind="live_ai",
+            planner_adapter=type(self).__name__,
+            planner_model=self.identity.model,
+        ))
+        return route
 
     def _retrieve(self, state: PlannerState) -> PlannerState:
+        started = datetime.now(timezone.utc)
         stage = _coerce_stage(state.get("stage", "")).value
         guidance = select_guidance(state.get("guidance", {}), stage)
+        selected_rule_ids = sorted(
+            str(rule.get("rule_id")) for rule in guidance.get("policy_rules", [])
+        )
+        self._trace(TraceStepDraft(
+            step=TraceStep.RETRIEVE_GUIDANCE,
+            message="Selected stage-scoped approved guidance.",
+            started_at=started,
+            completed_at=datetime.now(timezone.utc),
+            guidance_ids=selected_rule_ids,
+            decision_summary=f"Selected {len(selected_rule_ids)} guidance rule(s) for {stage}.",
+            planner_kind="live_ai",
+            planner_adapter=type(self).__name__,
+            planner_model=self.identity.model,
+        ))
         return {
             "guidance": guidance,
-            "selected_rule_ids": sorted(
-                str(rule.get("rule_id")) for rule in guidance.get("policy_rules", [])
-            ),
+            "selected_rule_ids": selected_rule_ids,
         }
 
     def _propose(self, state: PlannerState) -> PlannerState:
+        started = datetime.now(timezone.utc)
         incident = state["incident"]
         entity_ids = {str(e.get("id")) for e in incident.get("entities", [])}
         messages = _proposal_messages(
@@ -461,9 +519,25 @@ class LangGraphPlannerAdapter:
         actions = proposal.get("actions") or []
         if not isinstance(actions, list):
             raise PlannerError("planner 'actions' must be a list")
-        return {
-            "actions": [a for a in actions if isinstance(a, dict)],
-        }
+        candidates = [a for a in actions if isinstance(a, dict)]
+        valid_evidence = _collect_evidence_ids(incident)
+        cited = sorted({
+            str(item)
+            for action in candidates
+            for item in action.get("evidence_ids", []) if str(item) in valid_evidence
+        })
+        self._trace(TraceStepDraft(
+            step=TraceStep.PROPOSE,
+            message="Live planner returned candidate response actions.",
+            started_at=started,
+            completed_at=datetime.now(timezone.utc),
+            evidence_ids=cited,
+            decision_summary=f"Received {len(candidates)} dictionary-shaped candidate action(s).",
+            planner_kind="live_ai",
+            planner_adapter=type(self).__name__,
+            planner_model=self.identity.model,
+        ))
+        return {"actions": candidates}
 
     def generate_plan(
         self, incident_state: IncidentState, approved_guidance: dict | None = None
@@ -493,6 +567,23 @@ class LangGraphPlannerAdapter:
             )
             if action is not None:
                 actions.append(action)
+
+        completed = datetime.now(timezone.utc)
+        candidate_count = len(final.get("actions", []))
+        self._trace(TraceStepDraft(
+            step=TraceStep.VALIDATE_PROPOSAL,
+            message="Applied the live adapter's allowlisted proposal validation.",
+            started_at=completed,
+            completed_at=completed,
+            evidence_ids=sorted({item for action in actions for item in action.evidence_ids}),
+            guidance_ids=sorted(allowed_refs),
+            output_refs=[action.target_id for action in actions],
+            decision_summary=f"Accepted {len(actions)} of {candidate_count} candidate action(s).",
+            validation_summary=f"Filtered {candidate_count - len(actions)} candidate action(s); retained {len(analysis.findings)} evidence-linked finding(s).",
+            planner_kind="live_ai",
+            planner_adapter=type(self).__name__,
+            planner_model=self.identity.model,
+        ))
 
         return PlanProposal(
             based_on_state_version=incident_state.version,

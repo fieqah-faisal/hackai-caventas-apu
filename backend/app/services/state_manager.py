@@ -25,6 +25,8 @@ from app.schemas.incident_state import (
     TimelineEvent,
 )
 from app.services import audit_service, gas_lite
+from app.services.timeline_projection import project_timeline
+from app.schemas.timeline import TimelineResponse
 
 
 def _timeline_key(event: TimelineEvent) -> tuple[bool, datetime]:
@@ -266,6 +268,23 @@ def get_current_state(case_id: str) -> IncidentState | None:
         return None
     data = repositories.get_state_version(case_id, version)
     return IncidentState(**data) if data else None
+
+
+def get_current_timeline(case_id: str) -> TimelineResponse | None:
+    case = repositories.get_case(case_id)
+    if case is None:
+        return None
+    state = get_current_state(case_id)
+    return TimelineResponse(
+        case_id=case_id,
+        state_version=int(case.get("current_state_version", 0)),
+        events=project_timeline(
+            repositories.list_evidence(case_id),
+            repositories.list_actions(case_id),
+            repositories.list_action_results(case_id),
+            state,
+        ),
+    )
 
 
 def get_state(case_id: str, version: int) -> IncidentState | None:

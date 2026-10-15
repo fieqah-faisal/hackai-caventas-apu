@@ -102,6 +102,87 @@ def test_get_report_roundtrip(client, monkeypatch, tmp_path):
     assert fetched.json()["report_id"] == generated["report_id"]
 
 
+def test_report_snapshots_trace_activity_rejection_and_signoff(client, monkeypatch, tmp_path):
+    from app.services import analysis_runs
+    from app.services import report_document
+
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    monkeypatch.setattr(PLANNER_PATH, lambda: FakePlannerAdapter())
+    case_id = client.post("/cases", json={"title": "Synthetic auditable investigation"}).json()["case_id"]
+    response = client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("batch.json", FIXTURE.read_bytes(), "application/json")},
+    )
+    assert response.status_code == 200
+    run = analysis_runs.create(case_id)
+    analysis_runs.execute(run)
+    plan = repositories.list_plans(case_id)[0]
+    action_id = plan["action_ids"][0]
+    rejected = client.post(
+        f"/cases/{case_id}/actions/{action_id}/decision",
+        json={
+            "decision": "reject",
+            "analyst": "R. Reviewer",
+            "approver_role": "soc_analyst",
+            "reason": "Synthetic host ownership requires confirmation before isolation.",
+        },
+    )
+    assert rejected.status_code == 200
+    signed = client.post(f"/cases/{case_id}/reviews", json={
+        "target_type": "case",
+        "review_type": "sign_off",
+        "analyst": "A. Analyst",
+        "analyst_role": "SOC analyst",
+        "comment": "Synthetic report snapshot reviewed.",
+        "state_version": 1,
+    })
+    assert signed.status_code == 201
+
+    generated = client.post(f"/cases/{case_id}/reports").json()
+    analyst = generated["analyst_report"]
+    assert analyst["agent_decision_trace"]
+    assert {step["run_id"] for step in analyst["agent_decision_trace"]} == {run.run_id}
+    assert any(row["event_type"] == "action_rejected" and row["reason"] == "Synthetic host ownership requires confirmation before isolation." for row in analyst["investigation_activity"])
+    assert any(row["event_type"] == "signed_off" for row in analyst["investigation_activity"])
+    assert analyst["key_timeline"][0]["event_id"].startswith("TL-")
+
+    rendered: list[object] = []
+
+    def capture_story(_document, story, **_kwargs):
+        rendered.extend(story)
+
+    def flowable_text(value):
+        if isinstance(value, (list, tuple)):
+            return " ".join(flowable_text(item) for item in value)
+        cells = getattr(value, "_cellvalues", None)
+        if cells is not None:
+            return flowable_text(cells)
+        plain_text = getattr(value, "getPlainText", None)
+        return plain_text() if callable(plain_text) else ""
+
+    monkeypatch.setattr(report_document._IncidentReportDocument, "build", capture_story)
+    report_document.render_report_pdf(generated, tmp_path / "captured.pdf")
+    rendered_text = flowable_text(rendered)
+    assert "Structured incident timeline" in rendered_text
+    assert "Agent Decision Trace" in rendered_text
+    assert "Synthetic host ownership requires confirmation before isolation." in rendered_text
+    assert "Final analyst sign-off" in rendered_text
+    assert "Signed off by A. Analyst (SOC analyst)" in rendered_text
+
+    original_activity = analyst["investigation_activity"]
+    later = client.post(f"/cases/{case_id}/reviews", json={
+        "target_type": "case",
+        "review_type": "note",
+        "analyst": "Later Analyst",
+        "analyst_role": "SOC analyst",
+        "comment": "Created after the immutable report snapshot.",
+        "state_version": 1,
+    })
+    assert later.status_code == 201
+    fetched = client.get(f"/cases/{case_id}/reports/{generated['report_id']}").json()
+    assert fetched["analyst_report"]["investigation_activity"] == original_activity
+
+
 def test_latest_report_and_pdf_survive_a_later_read(client, monkeypatch, tmp_path):
     monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
     case_id = _case_with_history(client, monkeypatch)
@@ -478,6 +559,8 @@ def test_analyst_template_reuses_one_schema_across_distinct_scenarios(
         "impact",
         "next_steps",
         "analyst_reviews",
+        "agent_decision_trace",
+        "investigation_activity",
         "appendices",
     }
     assert analyst["appendices"]["evidence_index"]

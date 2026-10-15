@@ -16,9 +16,11 @@ shape; Milestone 1 does not call them.
 """
 from __future__ import annotations
 
-from typing import Protocol
+from datetime import datetime, timezone
+from typing import Callable, Protocol
 
 from app.schemas.incident_state import IncidentState
+from app.schemas.agent_decision_trace import TraceStep, TraceStepDraft
 from app.schemas.plan import (
     PlanAnalysis,
     PlannerIdentity,
@@ -41,6 +43,12 @@ class PlannerAdapter(Protocol):
 class FakePlannerAdapter:
     """Deterministic planner for integration testing without an LLM."""
 
+    def __init__(self) -> None:
+        self._trace_callback: Callable[[TraceStepDraft], None] | None = None
+
+    def set_trace_callback(self, callback: Callable[[TraceStepDraft], None]) -> None:
+        self._trace_callback = callback
+
     @property
     def identity(self) -> PlannerIdentity:
         return PlannerIdentity(
@@ -52,6 +60,7 @@ class FakePlannerAdapter:
     def generate_plan(
         self, incident_state: IncidentState, approved_guidance: dict | None = None
     ) -> PlanProposal:
+        started = datetime.now(timezone.utc)
         hosts = [e for e in incident_state.entities if e.type.value == "host"]
         # Use the most evidenced host rather than arbitrary lexical order:
         # multi-host synthetic batches include benign background workstations.
@@ -90,6 +99,44 @@ class FakePlannerAdapter:
                             confidence=0.6)
             for event in incident_state.timeline if event.evidence_ids
         ]
+        if self._trace_callback:
+            completed = datetime.now(timezone.utc)
+            evidence_ids = sorted({item for finding in findings for item in finding.evidence_ids})
+            identity = self.identity
+            common = {
+                "planner_kind": identity.kind,
+                "planner_adapter": identity.adapter,
+                "planner_model": identity.model,
+            }
+            self._trace_callback(TraceStepDraft(
+                step=TraceStep.ANALYZE,
+                message="Deterministic rules evaluated the stored state.",
+                started_at=started,
+                completed_at=completed,
+                duration_ms=max(0, int((completed - started).total_seconds() * 1000)),
+                evidence_ids=evidence_ids,
+                decision_summary=f"Produced {len(findings)} evidence-linked observation(s) using deterministic rules.",
+                **common,
+            ))
+            self._trace_callback(TraceStepDraft(
+                step=TraceStep.PROPOSE,
+                message="Deterministic rules produced candidate response actions.",
+                started_at=completed,
+                completed_at=completed,
+                evidence_ids=sorted({item for action in actions for item in action.evidence_ids}),
+                output_refs=[action.target_id for action in actions],
+                decision_summary=f"Proposed {len(actions)} candidate action(s).",
+                **common,
+            ))
+            self._trace_callback(TraceStepDraft(
+                step=TraceStep.VALIDATE_PROPOSAL,
+                message="Deterministic proposal construction completed.",
+                started_at=completed,
+                completed_at=datetime.now(timezone.utc),
+                output_refs=[action.target_id for action in actions],
+                validation_summary=f"Accepted {len(actions)} deterministically constructed action(s); filtered 0.",
+                **common,
+            ))
         signal = any("network_upload" in event.description for event in incident_state.timeline)
         summary = (
             f"Stored evidence includes network upload activity involving {host.name}; "

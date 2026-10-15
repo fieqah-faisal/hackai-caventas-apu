@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-15 (typed analyst reporting and PDF presentation).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-15 (investigation timeline and auditable decision trace).
 
 ## Project
 
@@ -91,6 +91,15 @@ Firestore; no credentials needed).
   Full infostealer and false-alarm tests enforce generic reuse and prevent false
   compromise claims. Oversized untrusted fields are bounded in report summaries
   and PDF cells so malformed evidence cannot break document generation.
+- Investigation audit views are additive to GAS-lite and existing lifecycle
+  stores (DEC-019). `GET /timeline` exposes a pure allowlisted current-state
+  chronology; asynchronous analysis runs own append-only, state-bound safe
+  trace steps; `GET /investigation-activity` joins reviews, approvals,
+  rejections, results and selected audits without replacing or mutating them.
+  Reports immutably copy the structured timeline, operational trace, activity,
+  rejection reasons and sign-off for shared web/PDF rendering. The responsive
+  timeline supports sorting/filtering/evidence links, and stale plans remain
+  visible but disabled as review targets.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).
@@ -186,6 +195,12 @@ Firestore; no credentials needed).
   placeholder pages; retired direct URLs redirect to persisted Cases. Case
   creation/evidence, refresh, every workspace tab, report reload/PDF download,
   responsive review controls and single-request planning pending state passed.
+- Investigation-audit verification (2026-10-15): backend **257 passed**;
+  frontend strict typecheck, **109 tests in 20 files**, production build,
+  Compose config and both image builds passed. Deterministic nginx-routed
+  acceptance confirmed the typed timeline, 8 append-only run steps, unified
+  rejection/sign-off activity, immutable report snapshot and 24,913-byte PDF.
+  No live-provider request was made.
 - Corrective integration gate (2026-10-14): backend **223 passed**; frontend
   strict typecheck, **95 tests in 17 files**, production build, Compose config
   and diff checks passed. Isolated deterministic browser acceptance verified

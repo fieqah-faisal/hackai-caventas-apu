@@ -68,6 +68,7 @@ import type {
   PlanDocDTO,
   RunResponseDTO,
   StateVersionMetaDTO,
+  TimelineResponseDTO,
   StoredActionDTO,
   StructuredReportDTO,
 } from "./dto";
@@ -364,15 +365,27 @@ export class RealProvider implements DataProvider {
   }
 
   async getTimeline(caseId: string): Promise<Outcome<TimelineEventVM[]>> {
-    const state = await apiGet<IncidentStateDTO>(`/cases/${caseId}/state`);
-    if (state.kind !== "ok") return fromApi<TimelineEventVM[]>(state as ApiResult<never>, "real");
-    const events: TimelineEventVM[] = state.data.timeline.map((t, i) => ({
-      id: `TL-${i}`,
-      time: t.timestamp ?? null,
-      label: t.description,
-      kind: "relevant",
-      relationshipStatus: "observed",
-      evidenceId: t.evidence_ids[0] ?? null,
+    const timeline = await apiGet<TimelineResponseDTO>(`/cases/${caseId}/timeline`);
+    if (timeline.kind !== "ok") return fromApi<TimelineEventVM[]>(timeline as ApiResult<never>, "real");
+    const events: TimelineEventVM[] = timeline.data.events.map((event) => ({
+      id: event.event_id,
+      time: event.occurred_at ?? null,
+      label: event.summary,
+      kind: event.relevance === "context" ? "benign_decoy" : event.source === "analyst_note" ? "analyst_added" : "relevant",
+      relationshipStatus: event.relationship_status,
+      evidenceId: event.evidence_ids[0] ?? null,
+      eventType: event.event_type,
+      source: event.source ?? null,
+      actor: event.actor ?? null,
+      subject: event.subject ?? null,
+      action: event.action ?? null,
+      result: event.result ?? null,
+      details: event.details,
+      evidenceIds: event.evidence_ids,
+      entityIds: event.entity_ids,
+      relevance: event.relevance,
+      severity: event.severity ?? null,
+      rawDescription: event.raw_description,
     }));
     return ok(events, "real");
   }

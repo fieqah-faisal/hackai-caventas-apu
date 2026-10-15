@@ -3,6 +3,13 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Structured investigation timeline and auditable decision trace (DONE, UNCOMMITTED)
+
+- Created `feat/investigation-audit-ui-fieqah` from committed integration base `6a754ce` without merging `main`. Added a pure typed current-state timeline projection/API and responsive shared table/cards with stored-time sorting, explicit filters, evidence links and collapsed technical detail. Existing GAS-lite `IncidentState.timeline` and planner behavior remain compatible.
+- Added append-only, state/run-bound operational trace steps for asynchronous analysis runs plus run-list and ordered-step APIs. Instrumentation records only executed service/planner boundaries, timings, bounded summaries and stored references; closed schemas exclude prompts, responses, provider payloads, exception bodies, credentials, arbitrary metadata and hidden reasoning. Added a pure unified activity projection over authoritative reviews, approvals/rejections, action results and selected audits without inferring replacement plans.
+- Analyst Reviews now uses a collapsed accessible disclosure, preserves draft form state and disables stale plan targets while retaining case/current-plan review paths. New report versions immutably snapshot the structured timeline, trace, activity, rejection reasons and sign-off; the Report tab and ReportLab PDF consume that stored contract, with conservative defaults for old reports.
+- Final verification: backend **257 passed** plus clean Python compilation; frontend strict typecheck, **109 tests in 20 files** and production build passed; Compose config and both image builds passed, and recreated backend/frontend containers are healthy. Nginx-routed deterministic acceptance used an explicitly blank planner key and confirmed `FakePlannerAdapter`, 6 typed evidence chronology rows, one completed state-bound run with 8 ordered trace steps, rejection reason and case sign-off in 4 activity rows, an immutable report snapshot with 7 material timeline rows, and a valid 24,913-byte PDF. `git diff --check` passed apart from expected Windows line-ending warnings; tracked sensitive-filename and changed-source credential-signature scans were clean. The temporary blank-key file and dedicated pytest container were removed. No live provider request, commit, stage, merge or push.
+
 ### 2026-10-15 Integration quality and analyst review pass (IN PROGRESS)
 
 - Confirmed `chore/final-integration-fieqah` starts at expected HEAD `c2d5f6752db99f2859c6b0a9b130508323c4d803` with no pre-existing worktree edits and no merge from `main` required or permitted.

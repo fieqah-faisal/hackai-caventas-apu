@@ -14,9 +14,18 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from app.schemas.incident_state import IncidentState, StateVersionMeta
+from app.schemas.timeline import TimelineResponse
 from app.services import state_manager
 
 router = APIRouter(prefix="/cases", tags=["state"])
+
+
+@router.get("/{case_id}/timeline", response_model=TimelineResponse)
+def get_timeline(case_id: str) -> TimelineResponse:
+    timeline = state_manager.get_current_timeline(case_id)
+    if timeline is None:
+        raise HTTPException(status_code=404, detail=f"case not found: {case_id}")
+    return timeline
 
 
 @router.get("/{case_id}/states", response_model=list[StateVersionMeta])

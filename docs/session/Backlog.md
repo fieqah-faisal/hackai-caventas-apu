@@ -17,7 +17,8 @@
 > `feat/bl-020-untrusted-evidence` adds DEC-016.
 > `docs/report-schema-v1.3` adds DEC-017 and BL-040..BL-042.
 > `chore/final-integration-fieqah` adds BL-043.
-> Next free IDs: **BL-046** and **DEC-019**.
+> `feat/investigation-audit-ui-fieqah` adds DEC-019.
+> Next free IDs: **BL-046** and **DEC-020**.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
 > (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done

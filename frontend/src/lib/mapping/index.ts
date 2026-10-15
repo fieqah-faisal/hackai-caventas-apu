@@ -638,6 +638,7 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
         evidenceIds: finding.evidence_ids,
       }));
   const mapTimeline = (event: NonNullable<typeof analyst>["key_timeline"][number]): ReportTimelineEventVM => ({
+    id: event.event_id || `${event.timestamp || "unknown"}-${event.event_type}-${event.evidence_ids.join("-")}`,
     timestamp: event.timestamp ?? null,
     category: event.category,
     eventType: event.event_type,
@@ -647,10 +648,23 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
     evidenceIds: event.evidence_ids,
     source: event.source,
     rawDetail: event.raw_detail,
+    actor: event.actor ?? null,
+    subject: event.subject ?? null,
+    action: event.action ?? null,
+    result: event.result ?? null,
+    details: event.details ?? {},
+    relationshipStatus: event.relationship_status ?? "observed",
+    relevance: event.relevance ?? (
+      event.category === "attack" || event.category === "defensive" || event.category === "context" || event.category === "observed"
+        ? event.category
+        : "context"
+    ),
+    severity: event.severity ?? null,
   });
   const timeline: ReportTimelineEventVM[] = analyst
     ? analyst.key_timeline.map(mapTimeline)
     : dto.timeline.map((event) => ({
+        id: `${event.time || "unknown"}-${event.source}-${event.evidence_ids.join("-")}`,
         timestamp: event.time ?? null,
         category: event.side === "defender" ? "defensive" : event.source === "analyst_note" ? "analyst" : "observed",
         eventType: event.source,
@@ -660,6 +674,14 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
         evidenceIds: event.evidence_ids,
         source: event.source,
         rawDetail: event.event,
+        actor: null,
+        subject: null,
+        action: null,
+        result: null,
+        details: {},
+        relationshipStatus: "observed",
+        relevance: event.side === "defender" ? "defensive" : "unknown",
+        severity: null,
       }));
   const entities: ReportEntityVM[] = analyst
     ? analyst.entities.map((entity) => ({
@@ -828,6 +850,46 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
       comment: review.comment,
       stateVersion: review.state_version ?? null,
       createdAt: review.created_at,
+    })),
+    agentDecisionTrace: (analyst?.agent_decision_trace || []).map((step) => ({
+      stepId: step.step_id,
+      runId: step.run_id,
+      sequence: step.sequence,
+      step: step.step,
+      status: step.status,
+      message: step.message,
+      stateVersion: step.based_on_state_version,
+      startedAt: step.started_at,
+      completedAt: step.completed_at,
+      durationMs: step.duration_ms,
+      evidenceIds: step.evidence_ids,
+      guidanceIds: step.guidance_ids,
+      outputRefs: step.output_refs,
+      decisionSummary: step.decision_summary,
+      validationSummary: step.validation_summary,
+      plannerKind: step.planner_kind,
+      plannerAdapter: step.planner_adapter ?? null,
+      plannerModel: step.planner_model ?? null,
+    })),
+    investigationActivity: (analyst?.investigation_activity || []).map((event) => ({
+      eventId: event.event_id,
+      timestamp: event.timestamp ?? null,
+      actorType: event.actor_type,
+      actor: event.actor ?? null,
+      role: event.role ?? null,
+      eventType: event.event_type,
+      targetType: event.target_type,
+      targetId: event.target_id ?? null,
+      stateVersion: event.state_version ?? null,
+      planId: event.plan_id ?? null,
+      actionId: event.action_id ?? null,
+      summary: event.summary,
+      reason: event.reason ?? null,
+      outcome: event.outcome ?? null,
+      references: event.references,
+      actionName: event.action_name ?? null,
+      actionTarget: event.action_target ?? null,
+      replacementPlanId: event.replacement_plan_id ?? null,
     })),
     stateVersion: dto.current_state_version ?? null,
     recoveryStatus: dto.recovery_status ?? null,

@@ -35,6 +35,7 @@ REPORTS = "reports"
 AUDIT_EVENTS = "audit_events"
 ANALYSIS_RUNS = "analysis_runs"
 ANALYST_REVIEWS = "analyst_reviews"
+TRACE_STEPS = "trace_steps"
 _fake_run_lock = Lock()  # test fake has no transaction; real Firestore uses one
 
 
@@ -203,6 +204,24 @@ def list_analyst_reviews(case_id: str) -> list[dict[str, Any]]:
 def get_analysis_run(case_id: str, run_id: str) -> dict[str, Any] | None:
     snap = _case_ref(case_id).collection(ANALYSIS_RUNS).document(run_id).get()
     return snap.to_dict() if snap.exists else None
+
+
+def list_analysis_runs(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(ANALYSIS_RUNS).stream()
+    return [
+        data for doc in docs
+        if (data := doc.to_dict()) and data.get("case_id") == case_id
+        and data.get("based_on_state_version") is not None
+    ]
+
+
+def append_trace_step(case_id: str, run_id: str, step_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(ANALYSIS_RUNS).document(run_id).collection(TRACE_STEPS).document(step_id).create(data)
+
+
+def list_trace_steps(case_id: str, run_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(ANALYSIS_RUNS).document(run_id).collection(TRACE_STEPS).stream()
+    return [doc.to_dict() for doc in docs]
 
 
 def get_active_analysis_run(case_id: str) -> dict[str, Any] | None:

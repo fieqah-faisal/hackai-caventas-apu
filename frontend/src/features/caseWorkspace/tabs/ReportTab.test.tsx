@@ -115,4 +115,31 @@ describe("ReportTab (H4: generate only on explicit action)", () => {
     expect(screen.getByText("Raw chronology")).toBeInTheDocument();
     expect(screen.getByText("Evidence index")).toBeInTheDocument();
   });
+
+  it("renders immutable activity facts and collapses the decision trace by default", async () => {
+    const auditable: ReportVM = {
+      ...REPORT,
+      agentDecisionTrace: [{
+        stepId: "TRACE-0001", runId: "RUN-1", sequence: 1, step: "analyze", status: "completed",
+        message: "Analysis completed.", stateVersion: 2, startedAt: "2026-01-01T00:00:00Z",
+        completedAt: "2026-01-01T00:00:01Z", durationMs: 1000, evidenceIds: ["EV-1"],
+        guidanceIds: [], outputRefs: [], decisionSummary: "One stored record was analyzed.",
+        validationSummary: "", plannerKind: "deterministic", plannerAdapter: "FakePlannerAdapter", plannerModel: null,
+      }],
+      investigationActivity: [{
+        eventId: "ACTIVITY-APPROVAL-1", timestamp: "2026-01-01T00:00:02Z", actorType: "analyst",
+        actor: "A. Analyst", role: "soc_analyst", eventType: "action_rejected", targetType: "action",
+        targetId: "ACT-1", stateVersion: 2, planId: "PLAN-1", actionId: "ACT-1",
+        summary: "Action ACT-1 was rejected.", reason: "Target ownership was not established.", outcome: "rejected",
+        references: ["ACT-1"], actionName: "isolate_host", actionTarget: "HOST::SYNTH", replacementPlanId: null,
+      }],
+    };
+    provider.getReport.mockResolvedValue({ kind: "ok", value: { data: auditable, source: "real" } });
+    renderTab();
+
+    const traceHeading = await screen.findByText("Agent Decision Trace");
+    expect(traceHeading.closest("details")).not.toHaveAttribute("open");
+    expect(screen.getByRole("heading", { name: "Analyst Activity and Approval Log" })).toBeInTheDocument();
+    expect(screen.getByText("Reason: Target ownership was not established.")).toBeInTheDocument();
+  });
 });

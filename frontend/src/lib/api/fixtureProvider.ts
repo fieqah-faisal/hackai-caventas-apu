@@ -490,6 +490,7 @@ export class FixtureProvider implements DataProvider {
     const decided = Object.entries(demo.decisionNote);
     const reportEvidence = [...infostealerEvidenceBatch1, ...infostealerEvidenceBatch2];
     const reportTimeline = [...infostealerTimelineBatch1, ...infostealerTimelineBatch2].map((event) => ({
+      id: event.id,
       timestamp: event.time,
       category: event.kind === "analyst_added" ? "analyst" as const : event.kind === "relevant" ? "attack" as const : "observed" as const,
       eventType: event.kind,
@@ -499,6 +500,14 @@ export class FixtureProvider implements DataProvider {
       evidenceIds: event.evidenceId ? [event.evidenceId] : [],
       source: "synthetic_fixture",
       rawDetail: event.label,
+      actor: event.actor ?? null,
+      subject: event.subject ?? null,
+      action: event.action ?? null,
+      result: event.result ?? null,
+      details: event.details ?? {},
+      relationshipStatus: event.relationshipStatus,
+      relevance: event.relevance ?? (event.kind === "relevant" ? "attack" as const : "context" as const),
+      severity: event.severity ?? null,
     }));
     const reportActions = actions.map((action) => {
       const result = executed.find((item) => item.actionId === action.actionId);
@@ -554,6 +563,8 @@ export class FixtureProvider implements DataProvider {
         confirmedByAnalyst: false,
         signOff: null,
         reviews: [],
+        agentDecisionTrace: [],
+        investigationActivity: [],
         stateVersion: 2,
         recoveryStatus: "containing",
         planId: "PLAN-FIXTURE-02",

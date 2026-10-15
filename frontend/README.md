@@ -78,12 +78,18 @@ Known backend gaps are surfaced explicitly rather than faked:
   `GET /action-results` after the approval queue refreshes.
 - Audit events map the backend shape (`audit_id`, `event_type`,
   `timestamp`, `details`); evidence lists in upload order.
+- Timeline reads the typed `GET /timeline` projection. Its responsive table and
+  mobile cards support stored-time ordering, explicit filters, evidence links
+  and collapsed technical/raw detail without parsing backend descriptions.
 - The Report uses the actual backend report DTO. `GET /reports/latest` restores
   the newest persisted report after refresh, and the PDF is downloaded through
   the report API rather than exposing the server-local `pdf_path`.
 - Opening the Report tab only reads. A report is generated only when the
   analyst clicks Generate / Regenerate. Each `POST /reports` stores a new
-  report version, PDF and audit event.
+  report version, PDF and audit event. The stored snapshot renders the same
+  structured timeline, operational Agent Decision Trace, analyst activity,
+  approval/rejection reasons and sign-off in web and PDF views; old reports
+  receive honest empty compatibility defaults.
 - Persisted `GET /cases` backs the Cases page and API-mode dashboard. Planning
   and decision summaries are derived from stored plans/actions. Case-scoped
   `POST /analysis-runs`, `GET /analysis-runs/active` and
@@ -92,6 +98,9 @@ Known backend gaps are surfaced explicitly rather than faked:
   active across routes and full refreshes; only watched case IDs are retained
   in session storage, never run status. The dashboard aggregate still has no
   list-runs endpoint.
+- Analyst Reviews is an accessible disclosure that stays collapsed by default.
+  Stale plans remain visible but cannot receive a new review; current plans and
+  the case remain valid targets, including case-level evidence requests.
 - Incident Graph reads immutable GAS-lite state history; `@xyflow/react` is a
   read-only renderer with deterministic left-to-right dependency ranks,
   explicit directional handles/arrowheads, semantic edge styles,
@@ -112,7 +121,7 @@ hard boundary: fixture and API data are never combined within one case.
   redirect to the persisted Cases surface instead of rendering placeholders
 - `src/components/shell` — TopBar, Sidebar (+ mobile drawer), AppShell, ConnectionBanner
 - `src/components/icons` — CoreUI icon registry + inline `Icon` renderer
-- `src/components/ui` — Button, StatusBadge, Region/states, Skeleton, Mono, Toast, SyntheticBadge, AsyncBoundary
+- `src/components/ui` — shared controls plus the responsive `TimelineTable`
 - `src/features/dashboard` — DashboardPage
 - `src/features/createCase` — CreateCasePage (stepper)
 - `src/features/caseWorkspace` — CaseWorkspace shell, DetailPanel, context, and the seven `tabs/`

@@ -23,6 +23,7 @@ Firebase Admin SDK for Python
 
 Incident State:
 Versioned JSON documents stored in Firestore
+Pure typed timeline and investigation-activity projections over stored records
 
 Incident Graph:
 JSON entities and relationships
@@ -59,6 +60,7 @@ Reports:
 ReportLab
 JSON exports
 CSV exports where needed
+Immutable typed timeline, Agent Decision Trace, activity and sign-off snapshots
 
 Testing:
 pytest

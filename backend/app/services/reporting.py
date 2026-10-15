@@ -32,6 +32,8 @@ from app.schemas.report import (
 )
 from app.services import audit_service, policy_service, state_manager
 from app.services.report_document import render_report_pdf
+from app.services.timeline_projection import project_timeline
+from app.services.investigation_activity import project_activity
 
 ORGANISATION = "Caventas Demo Organisation"
 
@@ -423,6 +425,7 @@ def _event_category(
 def _structured_timeline(
     evidence: list[dict[str, Any]],
     actions: list[dict[str, Any]],
+    action_results: list[dict[str, Any]],
     state: Any,
     findings: list[ReportFinding],
     incident_type: str,
@@ -451,89 +454,55 @@ def _structured_timeline(
         for evidence_id in finding.evidence_ids
     }
     rows: list[ReportTimelineEvent] = []
-    for record in evidence:
-        evidence_id = str(record.get("evidence_id", ""))
-        fields = record.get("fields") if isinstance(record.get("fields"), dict) else {}
-        event_type = str(fields.get("event_type") or record.get("kind") or "event")
-        source = str(fields.get("source") or "unknown").lower()
-        category = _event_category(
-            event_type, source, evidence_id, attack_evidence_ids, incident_type
+    for event in project_timeline(evidence, actions, action_results, state):
+        finding_id = next(
+            (finding_by_evidence.get(item) for item in event.evidence_ids if finding_by_evidence.get(item)),
+            None,
         )
-        severity = str(fields.get("severity", "")).lower()
-        finding_id = finding_by_evidence.get(evidence_id)
+        is_attack = not _is_non_incident(incident_type) and bool(set(event.evidence_ids).intersection(attack_evidence_ids))
+        category = (
+            "defensive" if event.relevance == "defensive"
+            else "attack" if is_attack
+            else "context" if event.relevance == "context"
+            else "analyst" if event.source == "analyst_note"
+            else "observed"
+        )
         significance = (
             f"Supports current-state finding {finding_id}."
             if finding_id
-            else "Analyst-supplied context."
-            if category == "analyst"
-            else "Change-management context."
-            if category == "context"
-            else f"Source severity: {severity}."
-            if severity in {"high", "critical"}
+            else "Analyst decision recorded."
+            if category == "defensive"
             else "Observed record; significance not determined."
         )
         rows.append(
             ReportTimelineEvent(
-                timestamp=_parse_datetime(record.get("event_time")),
+                event_id=event.event_id,
+                timestamp=event.occurred_at,
                 category=category,
-                event_type=event_type,
-                summary=_event_summary(fields, event_type),
+                event_type=event.event_type,
+                summary=event.summary,
                 significance=significance,
-                entity_ids=_event_entities(evidence_id, state),
-                evidence_ids=[evidence_id] if evidence_id else [],
-                source=source,
+                entity_ids=event.entity_ids,
+                evidence_ids=event.evidence_ids,
+                source=event.source or "unknown",
                 material=bool(
                     finding_id
-                    or category in {"analyst", "context", "attack"}
-                    or severity in {"high", "critical"}
+                    or category in {"analyst", "context", "attack", "defensive"}
+                    or event.severity in {"high", "critical"}
                 ),
-                raw_detail=_raw_evidence_detail(fields),
+                raw_detail=f"{event.raw_description[:797]}..." if len(event.raw_description) > 800 else event.raw_description,
+                actor=event.actor,
+                subject=event.subject,
+                action=event.action,
+                result=event.result,
+                details=event.details,
+                relationship_status=event.relationship_status,
+                relevance="attack" if is_attack else event.relevance,
+                severity=event.severity,
+                raw_description=event.raw_description,
             )
         )
-    for action in actions:
-        if action.get("decided_at"):
-            decision = action.get("approval_decision") or (
-                "rejected" if action.get("status") == "rejected" else "approved"
-            )
-            rows.append(
-                ReportTimelineEvent(
-                    timestamp=_parse_datetime(action.get("decided_at")),
-                    category="defensive",
-                    event_type="action_decision",
-                    summary=f"Action {action.get('action_id')} was {decision} for {action.get('target_id') or 'an unrecorded target'}.",
-                    significance="Analyst decision recorded.",
-                    entity_ids=[str(action.get("target_id"))] if action.get("target_id") else [],
-                    evidence_ids=_string_list(action.get("evidence_ids")),
-                    source="analyst_decision",
-                    material=True,
-                )
-            )
-        if action.get("execution_id"):
-            rows.append(
-                ReportTimelineEvent(
-                    timestamp=_parse_datetime(action.get("simulated_at") or action.get("decided_at")),
-                    category="defensive",
-                    event_type="action_result",
-                    summary=f"Simulated {action.get('tool_name') or 'action'} on {action.get('target_id') or 'an unrecorded target'}.",
-                    significance=(
-                        f"Execution {action.get('execution_status') or 'unknown'}; "
-                        f"validation {action.get('validation_status') or 'unknown'}."
-                    ),
-                    entity_ids=[str(action.get("target_id"))] if action.get("target_id") else [],
-                    evidence_ids=_string_list(action.get("evidence_ids")),
-                    source=str(action.get("result_source") or "simulator"),
-                    material=True,
-                )
-            )
-    return sorted(
-        rows,
-        key=lambda row: (
-            row.timestamp is None,
-            row.timestamp or datetime.max.replace(tzinfo=timezone.utc),
-            row.event_type,
-            row.evidence_ids[0] if row.evidence_ids else "",
-        ),
-    )
+    return rows
 
 
 def _structured_entities(
@@ -769,8 +738,11 @@ def _build_analyst_report(
     analysis: dict[str, Any],
     techniques: list[str],
     actions: list[dict[str, Any]],
+    action_results: list[dict[str, Any]],
     guidance: dict[str, Any],
     reviews: list[dict[str, Any]],
+    trace_steps: list[dict[str, Any]],
+    investigation_activity: list[Any],
 ) -> AnalystReport:
     evidence_by_id = {
         str(item.get("evidence_id")): item for item in evidence if item.get("evidence_id")
@@ -786,7 +758,7 @@ def _build_analyst_report(
     current_findings = technical_findings if has_current_analysis else []
     key_findings = current_findings[:6]
     timeline = _structured_timeline(
-        evidence, actions, state, key_findings, incident_type
+        evidence, actions, action_results, state, key_findings, incident_type
     )
     entities = _structured_entities(state, guidance, current_findings, incident_type)
     structured_actions = _structured_actions(actions)
@@ -876,6 +848,8 @@ def _build_analyst_report(
         impact=ReportImpact(remaining_risk=remaining_risk),
         next_steps=next_steps,
         analyst_reviews=reviews,
+        agent_decision_trace=trace_steps,
+        investigation_activity=investigation_activity,
         appendices=ReportAppendices(
             evidence_index=_evidence_references(evidence),
             raw_chronology=timeline,
@@ -914,6 +888,24 @@ def generate_report(case_id: str) -> dict[str, Any]:
 
     state = state_manager.get_current_state(case_id)
     evidence = repositories.list_evidence(case_id)
+    action_results = repositories.list_action_results(case_id)
+    analysis_runs = repositories.list_analysis_runs(case_id)
+    trace_steps = [
+        step
+        for run in analysis_runs
+        for step in repositories.list_trace_steps(case_id, str(run.get("run_id")))
+    ]
+    trace_steps.sort(key=lambda item: (item.get("started_at", ""), item.get("run_id", ""), item.get("sequence", 0)))
+    reviews = repositories.list_analyst_reviews(case_id)
+    approvals = repositories.list_approvals(case_id)
+    stored_actions = repositories.list_actions(case_id)
+    activity = project_activity(
+        reviews,
+        approvals,
+        action_results,
+        audit_service.list_events(case_id),
+        stored_actions,
+    )
     stored_evidence_ids = {item.get("evidence_id") for item in evidence}
     plans = _plans_newest_last(case_id)
     plan = plans[-1] if plans else None
@@ -1080,8 +1072,11 @@ def generate_report(case_id: str) -> dict[str, Any]:
         analysis=analysis,
         techniques=techniques,
         actions=actions,
+        action_results=action_results,
         guidance=guidance,
-        reviews=repositories.list_analyst_reviews(case_id),
+        reviews=reviews,
+        trace_steps=trace_steps,
+        investigation_activity=activity,
     )
     report["analyst_report"] = analyst_report.model_dump(mode="json")
     report["executive_summary"] = {

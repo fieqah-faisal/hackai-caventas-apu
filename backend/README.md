@@ -27,6 +27,7 @@ Milestone 1 (cases, evidence, incident state, audit):
 | GET | `/cases/{case_id}/state` | Current incident-state version |
 | GET | `/cases/{case_id}/states` | List immutable state-version metadata (GAS-lite) |
 | GET | `/cases/{case_id}/states/{version}` | Full immutable snapshot for one version (GAS-lite) |
+| GET | `/cases/{case_id}/timeline` | Typed current-state chronology projected from stored records |
 | GET | `/cases/{case_id}/audit` | Audit trail |
 | GET | `/health` | Health check |
 
@@ -48,7 +49,9 @@ AI planning (BL-002):
 | POST | `/cases/{case_id}/runs` | Run the planner; persist a plan + proposed actions |
 | POST | `/cases/{case_id}/analysis-runs` | Queue a persisted background analysis run; returns 202 and run ID |
 | GET | `/cases/{case_id}/analysis-runs/active` | Discover the case's active run for navigation/refresh recovery; returns the run or `null` |
+| GET | `/cases/{case_id}/analysis-runs` | List persisted runs, newest first |
 | GET | `/cases/{case_id}/analysis-runs/{run_id}` | Read stored stage, state binding, terminal plan or sanitized failure |
+| GET | `/cases/{case_id}/analysis-runs/{run_id}/steps` | Read the ordered, sanitized operational Agent Decision Trace |
 | GET | `/cases/{case_id}/plans` | List stored plans for a case |
 
 The planner runs behind `app/ai/langgraph_planner.py` (LangGraph over the
@@ -68,6 +71,10 @@ loading guidance, running planner, persisting plan), and store a sanitized
 failure rather than provider response text. The original synchronous `/runs`
 remains supported. A FastAPI process restart during a background run can leave
 its queued/running record nonterminal; durable worker recovery is follow-on.
+Each asynchronous run also owns append-only trace-step documents for operations
+that actually executed. Steps carry state/run bindings, timings, bounded
+summaries and record IDs only; prompts, responses, provider payloads, hidden
+reasoning, credentials and arbitrary metadata are not part of the schema.
 The deterministic adapter now emits evidence-grounded typed analysis for
 synthetic/offline verification; this is not evidence that the live model works.
 
@@ -84,7 +91,10 @@ Approvals, bounded simulated execution and reporting (BL-003):
 | POST | `/cases/{case_id}/actions/{action_id}/decision` | Analyst decision (`approve` / `reject`, with approver role) |
 | POST | `/cases/{case_id}/actions/{action_id}/execute` | Run an approved action in the bounded simulator |
 | POST | `/cases/{case_id}/reports` | Generate and store a new report version (JSON + PDF) |
+| GET | `/cases/{case_id}/reports/latest` | Retrieve the newest persisted report |
 | GET | `/cases/{case_id}/reports/{report_id}` | Retrieve a stored report |
+| GET | `/cases/{case_id}/reports/{report_id}/pdf` | Download the exact generated PDF |
+| GET | `/cases/{case_id}/investigation-activity` | Unified read-only review/decision/outcome activity |
 
 Read-only lists for the API-mode approvals queue (BL-027, DEC-011), sorted
 by `created_at`, 404 for an unknown case:
@@ -105,10 +115,13 @@ approval (one bound to a superseded state version) requires a new planning run
 and a replacement action rather than silent re-use. The proposal, approval,
 execution and validation records are each stored and immutable; GAS-lite adds
 an `action_attempted_on` response edge referencing the stored `action_id` and
-`execution_id` without replacing those records. Execution goes through
+`execution_id` without replacing those records. A pure read model combines
+reviews, approvals/rejections, execution/validation results and selected audit
+events without replacing those records or inferring a replacement action.
+Reports copy the typed timeline, operational trace, activity log and sign-off
+into each immutable snapshot. Execution goes through
 `BoundedSimulatorAdapter`; `FakeSimulatorAdapter` is used only by tests that
-need a fixed outcome. There is no report list/latest endpoint yet (see BL-025
-in `docs/session/Backlog.md`).
+need a fixed outcome.
 
 ## Architecture
 
@@ -127,7 +140,7 @@ data model):
 ```
 app/
   api/        FastAPI routers
-  schemas/    Pydantic models (case, evidence, incident_state, plan, report)
+  schemas/    Pydantic models (case, evidence, state, timeline, trace, report)
   services/   ingestion, state_manager, gas_lite, policy_service, planning,
               approval, execution, audit, reporting
   database/   firebase.py (client), repositories.py (all Firestore access)
@@ -169,7 +182,8 @@ run without the emulator or any credentials. The suite covers the Milestone 1
 endpoints, persistence, state versioning, malformed/unsupported uploads,
 404s, the audit trail, the planner adapter (scripted LLM, analysis
 validation, malformed-JSON retry), the planning endpoints, the approval,
-execution and reporting endpoints, and the read-only action/result lists.
+execution and reporting endpoints, typed timeline/trace/activity projections,
+immutable report snapshots, and the read-only action/result lists.
 
 ## Action simulator, scenarios and evaluation (Aidan)
 

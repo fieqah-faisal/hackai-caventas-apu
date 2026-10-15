@@ -11,6 +11,8 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 from app.schemas.analyst_review import AnalystReview
+from app.schemas.agent_decision_trace import AgentDecisionTraceStep
+from app.schemas.investigation_activity import InvestigationActivityEvent
 
 
 def _now() -> datetime:
@@ -52,6 +54,7 @@ class ReportFinding(BaseModel):
 
 
 class ReportTimelineEvent(BaseModel):
+    event_id: str = ""
     timestamp: datetime | None = None
     category: Literal["attack", "defensive", "analyst", "context", "observed"] = "observed"
     event_type: str = "event"
@@ -62,6 +65,15 @@ class ReportTimelineEvent(BaseModel):
     source: str = "unknown"
     material: bool = False
     raw_detail: str = ""
+    actor: str | None = None
+    subject: str | None = None
+    action: str | None = None
+    result: str | None = None
+    details: dict[str, str] = Field(default_factory=dict)
+    relationship_status: Literal["observed", "inferred"] = "observed"
+    relevance: str = "unknown"
+    severity: str | None = None
+    raw_description: str = ""
 
 
 class ReportEntity(BaseModel):
@@ -169,6 +181,8 @@ class AnalystReport(BaseModel):
     impact: ReportImpact = Field(default_factory=ReportImpact)
     next_steps: list[ReportNextStep] = Field(default_factory=list)
     analyst_reviews: list[AnalystReview] = Field(default_factory=list)
+    agent_decision_trace: list[AgentDecisionTraceStep] = Field(default_factory=list)
+    investigation_activity: list[InvestigationActivityEvent] = Field(default_factory=list)
     appendices: ReportAppendices = Field(default_factory=ReportAppendices)
 
 

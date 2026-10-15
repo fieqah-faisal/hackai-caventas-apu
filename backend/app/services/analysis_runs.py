@@ -4,9 +4,11 @@ from __future__ import annotations
 import uuid
 import re
 from datetime import datetime, timezone
+from typing import Callable
 
 from app.database import repositories
 from app.schemas.analysis_run import AnalysisRun, RunStage, RunStatus
+from app.schemas.agent_decision_trace import AgentDecisionTraceStep, TraceStep, TraceStepDraft
 from app.services import planning_service
 
 _MESSAGES = {
@@ -50,7 +52,43 @@ def active(case_id: str) -> AnalysisRun | None:
     return AnalysisRun(**data) if data else None
 
 
+def list_for_case(case_id: str) -> list[AnalysisRun] | None:
+    if not repositories.case_exists(case_id):
+        return None
+    runs = [AnalysisRun(**data) for data in repositories.list_analysis_runs(case_id)]
+    return sorted(runs, key=lambda item: (item.created_at, item.run_id))
+
+
+def list_steps(case_id: str, run_id: str) -> list[AgentDecisionTraceStep] | None:
+    if read(case_id, run_id) is None:
+        return None
+    rows = [AgentDecisionTraceStep(**data) for data in repositories.list_trace_steps(case_id, run_id)]
+    return sorted(rows, key=lambda item: (item.sequence, item.step_id))
+
+
+def _trace_recorder(run: AnalysisRun) -> Callable[[TraceStepDraft], None]:
+    sequence = len(repositories.list_trace_steps(run.case_id, run.run_id))
+
+    def record(draft: TraceStepDraft) -> None:
+        nonlocal sequence
+        sequence += 1
+        step = AgentDecisionTraceStep(
+            **draft.model_dump(),
+            step_id=f"TRACE-{sequence:04d}",
+            case_id=run.case_id,
+            run_id=run.run_id,
+            sequence=sequence,
+            based_on_state_version=run.based_on_state_version,
+        )
+        repositories.append_trace_step(
+            run.case_id, run.run_id, step.step_id, step.model_dump(mode="json")
+        )
+
+    return record
+
+
 def execute(run: AnalysisRun) -> None:
+    trace = _trace_recorder(run)
     def update(stage: str, version: int) -> None:
         repositories.update_analysis_run(run.case_id, run.run_id, {
             "status": RunStatus.RUNNING.value, "stage": stage,
@@ -58,8 +96,12 @@ def execute(run: AnalysisRun) -> None:
         })
 
     try:
-        plan = planning_service.run_planning(run.case_id, progress=update,
-                                             expected_state_version=run.based_on_state_version)
+        plan = planning_service.run_planning(
+            run.case_id,
+            progress=update,
+            expected_state_version=run.based_on_state_version,
+            trace=trace,
+        )
         if plan["based_on_state_version"] != run.based_on_state_version:
             raise planning_service.PlanningError("plan state binding changed", "planner")
         now = datetime.now(timezone.utc).isoformat()
@@ -68,6 +110,15 @@ def execute(run: AnalysisRun) -> None:
             "message": "Stored plan is ready.", "plan_id": plan["plan_id"],
             "updated_at": now, "completed_at": now,
         })
+        completed = datetime.now(timezone.utc)
+        trace(TraceStepDraft(
+            step=TraceStep.COMPLETED,
+            message="Analysis run completed with a persisted plan.",
+            started_at=completed,
+            completed_at=completed,
+            output_refs=[plan["plan_id"]],
+            decision_summary="The state-bound proposal was persisted for analyst review.",
+        ))
     except Exception as exc:
         # Do not store exception text: HTTP client exceptions may include URLs,
         # headers, upstream bodies or credential-bearing configuration.
@@ -83,5 +134,17 @@ def execute(run: AnalysisRun) -> None:
                       "planner request failed (upstream unavailable)" if category == "planner" else "analysis failed"),
             "updated_at": now, "completed_at": now,
         })
+        failed_at = datetime.now(timezone.utc)
+        try:
+            trace(TraceStepDraft(
+                step=TraceStep.FAILED,
+                status="failed",
+                message="Analysis run failed safely.",
+                started_at=failed_at,
+                completed_at=failed_at,
+                decision_summary="Failure category: planner unavailable." if category == "planner" else "Failure category: internal analysis error.",
+            ))
+        except Exception:
+            pass
     finally:
         repositories.release_analysis_run(run.case_id, run.run_id)

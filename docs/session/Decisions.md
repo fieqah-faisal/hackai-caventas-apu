@@ -558,3 +558,15 @@ DEC-001; BL-030; arXiv 2608.09524.
 **Tradeoff:** FastAPI background tasks are prototype-scoped: interrupted processes may leave an active marker/unfinished run until durable recovery is implemented (BL-044). The existing builder does not infer attack edges solely from a suspicious event name; such classification needs evidence-grounded rules (BL-045).
 
 **Links:** `.kiro/specs/caventas-gas-lite-frontend/`, `backend/app/services/analysis_runs.py`, `frontend/src/features/caseWorkspace/tabs/IncidentGraphTab.tsx`.
+
+## DEC-019: Typed audit projections and append-only operational traces (2026-10-15)
+
+**Context:** Analysts need a readable chronology, planner execution evidence and a unified decision history without mutating GAS-lite state, replacing authoritative lifecycle records, exposing hidden model reasoning or making old reports change after generation.
+
+**Options considered:** parse free-text state descriptions in React; copy reviews/approvals into a new mutable audit store; persist raw model/provider exchanges; or expose pure typed read projections plus a closed append-only operational trace and snapshot those contracts into reports.
+
+**Decision:** Keep `IncidentState.timeline`, reviews, approvals, action results and audit events authoritative. Project the current timeline and unified investigation activity through pure allowlisted services. Persist asynchronous run steps under `analysis_runs/{run_id}/trace_steps` with sequence IDs, create-only writes and a schema that forbids extra fields. Trace only executed operational boundaries, safe summaries and stored references. New report versions copy timeline, trace, activity and sign-off so web and PDF render immutable facts.
+
+**Tradeoff:** Projections can evolve without data migration, but old reports intentionally retain their generated shape and receive conservative frontend defaults. Trace completeness begins with asynchronous runs; the compatible synchronous `/runs` path does not invent a run trace. Replacement plans remain unknown unless a persisted relation explicitly establishes one.
+
+**Links:** `.kiro/specs/investigation-audit-ui/`, `backend/app/services/timeline_projection.py`, `backend/app/services/investigation_activity.py`, `backend/app/services/analysis_runs.py`.

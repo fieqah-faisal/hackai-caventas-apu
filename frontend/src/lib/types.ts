@@ -180,6 +180,18 @@ export interface TimelineEventVM {
   kind: TimelineKind;
   relationshipStatus: RelationshipStatus;
   evidenceId: string | null;
+  eventType?: string;
+  source?: string | null;
+  actor?: string | null;
+  subject?: string | null;
+  action?: string | null;
+  result?: string | null;
+  details?: Record<string, string>;
+  evidenceIds?: string[];
+  entityIds?: string[];
+  relevance?: "attack" | "defensive" | "context" | "observed" | "unknown";
+  severity?: Severity | null;
+  rawDescription?: string;
 }
 
 // ---- Analysis view models -------------------------------------------------
@@ -437,6 +449,7 @@ export interface ReportFindingVM {
 }
 
 export interface ReportTimelineEventVM {
+  id: string;
   timestamp: string | null;
   category: ReportTimelineCategory;
   eventType: string;
@@ -446,6 +459,56 @@ export interface ReportTimelineEventVM {
   evidenceIds: string[];
   source: string;
   rawDetail: string;
+  actor: string | null;
+  subject: string | null;
+  action: string | null;
+  result: string | null;
+  details: Record<string, string>;
+  relationshipStatus: RelationshipStatus;
+  relevance: "attack" | "defensive" | "context" | "observed" | "unknown";
+  severity: Severity | null;
+}
+
+export interface AgentDecisionTraceVM {
+  stepId: string;
+  runId: string;
+  sequence: number;
+  step: string;
+  status: "completed" | "failed";
+  message: string;
+  stateVersion: number;
+  startedAt: string;
+  completedAt: string;
+  durationMs: number;
+  evidenceIds: string[];
+  guidanceIds: string[];
+  outputRefs: string[];
+  decisionSummary: string;
+  validationSummary: string;
+  plannerKind: "live_ai" | "deterministic" | "unknown";
+  plannerAdapter: string | null;
+  plannerModel: string | null;
+}
+
+export interface InvestigationActivityVM {
+  eventId: string;
+  timestamp: string | null;
+  actorType: "analyst" | "agent" | "system";
+  actor: string | null;
+  role: string | null;
+  eventType: string;
+  targetType: string;
+  targetId: string | null;
+  stateVersion: number | null;
+  planId: string | null;
+  actionId: string | null;
+  summary: string;
+  reason: string | null;
+  outcome: string | null;
+  references: string[];
+  actionName: string | null;
+  actionTarget: string | null;
+  replacementPlanId: string | null;
 }
 
 export interface ReportEntityVM {
@@ -527,6 +590,8 @@ export interface ReportVM {
   confirmedByAnalyst: boolean;
   signOff: { analyst: string; role: string; at: string; comments: string } | null;
   reviews: ReportReviewVM[];
+  agentDecisionTrace: AgentDecisionTraceVM[];
+  investigationActivity: InvestigationActivityVM[];
   stateVersion: number | null;
   recoveryStatus: string | null;
   planId: string | null;

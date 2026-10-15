@@ -556,6 +556,50 @@ describe("RealProvider contract (real backend bodies)", () => {
     expect(fetchMock.mock.calls.map((call) => call[0])).toEqual(["/api/cases/CASE-TEST0001/states", "/api/cases/CASE-TEST0001/states/1"]);
   });
 
+  it("reads the typed timeline endpoint without fixture fallback", async () => {
+    const fetchMock = mockFetch(200, {
+      case_id: "CASE-TEST0001",
+      state_version: 3,
+      events: [{
+        event_id: "TL-000000000001",
+        occurred_at: "2026-10-04T21:38:00+08:00",
+        event_type: "dns_query",
+        source: "dns_log",
+        actor: "HOST::SYNTH-LT-01",
+        subject: "DOMAIN::suspicious.example",
+        action: "queried",
+        result: "resolved",
+        summary: "Synthetic host queried a synthetic domain.",
+        details: { query: "suspicious.example" },
+        evidence_ids: ["EV-7b000000000c"],
+        entity_ids: ["HOST::SYNTH-LT-01", "DOMAIN::suspicious.example"],
+        relationship_status: "observed",
+        relevance: "attack",
+        severity: "medium",
+        raw_description: "dns_query host=SYNTH-LT-01 query=suspicious.example",
+      }],
+    });
+    globalThis.fetch = fetchMock;
+
+    const result = await new RealProvider().getTimeline("CASE-TEST0001");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith("/api/cases/CASE-TEST0001/timeline", expect.anything());
+    expect(result.kind).toBe("ok");
+    if (result.kind !== "ok") return;
+    expect(result.value).toMatchObject({
+      source: "real",
+      data: [{
+        id: "TL-000000000001",
+        eventType: "dns_query",
+        source: "dns_log",
+        relationshipStatus: "observed",
+        evidenceIds: ["EV-7b000000000c"],
+        relevance: "attack",
+      }],
+    });
+  });
+
   it("recovers the persisted active run after a duplicate create conflict", async () => {
     const run = { run_id: "RUN-EXISTING", case_id: "CASE-TEST0001", status: "running", stage: "running_planner",
       message: "Planner is processing the incident state.", based_on_state_version: 2, plan_id: null,

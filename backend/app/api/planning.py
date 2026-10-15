@@ -11,6 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from app.database import repositories
 from app.services import analysis_runs, planning_service
 from app.schemas.analysis_run import AnalysisRun
+from app.schemas.agent_decision_trace import AgentDecisionTraceStep
 from app.services.reporting import _created_at_key
 
 router = APIRouter(prefix="/cases", tags=["planning"])
@@ -39,6 +40,22 @@ def get_active_analysis_run(case_id: str) -> AnalysisRun | None:
     if not repositories.case_exists(case_id):
         raise HTTPException(status_code=404, detail="case not found")
     return analysis_runs.active(case_id)
+
+
+@router.get("/{case_id}/analysis-runs", response_model=list[AnalysisRun])
+def list_analysis_runs(case_id: str) -> list[AnalysisRun]:
+    runs = analysis_runs.list_for_case(case_id)
+    if runs is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    return runs
+
+
+@router.get("/{case_id}/analysis-runs/{run_id}/steps", response_model=list[AgentDecisionTraceStep])
+def get_analysis_run_steps(case_id: str, run_id: str) -> list[AgentDecisionTraceStep]:
+    steps = analysis_runs.list_steps(case_id, run_id)
+    if steps is None:
+        raise HTTPException(status_code=404, detail="analysis run not found")
+    return steps
 
 
 @router.get("/{case_id}/analysis-runs/{run_id}", response_model=AnalysisRun)

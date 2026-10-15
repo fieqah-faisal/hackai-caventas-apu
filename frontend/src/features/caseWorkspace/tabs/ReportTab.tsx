@@ -5,10 +5,11 @@ import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/Region";
 import { Icon } from "@/components/icons/Icon";
-import { relativeTime } from "@/lib/format";
+import { readableValue, relativeTime } from "@/lib/format";
 import { cx } from "@/lib/types";
 import { FindingsTable } from "@/components/ui/FindingsTable";
-import type { ReportVM } from "@/lib/types";
+import { TimelineTable } from "@/components/ui/TimelineTable";
+import type { ReportVM, TimelineEventVM } from "@/lib/types";
 import { useWorkspace } from "../context";
 
 const p = getProvider();
@@ -74,6 +75,26 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
     ["malicious_indicator", "Malicious indicators"],
     ["contextual", "Context only"],
   ] as const;
+  const timelineEvents: TimelineEventVM[] = report.timeline.map((event) => ({
+    id: event.id,
+    time: event.timestamp,
+    label: event.summary,
+    kind: event.relevance === "context" ? "benign_decoy" : event.source === "analyst_note" ? "analyst_added" : "relevant",
+    relationshipStatus: event.relationshipStatus,
+    evidenceId: event.evidenceIds[0] ?? null,
+    eventType: event.eventType,
+    source: event.source,
+    actor: event.actor,
+    subject: event.subject,
+    action: event.action,
+    result: event.result,
+    details: event.details,
+    evidenceIds: event.evidenceIds,
+    entityIds: event.entityIds,
+    relevance: event.relevance,
+    severity: event.severity,
+    rawDescription: event.rawDetail,
+  }));
 
   return (
     <div className="space-y-4">
@@ -160,27 +181,6 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
         <p className="mt-2 text-2xs text-text-muted">Any confidence values are planner-reported, advisory, and not calibrated probabilities.</p>
       </section>
 
-      <section aria-labelledby="analyst-reviews" className="rounded-md border border-border-subtle bg-surface p-5">
-        <SectionHeading id="analyst-reviews" eyebrow="Human oversight" title="Analyst reviews and sign-off" count={report.reviews.length} />
-        <p className="mt-3 text-meta text-text-secondary">
-          Sign-off: {report.signOff ? `${report.signOff.analyst} (${report.signOff.role})` : "No analyst sign-off recorded"}
-        </p>
-        {report.reviews.length ? (
-          <ul className="mt-3 space-y-2">
-            {report.reviews.map((review) => (
-              <li key={review.reviewId} className="rounded border border-border-subtle bg-surface-raised px-4 py-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-text-primary">{review.analyst}</span>
-                  <span className="text-2xs text-text-muted">{review.analystRole}</span>
-                  <StatusBadge value={review.reviewType} />
-                </div>
-                {review.comment && <p className="mt-1 text-meta text-text-secondary">{review.comment}</p>}
-              </li>
-            ))}
-          </ul>
-        ) : <EmptyLine text="No analyst reviews recorded for this report snapshot." />}
-      </section>
-
       <section aria-labelledby="key-findings" className="rounded-md border border-border-subtle bg-surface p-5">
         <SectionHeading id="key-findings" eyebrow="Prioritized analysis" title="Key findings" count={report.findings.length} />
         <div className="mt-4">
@@ -200,22 +200,8 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
       </section>
 
       <section aria-labelledby="key-timeline" className="rounded-md border border-border-subtle bg-surface p-5">
-        <SectionHeading id="key-timeline" eyebrow="Material sequence" title="Key timeline" count={report.timeline.length} />
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[760px] border-collapse text-left text-meta">
-            <thead><tr className="border-b border-border-strong text-2xs uppercase tracking-wide text-text-muted"><th className="px-3 py-2">Time</th><th className="px-3 py-2">Category</th><th className="px-3 py-2">Event</th><th className="px-3 py-2">Why it matters</th><th className="px-3 py-2">References</th></tr></thead>
-            <tbody>{report.timeline.map((event, index) => (
-              <tr key={`${event.timestamp}-${event.eventType}-${index}`} className="border-b border-border-subtle align-top last:border-0">
-                <td className="whitespace-nowrap px-3 py-3 font-mono text-2xs text-text-muted">{event.timestamp || "Not recorded"}</td>
-                <td className="px-3 py-3"><StatusBadge value={event.category} /></td>
-                <td className="max-w-sm px-3 py-3 text-text-primary"><span className="block font-semibold">{event.eventType.replaceAll("_", " ")}</span><span className="mt-0.5 block text-text-secondary">{event.summary}</span></td>
-                <td className="max-w-xs px-3 py-3 text-text-secondary">{event.significance}</td>
-                <td className="px-3 py-3 font-mono text-2xs text-text-muted">{event.evidenceIds.join(", ") || "None"}</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-        {!report.timeline.length && <EmptyLine text="No material chronology is available." />}
+        <SectionHeading id="key-timeline" eyebrow="Material sequence" title="Structured timeline" count={report.timeline.length} />
+        <div className="mt-4 overflow-hidden rounded border border-border-subtle"><TimelineTable caseId={report.caseId} events={timelineEvents} /></div>
       </section>
 
       <section aria-labelledby="entities" className="rounded-md border border-border-subtle bg-surface p-5">
@@ -257,6 +243,46 @@ function ReportView({ report, busy, onGenerate }: { report: ReportVM; busy: bool
           </table>
         </div>
         {!report.actions.length && <EmptyLine text="No response actions are recorded." />}
+      </section>
+
+      <details className="rounded-md border border-border-subtle bg-surface">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
+          <span><span className="block text-2xs font-semibold uppercase tracking-[0.14em] text-accent">Automated execution</span><span className="mt-0.5 block text-base font-semibold text-text-primary">Agent Decision Trace</span></span>
+          <span className="tnum rounded bg-surface-raised px-2 py-1 text-2xs text-text-muted">{report.agentDecisionTrace.length} steps · expand</span>
+        </summary>
+        <div className="border-t border-border-subtle p-5">
+          <p className="text-meta text-text-muted">Operational execution and decision trace only. This is not hidden chain-of-thought or private model reasoning.</p>
+          {report.agentDecisionTrace.length ? <div className="mt-4 space-y-2">{report.agentDecisionTrace.map((step) => <article key={step.stepId} className="rounded border border-border-subtle bg-surface-raised p-3"><div className="flex flex-wrap items-center gap-2"><StatusBadge value={step.status} /><span className="font-semibold text-text-primary">{readableValue(step.step)}</span><span className="font-mono text-2xs text-text-muted">{step.runId} · State v{step.stateVersion} · {step.durationMs} ms</span></div><p className="mt-2 text-meta text-text-secondary">{step.decisionSummary || step.message}</p>{step.validationSummary && <p className="mt-1 text-meta text-text-muted">Validation: {step.validationSummary}</p>}<p className="mt-1 break-words font-mono text-2xs text-text-muted">Planner: {readableValue(step.plannerKind)}{step.plannerModel ? ` · ${step.plannerModel}` : ""}{step.evidenceIds.length ? ` · Evidence: ${step.evidenceIds.join(", ")}` : ""}{step.guidanceIds.length ? ` · Guidance: ${step.guidanceIds.join(", ")}` : ""}{step.outputRefs.length ? ` · Outputs: ${step.outputRefs.join(", ")}` : ""}</p></article>)}</div> : <EmptyLine text="No persisted Agent Decision Trace steps were available for this report snapshot." />}
+        </div>
+      </details>
+
+      <section aria-labelledby="activity-log" className="rounded-md border border-border-subtle bg-surface p-5">
+        <SectionHeading id="activity-log" eyebrow="Human and system record" title="Analyst Activity and Approval Log" count={report.investigationActivity.length} />
+        <div className="mt-4 space-y-2">
+          {report.investigationActivity.map((event) => <article key={event.eventId} className="grid gap-2 rounded border border-border-subtle bg-surface-raised p-3 md:grid-cols-[10rem_12rem_1fr]"><div><StatusBadge value={event.actorType} /><p className="mt-1 text-meta font-medium text-text-primary">{event.actor || "Not recorded"}</p><p className="text-2xs text-text-muted">{event.role || "Role not recorded"}</p></div><div><p className="font-semibold text-text-primary">{readableValue(event.eventType)}</p><p className="mt-1 font-mono text-2xs text-text-muted">{event.actionId || event.targetId || "No target ID"}{event.stateVersion == null ? "" : ` · State v${event.stateVersion}`}{event.planId ? ` · ${event.planId}` : ""}</p></div><div><p className="text-meta text-text-secondary">{event.summary}</p>{event.reason && <p className="mt-1 text-meta text-text-primary">Reason: {event.reason}</p>}{event.outcome && <p className="mt-1 text-2xs text-text-muted">Outcome: {event.outcome}</p>}</div></article>)}
+          {!report.investigationActivity.length && <EmptyLine text="No analyst activity or approval records were available for this report snapshot." />}
+        </div>
+      </section>
+
+      <section aria-labelledby="analyst-reviews" className="rounded-md border border-border-subtle bg-surface p-5">
+        <SectionHeading id="analyst-reviews" eyebrow="Human oversight" title="Analyst reviews and sign-off" count={report.reviews.length} />
+        <p className="mt-3 text-meta text-text-secondary">
+          Sign-off: {report.signOff ? `${report.signOff.analyst} (${report.signOff.role})` : "No analyst sign-off recorded"}
+        </p>
+        {report.reviews.length ? (
+          <ul className="mt-3 space-y-2">
+            {report.reviews.map((review) => (
+              <li key={review.reviewId} className="rounded border border-border-subtle bg-surface-raised px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-text-primary">{review.analyst}</span>
+                  <span className="text-2xs text-text-muted">{review.analystRole}</span>
+                  <StatusBadge value={review.reviewType} />
+                </div>
+                {review.comment && <p className="mt-1 text-meta text-text-secondary">{review.comment}</p>}
+              </li>
+            ))}
+          </ul>
+        ) : <EmptyLine text="No analyst reviews recorded for this report snapshot." />}
       </section>
 
       <section aria-labelledby="impact" className="rounded-md border border-border-subtle bg-surface p-5">

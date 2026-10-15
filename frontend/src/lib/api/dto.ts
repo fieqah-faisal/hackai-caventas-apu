@@ -168,6 +168,31 @@ export interface TimelineEventDTO {
   evidence_ids: string[];
 }
 
+export interface StructuredTimelineEventDTO {
+  event_id: string;
+  occurred_at?: string | null;
+  event_type: string;
+  source?: string | null;
+  actor?: string | null;
+  subject?: string | null;
+  action?: string | null;
+  result?: string | null;
+  summary: string;
+  details: Record<string, string>;
+  evidence_ids: string[];
+  entity_ids: string[];
+  relationship_status: "observed" | "inferred";
+  relevance: "attack" | "defensive" | "context" | "observed" | "unknown";
+  severity?: "low" | "medium" | "high" | "critical" | null;
+  raw_description: string;
+}
+
+export interface TimelineResponseDTO {
+  case_id: string;
+  state_version: number;
+  events: StructuredTimelineEventDTO[];
+}
+
 export interface FindingDTO {
   summary: string;
   evidence_ids: string[];
@@ -531,6 +556,7 @@ export interface AnalystReportFindingDTO {
 }
 
 export interface AnalystReportTimelineEventDTO {
+  event_id?: string;
   timestamp?: string | null;
   category: AnalystTimelineCategoryDTO;
   event_type: string;
@@ -541,6 +567,58 @@ export interface AnalystReportTimelineEventDTO {
   source: string;
   material: boolean;
   raw_detail: string;
+  actor?: string | null;
+  subject?: string | null;
+  action?: string | null;
+  result?: string | null;
+  details?: Record<string, string>;
+  relationship_status?: "observed" | "inferred";
+  relevance?: "attack" | "defensive" | "context" | "observed" | "unknown";
+  severity?: "low" | "medium" | "high" | "critical" | null;
+  raw_description?: string;
+}
+
+export interface AgentDecisionTraceStepDTO {
+  step_id: string;
+  case_id: string;
+  run_id: string;
+  sequence: number;
+  step: string;
+  status: "completed" | "failed";
+  message: string;
+  based_on_state_version: number;
+  started_at: string;
+  completed_at: string;
+  duration_ms: number;
+  evidence_ids: string[];
+  guidance_ids: string[];
+  output_refs: string[];
+  decision_summary: string;
+  validation_summary: string;
+  planner_kind: "live_ai" | "deterministic" | "unknown";
+  planner_adapter?: string | null;
+  planner_model?: string | null;
+}
+
+export interface InvestigationActivityDTO {
+  event_id: string;
+  timestamp?: string | null;
+  actor_type: "analyst" | "agent" | "system";
+  actor?: string | null;
+  role?: string | null;
+  event_type: string;
+  target_type: string;
+  target_id?: string | null;
+  state_version?: number | null;
+  plan_id?: string | null;
+  action_id?: string | null;
+  summary: string;
+  reason?: string | null;
+  outcome?: string | null;
+  references: string[];
+  action_name?: string | null;
+  action_target?: string | null;
+  replacement_plan_id?: string | null;
 }
 
 export interface AnalystReportEntityDTO {
@@ -607,6 +685,8 @@ export interface AnalystReportDTO {
   executive_summary: string;
   executive_summary_source: "current_state_analysis" | "record_derived";
   analyst_reviews?: AnalystReviewDTO[];
+  agent_decision_trace?: AgentDecisionTraceStepDTO[];
+  investigation_activity?: InvestigationActivityDTO[];
   key_findings: AnalystReportFindingDTO[];
   key_timeline: AnalystReportTimelineEventDTO[];
   entities: AnalystReportEntityDTO[];

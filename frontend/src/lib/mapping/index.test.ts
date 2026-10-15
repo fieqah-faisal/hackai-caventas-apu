@@ -352,6 +352,21 @@ describe("report action wording keeps proposed / approved / executed / effective
         evidence_ids: ["EV-1"],
       }],
       response_actions: [],
+      agent_decision_trace: [{
+        step_id: "TRACE-0001", case_id: dto.incident_id, run_id: "RUN-1", sequence: 1,
+        step: "analyze", status: "completed", message: "Analysis completed.", based_on_state_version: 3,
+        started_at: dto.created_at, completed_at: dto.created_at, duration_ms: 12,
+        evidence_ids: ["EV-1"], guidance_ids: [], output_refs: [],
+        decision_summary: "One stored record was analyzed.", validation_summary: "",
+        planner_kind: "deterministic", planner_adapter: "FakePlannerAdapter", planner_model: "deterministic-rules-v1",
+      }],
+      investigation_activity: [{
+        event_id: "ACTIVITY-APPROVAL-1", timestamp: dto.created_at, actor_type: "analyst",
+        actor: "A. Analyst", role: "soc_analyst", event_type: "action_rejected", target_type: "action",
+        target_id: "ACT-1", state_version: 3, plan_id: dto.plan_id, action_id: "ACT-1",
+        summary: "Action ACT-1 was rejected.", reason: "Target ownership was not established.", outcome: "rejected",
+        references: ["ACT-1"], action_name: "isolate_host", action_target: "HOST::FS-01", replacement_plan_id: null,
+      }],
       impact: { confirmed: [], potential: [], remaining_risk: [] },
       next_steps: [{ priority: "Low", text: "Close after analyst review.", owner: "SOC analyst", status: "open", related_ids: ["EV-1"] }],
       appendices: {
@@ -371,6 +386,8 @@ describe("report action wording keeps proposed / approved / executed / effective
     expect(vm.entities[0].relevance).toBe("contextual");
     expect(vm.executiveSummary.source).toBe("current_state_analysis");
     expect(vm.appendices.evidence[0].untrusted).toBe(true);
+    expect(vm.agentDecisionTrace[0].runId).toBe("RUN-1");
+    expect(vm.investigationActivity[0].reason).toBe("Target ownership was not established.");
   });
 });
 

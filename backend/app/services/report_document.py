@@ -369,26 +369,6 @@ def render_report_pdf(report: dict[str, Any], output_path: Path) -> Path:
     story.append(Paragraph(_text(analyst.analysis_summary), styles["body"]))
     story.append(Paragraph("Any confidence values are planner-reported, advisory, and not calibrated probabilities.", styles["small"]))
 
-    _section(story, "Analyst reviews", styles)
-    if analyst.analyst_reviews:
-        story.append(
-            _table(
-                ["Time", "Analyst", "Target", "Review", "Comment"],
-                [[
-                    _time(review.created_at),
-                    f"{review.analyst}\n{review.analyst_role}",
-                    f"{_label(review.target_type)}\n{review.target_id or review.case_id}",
-                    _label(review.review_type),
-                    _bounded(review.comment),
-                ] for review in analyst.analyst_reviews],
-                [25 * mm, 35 * mm, 35 * mm, 25 * mm, width - 120 * mm],
-                styles,
-                mono_columns={0, 2},
-            )
-        )
-    else:
-        _empty(story, "No analyst reviews were recorded when this report snapshot was generated.", styles)
-
     _section(story, "Key findings", styles)
     if analyst.key_findings:
         story.append(
@@ -411,7 +391,7 @@ def render_report_pdf(report: dict[str, Any], output_path: Path) -> Path:
     else:
         _empty(story, "No current-state prioritized findings are recorded.", styles)
 
-    _section(story, "Key incident timeline", styles)
+    _section(story, "Structured incident timeline", styles)
     if analyst.key_timeline:
         story.append(
             _table(
@@ -491,6 +471,72 @@ def render_report_pdf(report: dict[str, Any], output_path: Path) -> Path:
         )
     else:
         _empty(story, "No response actions are recorded.", styles)
+
+    _section(story, "Agent Decision Trace", styles)
+    story.append(Paragraph("Operational execution and decision trace only; this is not hidden chain-of-thought or model reasoning.", styles["small"]))
+    if analyst.agent_decision_trace:
+        story.append(
+            _table(
+                ["Run / planner", "State", "Step / time", "Decision summary", "References / validation"],
+                [[
+                    f"{step.run_id}\n{_label(step.planner_kind)}"
+                    + (f"\n{step.planner_model}" if step.planner_model else ""),
+                    f"v{step.based_on_state_version}",
+                    f"{_label(step.step.value)}\n{_time(step.completed_at)}\n{step.duration_ms} ms",
+                    _bounded(step.decision_summary or step.message),
+                    _bounded("; ".join(filter(None, [
+                        f"Evidence: {_refs(step.evidence_ids)}" if step.evidence_ids else "",
+                        f"Guidance: {_refs(step.guidance_ids)}" if step.guidance_ids else "",
+                        f"Outputs: {_refs(step.output_refs)}" if step.output_refs else "",
+                        step.validation_summary,
+                    ]))),
+                ] for step in analyst.agent_decision_trace],
+                [35 * mm, 12 * mm, 35 * mm, 52 * mm, width - 134 * mm],
+                styles,
+                mono_columns={0, 1, 2, 4},
+            )
+        )
+    else:
+        _empty(story, "No persisted Agent Decision Trace steps were available at report generation.", styles)
+
+    _section(story, "Analyst Activity and Approval Log", styles)
+    story.append(Paragraph("Analyst reviews, approvals, rejections, execution and validation are shown as immutable snapshot records.", styles["small"]))
+    if analyst.investigation_activity:
+        story.append(
+            _table(
+                ["Time", "Origin", "Activity", "Target / binding", "Reason / outcome"],
+                [[
+                    _time(event.timestamp),
+                    f"{_label(event.actor_type)}\n{event.actor or 'Not recorded'}"
+                    + (f"\n{event.role}" if event.role else ""),
+                    f"{_label(event.event_type.value)}\n{event.summary}",
+                    _bounded("; ".join(filter(None, [
+                        event.target_id,
+                        f"State v{event.state_version}" if event.state_version is not None else "",
+                        event.plan_id,
+                        event.action_name,
+                        event.action_target,
+                    ]))),
+                    _bounded("; ".join(filter(None, [event.reason, event.outcome]))),
+                ] for event in analyst.investigation_activity],
+                [25 * mm, 32 * mm, 48 * mm, 42 * mm, width - 147 * mm],
+                styles,
+                mono_columns={0, 3},
+            )
+        )
+    else:
+        _empty(story, "No analyst activity or approval records were available at report generation.", styles)
+
+    _section(story, "Final analyst sign-off", styles)
+    sign_offs = [review for review in analyst.analyst_reviews if review.review_type == "sign_off"]
+    if sign_offs:
+        sign_off = sign_offs[-1]
+        story.append(Paragraph(_text(
+            f"Signed off by {sign_off.analyst} ({sign_off.analyst_role}) at {_time(sign_off.created_at)} "
+            f"for State v{sign_off.state_version}. {sign_off.comment}"
+        ), styles["body"]))
+    else:
+        _empty(story, "No analyst sign-off was recorded when this report snapshot was generated.", styles)
 
     _section(story, "Impact and remaining risk", styles)
     for heading, values, empty_message in [
