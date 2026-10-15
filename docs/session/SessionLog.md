@@ -11,6 +11,11 @@
 - Verification: `cd backend && ../.venv/bin/python -m pytest -q` → **257 passed**; frame-by-frame review of rendered contact sheets; `ebur128` −16.1 LUFS / −1.9 dBTP; new files scanned for credentials/absolute paths (none).
 - Branch `claude/laughing-bardeen-cfbl6d`. Next: BL-046 (re-record with a live planner run once BL-043 is resolved).
 
+### 2026-10-15 Favicon correction using supplied Caventas artwork (DONE, UNCOMMITTED)
+
+- Replaced the placeholder SVG favicon with the original transparent `frontend/src/assets/Caventas-logo.png` via a Vite-bundled PNG link; removed the unused placeholder SVG. No artwork was cropped, redrawn or filtered.
+- Verified the production HTML points to the hashed logo image under `/assets/` and the image is present in `dist`. Frontend **111 passed in 21 files**, typecheck, production build and `git diff --check` passed. Changes are unstaged on `feat/investigation-audit-ui-fieqah`; no commit, merge or push.
+
 ### 2026-10-15 Root README refreshed after PR #28 (DONE)
 
 - Replaced the ASCII architecture diagram with the supplied workflow image (`docs/assets/caventas-workflow.png`) plus a components paragraph (workspace → API → Firestore → planner → policy guard → simulator → report, Compose deployment). Added the light/dark Caventas logo block (`docs/assets/caventas-logo-bw.png` + the existing transparent asset) and layout rows for `compose.yaml` / `firebase.json`.
