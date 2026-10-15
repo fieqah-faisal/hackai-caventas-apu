@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/Caventas-logo.png">
+    <img src="docs/assets/caventas-logo-bw.png" alt="Caventas — Be prepared." width="360">
+  </picture>
+</p>
+
 # Caventas — Incident Response Planner
 
 **HackAI 2026 · Track 1 — Agentic Cyber Defense · Problem Statement 04: Incident Response Planner**
@@ -21,28 +28,22 @@ report, not a chatbot answer.
 
 ## How the pieces fit
 
-```
- Evidence (alerts, logs, notes, IOCs)      Approved context (playbooks, policies,
-        │                                   approval rules, asset inventory)
-        ▼                                             │
- Observe → Reconstruct ──────────────► Incident State (versioned, Graph-as-State-lite)
- (normalize, dedupe,                    evidence refs · entities · timeline ·
-  keep provenance)                      hypotheses · gaps · decisions · results
-        │                                             │
-        ├──► Planner: Analyze ──► evidence sufficient? ──no──► Request evidence
-        │                               │yes                        ▲
-        │                               ▼                           │
-        │            IR phase router (assessment … restoration) ◄───┘
-        │            → Retrieve stage-relevant approved guidance
-        │            → Propose prioritized actions (evidence, rationale,
-        │              policy refs, risk, validation method)
-        │                               │
-        ▼                               ▼
-   Human approval (approve / reject) ──► Bounded simulator (approved
-        │                                        catalogue, fictional org)
-        ▼                                             │
-   Outcome validation → new incident-state version → Re-plan ──► Report
-```
+![Caventas workflow: observe and reconstruct the incident, analyse evidence sufficiency, route through IR phases, retrieve approved guidance, propose actions, human decision, bounded simulation, effect validation, update the incident state and re-plan or report](docs/assets/caventas-workflow.png)
+
+The React analyst workspace talks only to the FastAPI backend (`/api`); the
+backend keeps cases, evidence, versioned incident-state snapshots and every
+decision in Firestore — a local emulator or Google Cloud. The LangGraph
+planner reconstructs and analyses the incident, checks evidence sufficiency,
+routes through IR phases, and proposes prioritized actions grounded in
+retrieved approved guidance, with evidence, rationale, policy references,
+risk and validation. A deterministic backend guard — not the planner —
+enforces approver role, evidence validity and sequencing; approved actions
+run in the bounded simulator, and an outcome is applied to the state only
+after validation. Reports are assembled deterministically from stored
+records as schema v1.3 JSON and PDF. `compose.yaml` packages this as two
+containers — a non-root FastAPI backend and an nginx-served API-mode
+frontend on `:8088` — with health checks and the Firestore emulator reached
+at `host.docker.internal:8080`.
 
 The loop continues until analyst-verified closure. Every version of the
 state, every decision and every outcome is kept for traceability.
@@ -72,27 +73,31 @@ never from planner-cited references.
 | `frontend/` | React + Vite + Tailwind analyst workspace (fixture and API modes) — see [`frontend/README.md`](frontend/README.md) |
 | `backend/scenarios/` | Five synthetic incident scenarios (agent-visible batches + evaluator-only ground truth) — see [`backend/scenarios/README.md`](backend/scenarios/README.md) |
 | `backend/evaluation/` | Evaluation harness, checkpoint scorer, safety gates, calibration results |
+| `compose.yaml` | Two-container Docker deployment (FastAPI backend + nginx API-mode frontend) with health checks — see Docker below |
+| `firebase.json` | Local Firestore emulator configuration (`:8080`) |
 | `docs/session/` | Shared session notebook: team state, history, decisions, backlog — read before any work |
 | `.kiro/steering/` | Current architecture, technology, security and product rules |
 | `PRODUCT.md` | Product record: scope, design system, colour rules |
 
 ## Getting started
 
-**Prerequisites:** Python 3.10+ (3.12 recommended); Node.js + npm for the
-frontend. Optional: Java 21+ and `firebase-tools` for the local Firestore
-emulator; an OpenCode Go API key for the real AI planner (everything works
-without it — the backend falls back to a deterministic fake planner).
+**Prerequisites:** Python 3.10+ (3.12 recommended) for the backend;
+Node.js 18+ and npm for the frontend; Docker with Compose v2 for the
+container path. For the local Firestore emulator: a Java runtime and
+`firebase-tools` (the `npx` form below needs no global install). Optional:
+an OpenCode Go API key for the real AI planner — everything works without
+it, falling back to a deterministic fake planner.
 
 ### Backend
 
 ```bash
 cd backend
-python3 -m venv ../.venv
+python3 -m venv ../.venv                       # Windows: py -3 -m venv ..\.venv
 ../.venv/bin/pip install -r requirements.txt
-cp .env.example .env            # fill values; the AI planner key is optional
+cp .env.example .env                           # fill values; the AI planner key is optional
 
-# Local Firestore (no cloud project needed) — optional:
-#   npx --yes firebase-tools emulators:start --only firestore --project ir-planner-dev
+# Local Firestore (no cloud project needed) — optional; run from the repo root:
+#   npx --yes firebase-tools emulators:start --only firestore
 #   then set FIRESTORE_EMULATOR_HOST=localhost:8080 in .env
 
 ../.venv/bin/uvicorn app.main:app --reload     # http://localhost:8000/docs
@@ -116,17 +121,35 @@ mixes modes. Details in [`frontend/README.md`](frontend/README.md).
 
 ### Docker (frontend + backend)
 
-Start the Firestore emulator on the Windows host first; the backend container
-connects to it at `host.docker.internal:8080`. Docker packages only the
-frontend and backend and uses the deterministic planner when no key is supplied.
+The two-container stack replaces the local servers: a non-root FastAPI
+backend and an nginx-served API-mode frontend. The backend container reads
+Firestore on the host at `host.docker.internal:8080`, so start the Firestore
+emulator first, from the repo root (leave it running):
 
 ```bash
-docker compose build
-docker compose up -d
+npx --yes firebase-tools emulators:start --only firestore
+```
+
+`backend/.env` supplies the variables Compose substitutes — notably
+`OPENCODE_GO_API_KEY`; the file itself is excluded from the images
+(`.dockerignore`). Validate, start and check health:
+
+```bash
+docker compose --env-file backend/.env config --quiet   # validate the config
+docker compose --env-file backend/.env up -d --build    # build + start
+docker compose ps                                       # container health
 # UI: http://localhost:8088  (nginx proxies /api to the backend container)
-docker compose ps
 docker compose down
 ```
+
+Confirm the AI planner configuration inside the running backend:
+
+```bash
+docker compose exec backend python -c "from app.config import get_settings; print('Live AI planner' if bool(get_settings().opencode_go_api_key) else 'Deterministic fake planner')"
+```
+
+Expected output: `Live AI planner` when a key was supplied (otherwise
+`Deterministic fake planner`).
 
 Troubleshooting: confirm `localhost:8080` is listening before startup, use
 `docker compose logs backend frontend` for service errors, and use
@@ -191,18 +214,18 @@ ATT&CK mappings (`not_produced_yet` is empty on all five scenarios).
   preservation-before-reimage sequencing are checked against `guidance.json`
   and stored records, never the planner's cited `policy_refs`; typed timeline,
   analysis-run trace and unified investigation-activity read models feed the
-  responsive workspace and immutable JSON/PDF report snapshots (DEC-019).
+  responsive workspace and immutable JSON/PDF report snapshots (DEC-019). Containerised deployment: two-container Compose stack (non-root FastAPI + API-mode nginx frontend on :8088) with health checks and emulator access via host.docker.internal.
 - **Measured:** the live planner passed 12/12 checkpoints across 5/5
   scenarios (mean 92.7; 2026-10-14 run with the policy guard and the
   incident_type schema enum) with complete report coverage and all safety
-  gates holding; backend suite 214 passed, frontend 75 passed.
+  gates holding; backend suite 257 passed, frontend 111 passed (21 files).
 - **Prototype limitation:** the approver role is a *declared* value on the
   decision request, not an authenticated identity (no auth / IdP yet). The
   backend still enforces that the declared role satisfies the policy pack.
 - **Next:** report notification/conformance/asset-criticality enrichment
   (BL-033), simulator and fixture alignment (BL-035/BL-036/BL-039), and
-  remaining reads (BL-013, BL-025). Deferred: trigger-aware retrieval,
-  frontend graph visualisation, and GitHub Actions.
+  remaining reads (BL-013, BL-025), analysis-run interruption recovery
+  (BL-044). Deferred: trigger-aware retrieval and GitHub Actions.
 - **Decisions/deferred:** record the Firestore divergence (BL-001), ratify
   React over Streamlit (BL-012), optional cloud Firebase (BL-009), and
   approval invalidation after state changes (BL-024).
@@ -238,20 +261,6 @@ The current architecture and stack rules are in `.kiro/steering/`.
 Syafieqah Binti Ahmad Shukri · Aida Batrisya Binti Ramlee ·
 Al-Aidan Iszdehar Farrn Bin Ismail Faizal · Airil Hakimi bin Anuar ·
 Raajshreedhar Sathia Murthy
-
-## Original project timeline (planning record)
-
-| To-do's | Date | Activities | Status |
-| --- | ---- | --- | ---|
-| **Track and Problem Statement Selection** | By 21/09 | Review problem statement selection from Track 1: Agentic Cyber Defense | Done |
-| **Pre-mentor ideas refinement** | 22/09 - 25/09 | Refine the shortlisted ideas, identify technical requirements and prepare questions for the mentor | Done |
-| **Mentor Consultation** | 26/09 | Present the proposed direction, obtain feedback and challenge the project scope | Done |
-| **Scope and Planning** | 27/09 – 29/09 | Finalize the problem statement, target users, MVP, agent workflow, architecture, dataset, safeguards and success metrics | Done |
-| **Core Prototype Development** | 30/09 – 4/10 | Build the main evidence-processing, agent reasoning, planning and user-interface components | Done |
-| **Integration and Evaluation** | 5/10 – 7/10 | Integrate components, test the main scenario, evaluate outputs and resolve critical issues | Done |
-| **Internal Feature Freeze** | 8/10 | Complete the core functionality and prepare the first full submission candidate | Reached (8 Oct; post-freeze changes tracked in `docs/session/`) |
-| **Finalization Buffer** | 9/10 - 14/10 | Conduct final testing, improve usability, complete documentation, record and edit the demo video, verify links and prepare submission files | In progress |
-| **Official Submission** | 15/10 | Upload all deliverables early and verify successful submission | Pending |
 
 ## Security/testing requirements and constraints
 
