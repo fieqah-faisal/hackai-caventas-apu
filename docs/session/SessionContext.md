@@ -122,8 +122,8 @@ Firestore; no credentials needed).
    `PRODUCT.md`.
 - Frontend branding uses the supplied complete Caventas lockup in header,
   sidebar organization branding and About page; organization/profile display
-  defaults are Caventas SOC / Caventas SOC Analyst. The supplied asset has no
-  separate compact icon variant, so the favicon remains unchanged.
+  defaults are Caventas SOC / Caventas SOC Analyst. The complete lockup is also
+  used as the PNG favicon because no separate compact icon variant was supplied.
 - Frontend↔backend integration: API mode loads all 7 case tabs; stored actions
   populate Response Plan and Approvals, and stored execution/validation results
   remain visible after execution. `not_applicable` is explicit, the analyst-note
