@@ -1,0 +1,104 @@
+{
+  "_provenance": {
+    "structure": "Stage, tool, target, cited record ids, policy refs and missing-evidence lists are copied from the recorded live LangGraph + DeepSeek run in backend/evaluation/results/live.json (sc01_infostealer CP1 and CP2). ATT&CK ids are the live run's report list.",
+    "rationales_verbatim": "preserve_evidence, revoke_sessions (cp1) and reset_password rationales are verbatim from .agents/tasks/bl-038-planner-smoke-rerun/smoke-output.txt; isolate_host is the same text with 'installer.exe' replaced by the scenario's process names.",
+    "authored": "Findings, scope, risk, expected_effect, prerequisites, validation_checks and the remaining rationales were written for this demo in the planner's output style, grounded in the uploaded synthetic records."
+  },
+  "cp1": {
+    "analysis": {
+      "incident_type": "infostealer_session_hijack",
+      "scope": "SALES-LT-07 and account farah (SSO, mail and CRM sessions); C2 at 203.0.113.45 / cdn-sync-update.example",
+      "severity": "high",
+      "confidence": 0.86,
+      "sufficient": true,
+      "stage": "containment",
+      "findings": [
+        {"summary": "SALES-LT-07 ran an unsigned installer (PDFEditorSetup.exe) downloaded from pdf-editor-free.example, which started an unsigned svchost-update.exe from AppData\\Roaming\\SyncUpdate.", "records": ["SC1-B1-05", "SC1-B1-06", "SC1-B1-07", "SC1-B1-08"], "confidence": 0.9},
+        {"summary": "svchost-update.exe read the Chrome password and cookie stores (EDR rule CRED-BROWSER-READ): farah's saved credentials and session cookies must be treated as stolen.", "records": ["SC1-B1-09", "SC1-B1-19"], "confidence": 0.9},
+        {"summary": "A 2.4 MB archive (b7.zip) was staged and uploaded to 203.0.113.45, resolved from cdn-sync-update.example.", "records": ["SC1-B1-10", "SC1-B1-11", "SC1-B1-12"], "confidence": 0.85},
+        {"summary": "Persistence was set through the HKCU Run key 'SyncUpdate' and the host kept beaconing to 203.0.113.45 until 08:12 on 5 Oct: the infection is still active.", "records": ["SC1-B1-13", "SC1-B1-15", "SC1-B1-16", "SC1-B1-18"], "confidence": 0.85},
+        {"summary": "farah holds an SSO session and a CRM session (crm-s-7731) opened from SALES-LT-07 before the theft; the CRM stores customer data.", "records": ["SC1-B1-01", "SC1-B1-02", "SC1-B1-20"], "confidence": 0.7},
+        {"summary": "Activity on MKT-LT-11 (aina) and HR-LT-02 (daniel) is signed, routine software and is not linked to this incident.", "records": ["SC1-B1-03", "SC1-B1-14", "SC1-B1-17"], "confidence": 0.6}
+      ],
+      "attack_techniques": ["T1204.002", "T1036.005", "T1547.001", "T1555.003", "T1071.001", "T1041"],
+      "missing_evidence": [
+        "Hash reputation/sandbox verdicts for PDFEditorSetup.exe (e18c80a7…) and svchost-update.exe (0387e063…) and whether either is known-bad in threat intel",
+        "Full process tree and any additional child processes or dropped files beyond b7.zip, plus memory image of SALES-LT-07 before remediation",
+        "Confirmation of what exactly was in the 2.4 MB upload (b7.zip contents) and whether it included CRM/mail session cookies or customer records",
+        "Ownership/registration of 203.0.113.45, 203.0.113.10, cdn-sync-update.example and pdf-editor-free.example, and any proxy/DNS logs showing other internal hosts resolving them",
+        "Attribution of the 2026-10-05 07:58 SSO sign-in from 192.0.2.61 (state links it to account aina / MKT-LT-11) — confirm whether it is unrelated or a post-compromise access, and review farah's CRM/mail audit logs from 2026-10-04 21:42 onward for use of the stolen session",
+        "Whether the download was user-initiated via search/advertisement or delivered through an email/message (no phishing artefact in this batch)",
+        "Any change-management record that could explain the download/installation on SALES-LT-07"
+      ]
+    },
+    "proposal": {
+      "stage": "containment",
+      "actions": [
+        {"tool_name": "preserve_evidence", "target_id": "HOST::SALES-LT-07", "records": ["SC1-B1-07", "SC1-B1-08", "SC1-B1-09", "SC1-B1-10", "SC1-B1-12", "SC1-B1-13", "SC1-B1-20"], "policy_refs": [],
+         "rationale": "Capture volatile and stored artifacts from SALES-LT-07 before any remediation or reimage to support investigation, confirm scope, and preserve potential legal/HR evidence. Include process tree, memory, browser artifacts, network connections, and dropped files.",
+         "prerequisites": ["EDR live-response channel to SALES-LT-07 is available"], "risk": "Low: read-only collection; adds a short delay before re-imaging.",
+         "expected_effect": "Memory and disk images of SALES-LT-07 captured with a chain-of-custody record.", "validation_checks": ["Image hashes recorded", "Chain-of-custody entry exists"]},
+        {"tool_name": "isolate_host", "target_id": "HOST::SALES-LT-07", "records": ["SC1-B1-07", "SC1-B1-08", "SC1-B1-09", "SC1-B1-12", "SC1-B1-15", "SC1-B1-18", "SC1-B1-19"], "policy_refs": ["POL-04"],
+         "rationale": "Evidence shows an unsigned installer (PDFEditorSetup.exe → svchost-update.exe) on SALES-LT-07 accessed the browser credential store and uploaded 2.4 MB to 203.0.113.45. Isolating the host stops further credential access, exfiltration, and potential lateral movement. POL-04 allows a SOC analyst to approve isolating a user laptop alone.",
+         "prerequisites": [], "risk": "Farah loses network access on SALES-LT-07 until release.",
+         "expected_effect": "SALES-LT-07 network-contained; only the EDR management channel remains.", "validation_checks": ["No further connections from SALES-LT-07 to 203.0.113.45", "EDR reports the host as contained"]},
+        {"tool_name": "revoke_sessions", "target_id": "ACCOUNT::farah", "records": ["SC1-B1-09", "SC1-B1-02", "SC1-B1-01", "SC1-B1-12", "SC1-B1-20"], "policy_refs": ["POL-11", "POL-07"],
+         "rationale": "The infostealer accessed the browser credential store on SALES-LT-07, placing account farah's credentials and potentially active session tokens at risk. Revoking active sessions invalidates any stolen tokens and forces re-authentication. POL-07 permits a SOC analyst to approve revoking sessions for a compromised account alone.",
+         "prerequisites": [], "risk": "Farah is signed out of SSO, mail and CRM.",
+         "expected_effect": "All active sessions for farah invalidated in idp, mail and crm.", "validation_checks": ["Session-cookie sign-ins for farah fail", "CRM session crm-s-7731 is invalid"]},
+        {"tool_name": "reset_password", "target_id": "ACCOUNT::farah", "records": ["SC1-B1-09", "SC1-B1-12", "SC1-B1-20"], "policy_refs": ["POL-07"],
+         "rationale": "Stolen browser credentials require a password reset to prevent account takeover and downstream access to mail, SSO, and other services. POL-07 permits a SOC analyst to approve resetting the password of a compromised account alone.",
+         "prerequisites": ["User available for a user-assisted reset"], "risk": "Requires Farah to set a new password; existing sessions stay valid until revoked.",
+         "expected_effect": "The stolen password no longer authenticates.", "validation_checks": ["Password sign-ins with the old credential fail"]},
+        {"tool_name": "block_domain", "target_id": "DOMAIN::cdn-sync-update.example", "records": ["SC1-B1-11", "SC1-B1-12", "SC1-B1-15", "SC1-B1-16", "SC1-B1-18"], "policy_refs": ["POL-09"],
+         "rationale": "svchost-update.exe resolved cdn-sync-update.example to 203.0.113.45, uploaded the staged archive there and kept beaconing. Blocking the domain cuts the command-and-control and exfiltration channel for any other infected host.",
+         "prerequisites": [], "risk": "Low: the domain has no business use.",
+         "expected_effect": "cdn-sync-update.example sinkholed at the resolver and blocked at the web proxy.", "validation_checks": ["DNS queries for the domain return the sinkhole"]},
+        {"tool_name": "block_domain", "target_id": "DOMAIN::pdf-editor-free.example", "records": ["SC1-B1-05", "SC1-B1-06", "SC1-B1-07"], "policy_refs": ["POL-09"],
+         "rationale": "pdf-editor-free.example served the unsigned installer that started the infection. Blocking it stops other staff downloading the same payload.",
+         "prerequisites": [], "risk": "Low: uncategorised download site.",
+         "expected_effect": "pdf-editor-free.example blocked at the resolver and web proxy.", "validation_checks": ["Proxy blocks requests to the domain"]}
+      ]
+    }
+  },
+  "cp2": {
+    "analysis": {
+      "incident_type": "infostealer_session_hijack",
+      "scope": "Account farah and CRM customer data; SALES-LT-07 contained; attacker at 198.51.100.23",
+      "severity": "critical",
+      "confidence": 0.9,
+      "sufficient": true,
+      "stage": "containment",
+      "findings": [
+        {"summary": "farah's stolen CRM session crm-s-7731 was replayed from 198.51.100.23 on a new device fingerprint at 10:20, after the IdP session had been revoked.", "records": ["SC1-B2-08", "SC1-B2-11"], "confidence": 0.95},
+        {"summary": "The replayed session exported 1,200 customer records (name, phone, email, company) and downloaded export_customers_central.csv.", "records": ["SC1-B2-13", "SC1-B2-14"], "confidence": 0.95},
+        {"summary": "The earlier session revocation failed in the CRM during vendor maintenance; the CRM admin API is available again.", "records": ["SC1-B2-15"], "confidence": 0.85},
+        {"summary": "Farah was in a client meeting from 10:00 and has not used the CRM today: the 10:20 CRM activity is the attacker.", "records": ["SC1-B2-16"], "confidence": 0.85},
+        {"summary": "SALES-LT-07 is contained: its outbound connection to 203.0.113.45 was dropped.", "records": ["SC1-B2-04"], "confidence": 0.9}
+      ],
+      "attack_techniques": ["T1204.002", "T1036.005", "T1547.001", "T1555.003", "T1071.001", "T1041", "T1550.004", "T1213"],
+      "missing_evidence": [
+        "CRM admin API is back online (vendor maintenance ended 10:30) — revoke remaining CRM session crm-s-7731 and confirm no other live sessions for farah.",
+        "Full inventory of credentials and cookies stolen from farah's browser stores (which additional apps/accounts the stolen cookies can still access).",
+        "Complete CRM audit trail of the attacker session crm-s-7731 (all views, exports, changes, and any further downloads beyond export_customers_central.csv).",
+        "Verification whether the SSO sign-ins from 192.0.2.61 at 2026-10-05 07:58 and 09:30 and the CRM sign-in crm-s-8120 at 10:05 were the legitimate user or the attacker (user reported being in a meeting from 10:00).",
+        "Sweep for the same installer binary/hash (PDFEditorSetup.exe, svchost-update.exe) or related C2 (203.0.113.45, cdn-sync-update.example, pdf-editor-free.example) on other endpoints and accounts.",
+        "Malware/C2 analysis of the dropped binary and staging archive to confirm stealer family and any secondary payloads or lateral movement.",
+        "Ownership/registration verification of pdf-editor-free.example, cdn-sync-update.example and 203.0.113.45."
+      ]
+    },
+    "proposal": {
+      "stage": "containment",
+      "actions": [
+        {"tool_name": "revoke_sessions", "target_id": "ACCOUNT::farah", "records": ["SC1-B1-02", "SC1-B2-11", "SC1-B2-13", "SC1-B2-04"], "policy_refs": ["POL-07", "POL-11"],
+         "rationale": "The stolen CRM session crm-s-7731 was replayed from 198.51.100.23 and used to export 1,200 customer records. The first revocation failed in the CRM during vendor maintenance; the admin API is back, so revoking again closes the attacker's live session. POL-07 permits a SOC analyst to approve revoking sessions alone.",
+         "prerequisites": ["CRM admin API available"], "risk": "Farah is signed out of every service again.",
+         "expected_effect": "Active sessions for farah revoked in idp, mail and crm, including crm-s-7731.", "validation_checks": ["CRM sign-ins with crm-s-7731 fail", "No new CRM exports from 198.51.100.23"]},
+        {"tool_name": "disable_account", "target_id": "ACCOUNT::farah", "records": ["SC1-B1-09", "SC1-B2-11", "SC1-B2-09", "SC1-B2-10", "SC1-B2-08"], "policy_refs": ["POL-02"],
+         "rationale": "The attacker holds farah's stolen browser credentials and is actively trying to sign in from 198.51.100.23. Disabling the account blocks new sign-ins until a user-assisted reset is done. POL-02 requires IT-manager approval to disable a staff account.",
+         "prerequisites": ["IT manager approval"], "risk": "Farah cannot work until the account is re-enabled.",
+         "expected_effect": "New sign-ins for farah are blocked at the identity provider.", "validation_checks": ["Sign-in attempts for farah are rejected as disabled"]}
+      ]
+    }
+  }
+}

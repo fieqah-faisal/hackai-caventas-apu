@@ -1,0 +1,3522 @@
+{
+ "case": "CASE-742CD2AB",
+ "states": [
+  {
+   "version": 1,
+   "parent_version": null,
+   "created_from": "evidence_upload",
+   "change_reason": "evidence upload: idp_signin_logs.json (3 records)",
+   "created_at": "2026-10-15T07:55:35.729454Z",
+   "entity_count": 5,
+   "relationship_count": 2,
+   "timeline_count": 3
+  },
+  {
+   "version": 2,
+   "parent_version": 1,
+   "created_from": "evidence_upload",
+   "change_reason": "evidence upload: edr_endpoint_events.json (8 records)",
+   "created_at": "2026-10-15T07:55:37.171931Z",
+   "entity_count": 13,
+   "relationship_count": 7,
+   "timeline_count": 11
+  },
+  {
+   "version": 3,
+   "parent_version": 2,
+   "created_from": "evidence_upload",
+   "change_reason": "evidence upload: dns_queries.json (3 records)",
+   "created_at": "2026-10-15T07:55:38.571440Z",
+   "entity_count": 16,
+   "relationship_count": 7,
+   "timeline_count": 14
+  },
+  {
+   "version": 4,
+   "parent_version": 3,
+   "created_from": "evidence_upload",
+   "change_reason": "evidence upload: firewall_proxy_logs.json (5 records)",
+   "created_at": "2026-10-15T07:55:39.991009Z",
+   "entity_count": 16,
+   "relationship_count": 7,
+   "timeline_count": 19
+  },
+  {
+   "version": 5,
+   "parent_version": 4,
+   "created_from": "evidence_upload",
+   "change_reason": "evidence upload: analyst_notes.json (1 records)",
+   "created_at": "2026-10-15T07:55:41.380465Z",
+   "entity_count": 16,
+   "relationship_count": 7,
+   "timeline_count": 20
+  },
+  {
+   "version": 6,
+   "parent_version": 5,
+   "created_from": "action_result",
+   "change_reason": "action result EXEC-59803299791e (isolate_host on HOST::SALES-LT-07)",
+   "created_at": "2026-10-15T07:57:21.822780Z",
+   "entity_count": 16,
+   "relationship_count": 8,
+   "timeline_count": 22
+  },
+  {
+   "version": 7,
+   "parent_version": 6,
+   "created_from": "action_result",
+   "change_reason": "action result EXEC-b006f8e00acc (revoke_sessions on ACCOUNT::farah)",
+   "created_at": "2026-10-15T07:57:37.161606Z",
+   "entity_count": 16,
+   "relationship_count": 9,
+   "timeline_count": 23
+  },
+  {
+   "version": 8,
+   "parent_version": 7,
+   "created_from": "evidence_upload",
+   "change_reason": "evidence upload: crm_audit_and_signin_followup.json (10 records)",
+   "created_at": "2026-10-15T07:57:41.810827Z",
+   "entity_count": 17,
+   "relationship_count": 9,
+   "timeline_count": 33
+  },
+  {
+   "version": 9,
+   "parent_version": 8,
+   "created_from": "action_result",
+   "change_reason": "action result EXEC-7c20360c2a97 (revoke_sessions on ACCOUNT::farah)",
+   "created_at": "2026-10-15T07:58:27.253908Z",
+   "entity_count": 17,
+   "relationship_count": 10,
+   "timeline_count": 35
+  }
+ ],
+ "state_v5": {
+  "case_id": "CASE-742CD2AB",
+  "version": 5,
+  "entities": [
+   {
+    "id": "ACCOUNT::aina",
+    "type": "account",
+    "name": "aina",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T07:58:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "ACCOUNT::daniel",
+    "type": "account",
+    "name": "daniel",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "ACCOUNT::farah",
+    "type": "account",
+    "name": "farah",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9"
+    ],
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T08:55:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "DOMAIN::cdn-sync-update.example",
+    "type": "domain",
+    "name": "cdn-sync-update.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-5698fd4198f6"
+    ],
+    "first_seen": "2026-10-04T21:42:00+08:00",
+    "last_seen": "2026-10-04T21:42:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "DOMAIN::pdf-editor-free.example",
+    "type": "domain",
+    "name": "pdf-editor-free.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-2beb0d81a6c2"
+    ],
+    "first_seen": "2026-10-04T21:36:00+08:00",
+    "last_seen": "2026-10-04T21:36:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "DOMAIN::update.vendor-os.example",
+    "type": "domain",
+    "name": "update.vendor-os.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-a6e65d97bc84"
+    ],
+    "first_seen": "2026-10-04T21:30:00+08:00",
+    "last_seen": "2026-10-04T21:30:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "FILE::SALES-LT-07::c:/users/farah/appdata/roaming/syncupdate/svchost-update.exe",
+    "type": "file",
+    "name": "C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "condition": null
+   },
+   {
+    "id": "FILE::SALES-LT-07::c:/users/farah/downloads/pdfeditorsetup.exe",
+    "type": "file",
+    "name": "C:\\Users\\farah\\Downloads\\PDFEditorSetup.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::HR-LT-02",
+    "type": "host",
+    "name": "HR-LT-02",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::MKT-LT-11",
+    "type": "host",
+    "name": "MKT-LT-11",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T07:58:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::SALES-LT-07",
+    "type": "host",
+    "name": "SALES-LT-07",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9"
+    ],
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T08:55:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::HR-LT-02::onedrive.exe",
+    "type": "process",
+    "name": "OneDrive.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::MKT-LT-11::teams.exe",
+    "type": "process",
+    "name": "Teams.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-04T21:15:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::SALES-LT-07::pdfeditorsetup.exe",
+    "type": "process",
+    "name": "PDFEditorSetup.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::SALES-LT-07::svchost-update.exe",
+    "type": "process",
+    "name": "svchost-update.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "condition": null
+   },
+   {
+    "id": "SESSION::farah::crm-s-7731",
+    "type": "session",
+    "name": "crm-s-7731",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-a5fce70c3324"
+    ],
+    "first_seen": "2026-10-04T21:02:00+08:00",
+    "last_seen": "2026-10-04T21:02:00+08:00",
+    "condition": null
+   }
+  ],
+  "relationships": [
+   {
+    "source": "PROCESS::HR-LT-02::onedrive.exe",
+    "relation": "executed_on",
+    "target": "HOST::HR-LT-02",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::HR-LT-02::onedrive.exe::HOST::HR-LT-02",
+    "category": "context",
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::MKT-LT-11::teams.exe",
+    "relation": "executed_on",
+    "target": "HOST::MKT-LT-11",
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::MKT-LT-11::teams.exe::HOST::MKT-LT-11",
+    "category": "context",
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-04T21:15:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::SALES-LT-07::pdfeditorsetup.exe",
+    "relation": "executed_on",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::SALES-LT-07::pdfeditorsetup.exe::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::SALES-LT-07::svchost-update.exe",
+    "relation": "executed_on",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::SALES-LT-07::svchost-update.exe::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::aina",
+    "relation": "logged_into",
+    "target": "HOST::MKT-LT-11",
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::aina::HOST::MKT-LT-11",
+    "category": "context",
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T07:58:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::daniel",
+    "relation": "logged_into",
+    "target": "HOST::HR-LT-02",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::daniel::HOST::HR-LT-02",
+    "category": "context",
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::farah",
+    "relation": "logged_into",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::farah::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T08:55:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   }
+  ],
+  "timeline": [
+   {
+    "timestamp": "2026-10-04T20:58:00+08:00",
+    "description": "idp_signin: event_time=2026-10-04T20:58:00+08:00, source=signin, application=SSO portal, result=success, mfa=push_approved, src_ip=192.0.2.44, device=SALES-LT-07 (managed), record_id=SC1-B1-01 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-22f944b03062"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:02:00+08:00",
+    "description": "crm_signin: event_time=2026-10-04T21:02:00+08:00, source=signin, application=CRM, auth=SSO, result=success, src_ip=192.0.2.44, session_id=crm-s-7731, record_id=SC1-B1-02 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-a5fce70c3324"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:15:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:15:00+08:00, source=endpoint, process=Teams.exe, signed=true, parent=explorer.exe, record_id=SC1-B1-03 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:30:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:30:00+08:00, source=dns, query=update.vendor-os.example, answer=198.51.100.140, record_id=SC1-B1-04 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-a6e65d97bc84"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:36:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:36:00+08:00, source=dns, query=pdf-editor-free.example, answer=203.0.113.10, record_id=SC1-B1-05 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-2beb0d81a6c2"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:38:00+08:00",
+    "description": "http_download: event_time=2026-10-04T21:38:00+08:00, source=firewall, url=https://pdf-editor-free.example/dl/PDFEditorSetup.exe, dst_ip=203.0.113.10, bytes_in=4718592, verdict=allowed, url_category=uncategorised, record_id=SC1-B1-06 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-f05839cea7ff"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:40:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:40:00+08:00, source=endpoint, process=PDFEditorSetup.exe, signed=false, parent=explorer.exe, path=C:\\Users\\farah\\Downloads\\PDFEditorSetup.exe, sha256=e18c80a7aaf1a837f26618548b51ed72139a19150b4fbaad4852f6a95906ce5a, record_id=SC1-B1-07 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:40:20+08:00",
+    "description": "process_start: event_time=2026-10-04T21:40:20+08:00, source=endpoint, process=svchost-update.exe, signed=false, parent=PDFEditorSetup.exe, path=C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe, sha256=0387e06330c2a66b7bdc84d6d86641f300cf0bd952bcd8cd4e2830959450e4e6, record_id=SC1-B1-08 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:41:05+08:00",
+    "description": "edr_alert: event_time=2026-10-04T21:41:05+08:00, source=endpoint, alert=Unsigned process read browser password and cookie stores, process=svchost-update.exe, files=Chrome Login Data; Chrome Cookies, severity=high, rule=CRED-BROWSER-READ, record_id=SC1-B1-09 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-5976bc957636"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:41:30+08:00",
+    "description": "file_create: event_time=2026-10-04T21:41:30+08:00, source=endpoint, path=C:\\Users\\farah\\AppData\\Local\\Temp\\b7.zip, process=svchost-update.exe, size_bytes=2457600, record_id=SC1-B1-10 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-1026b676e170"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:42:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:42:00+08:00, source=dns, query=cdn-sync-update.example, answer=203.0.113.45, record_id=SC1-B1-11 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-5698fd4198f6"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:42:30+08:00",
+    "description": "network_upload: event_time=2026-10-04T21:42:30+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=2457600, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-12 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-6c1d5cdc1643"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:43:10+08:00",
+    "description": "registry_set: event_time=2026-10-04T21:43:10+08:00, source=endpoint, key=HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run, value_name=SyncUpdate, value_data=C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe, record_id=SC1-B1-13 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-f0cbb6dba43d"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:50:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:50:00+08:00, source=endpoint, process=OneDrive.exe, signed=true, parent=explorer.exe, record_id=SC1-B1-14 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T22:12:00+08:00",
+    "description": "network_connection: event_time=2026-10-04T22:12:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-15 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-5d6cea1fb718"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T22:42:00+08:00",
+    "description": "network_connection: event_time=2026-10-04T22:42:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-16 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-a9a778f02891"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T07:58:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T07:58:00+08:00, source=signin, application=SSO portal, result=success, mfa=push_approved, src_ip=192.0.2.61, record_id=SC1-B1-17 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-1e99182c8350"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:12:00+08:00",
+    "description": "network_connection: event_time=2026-10-05T08:12:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-18 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-bdc21bd24462"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:40:00+08:00",
+    "description": "edr_alert: event_time=2026-10-05T08:40:00+08:00, source=endpoint, alert=Correlated: unsigned installer -> browser credential access -> upload to 203.0.113.45, severity=high, alert_id=EDR-2026-1005-014, record_id=SC1-B1-19 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-8355588a08b4"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:55:00+08:00",
+    "description": "analyst_note: event_time=2026-10-05T08:55:00+08:00, source=analyst_note, note=Farah (Sales) ran an unsigned 'PDF editor' installer on SALES-LT-07 on 4 Oct 21:40; browser password+cookie stores read; 2.4 MB sent to 203.0.113.45. She uses SSO for mail and CRM (customer data). Laptop still online., author=soc.analyst, record_id=SC1-B1-20 (analyst_notes.json)",
+    "evidence_ids": [
+     "EV-a895e99bdcf9"
+    ]
+   }
+  ],
+  "findings": [],
+  "attack_mapping": [],
+  "hypotheses": [],
+  "missing_evidence": [],
+  "actions": [],
+  "action_results": [],
+  "recovery_status": "investigating",
+  "created_at": "2026-10-15T07:55:41.380465Z",
+  "parent_version": 4,
+  "change_reason": "evidence upload: analyst_notes.json (1 records)",
+  "created_from": "evidence_upload",
+  "observed_response_status": null,
+  "recommended_response_focus": null,
+  "response_objective": null,
+  "response_prerequisites": [],
+  "routing_rationale": null,
+  "routing_evidence_ids": [],
+  "routing_confidence": null,
+  "routing_transition": null,
+  "report_sections_complete": [],
+  "report_sections_pending": [],
+  "report_sections_invalidated": [],
+  "latest_report_id": null,
+  "latest_report_version": null,
+  "report_status": null
+ },
+ "state_v8": {
+  "case_id": "CASE-742CD2AB",
+  "version": 8,
+  "entities": [
+   {
+    "id": "ACCOUNT::aina",
+    "type": "account",
+    "name": "aina",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5",
+     "EV-c7f28cca6212",
+     "EV-cd733e8cd4eb"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T10:05:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "ACCOUNT::daniel",
+    "type": "account",
+    "name": "daniel",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "ACCOUNT::farah",
+    "type": "account",
+    "name": "farah",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9",
+     "EV-c7adaa08e561",
+     "EV-356a23cdcb96",
+     "EV-cf09caed38f3",
+     "EV-c62fe1853c3c",
+     "EV-5b11141073a9",
+     "EV-37c9ec0c2ce3",
+     "EV-83e169301cb1"
+    ],
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T10:40:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "DOMAIN::cdn-sync-update.example",
+    "type": "domain",
+    "name": "cdn-sync-update.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-5698fd4198f6"
+    ],
+    "first_seen": "2026-10-04T21:42:00+08:00",
+    "last_seen": "2026-10-04T21:42:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "DOMAIN::pdf-editor-free.example",
+    "type": "domain",
+    "name": "pdf-editor-free.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-2beb0d81a6c2"
+    ],
+    "first_seen": "2026-10-04T21:36:00+08:00",
+    "last_seen": "2026-10-04T21:36:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "DOMAIN::update.vendor-os.example",
+    "type": "domain",
+    "name": "update.vendor-os.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-a6e65d97bc84"
+    ],
+    "first_seen": "2026-10-04T21:30:00+08:00",
+    "last_seen": "2026-10-04T21:30:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "FILE::SALES-LT-07::c:/users/farah/appdata/roaming/syncupdate/svchost-update.exe",
+    "type": "file",
+    "name": "C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "condition": null
+   },
+   {
+    "id": "FILE::SALES-LT-07::c:/users/farah/downloads/pdfeditorsetup.exe",
+    "type": "file",
+    "name": "C:\\Users\\farah\\Downloads\\PDFEditorSetup.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::HR-LT-02",
+    "type": "host",
+    "name": "HR-LT-02",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::MKT-LT-11",
+    "type": "host",
+    "name": "MKT-LT-11",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5",
+     "EV-c7f28cca6212",
+     "EV-cd733e8cd4eb"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T10:05:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::SALES-LT-07",
+    "type": "host",
+    "name": "SALES-LT-07",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9",
+     "EV-c7adaa08e561"
+    ],
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T09:15:00+08:00",
+    "condition": "isolated"
+   },
+   {
+    "id": "PROCESS::HR-LT-02::onedrive.exe",
+    "type": "process",
+    "name": "OneDrive.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::MKT-LT-11::teams.exe",
+    "type": "process",
+    "name": "Teams.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-04T21:15:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::SALES-LT-07::pdfeditorsetup.exe",
+    "type": "process",
+    "name": "PDFEditorSetup.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::SALES-LT-07::svchost-update.exe",
+    "type": "process",
+    "name": "svchost-update.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "condition": null
+   },
+   {
+    "id": "SESSION::aina::crm-s-8120",
+    "type": "session",
+    "name": "crm-s-8120",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-cd733e8cd4eb"
+    ],
+    "first_seen": "2026-10-05T10:05:00+08:00",
+    "last_seen": "2026-10-05T10:05:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "SESSION::farah::crm-s-7731",
+    "type": "session",
+    "name": "crm-s-7731",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-a5fce70c3324",
+     "EV-c62fe1853c3c",
+     "EV-5b11141073a9"
+    ],
+    "first_seen": "2026-10-04T21:02:00+08:00",
+    "last_seen": "2026-10-05T10:24:00+08:00",
+    "condition": null
+   }
+  ],
+  "relationships": [
+   {
+    "source": "ACT-32ab5b7797b7",
+    "relation": "action_attempted_on",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [],
+    "status": "observed",
+    "id": "REL::action_attempted_on::ACT-32ab5b7797b7::HOST::SALES-LT-07::EXEC-59803299791e",
+    "category": "response",
+    "first_seen": null,
+    "last_seen": null,
+    "attributes": {
+     "tool_name": "isolate_host",
+     "execution_status": "completed",
+     "validation_status": "effective",
+     "result_source": "simulator"
+    },
+    "action_id": "ACT-32ab5b7797b7",
+    "execution_id": "EXEC-59803299791e"
+   },
+   {
+    "source": "ACT-b13a014e6662",
+    "relation": "action_attempted_on",
+    "target": "ACCOUNT::farah",
+    "evidence_ids": [],
+    "status": "observed",
+    "id": "REL::action_attempted_on::ACT-b13a014e6662::ACCOUNT::farah::EXEC-b006f8e00acc",
+    "category": "response",
+    "first_seen": null,
+    "last_seen": null,
+    "attributes": {
+     "tool_name": "revoke_sessions",
+     "execution_status": "partially_completed",
+     "validation_status": "ineffective",
+     "result_source": "simulator"
+    },
+    "action_id": "ACT-b13a014e6662",
+    "execution_id": "EXEC-b006f8e00acc"
+   },
+   {
+    "source": "PROCESS::HR-LT-02::onedrive.exe",
+    "relation": "executed_on",
+    "target": "HOST::HR-LT-02",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::HR-LT-02::onedrive.exe::HOST::HR-LT-02",
+    "category": "context",
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::MKT-LT-11::teams.exe",
+    "relation": "executed_on",
+    "target": "HOST::MKT-LT-11",
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::MKT-LT-11::teams.exe::HOST::MKT-LT-11",
+    "category": "context",
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-04T21:15:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::SALES-LT-07::pdfeditorsetup.exe",
+    "relation": "executed_on",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::SALES-LT-07::pdfeditorsetup.exe::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::SALES-LT-07::svchost-update.exe",
+    "relation": "executed_on",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::SALES-LT-07::svchost-update.exe::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::aina",
+    "relation": "logged_into",
+    "target": "HOST::MKT-LT-11",
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5",
+     "EV-c7f28cca6212",
+     "EV-cd733e8cd4eb"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::aina::HOST::MKT-LT-11",
+    "category": "context",
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T10:05:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::daniel",
+    "relation": "logged_into",
+    "target": "HOST::HR-LT-02",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::daniel::HOST::HR-LT-02",
+    "category": "context",
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::farah",
+    "relation": "logged_into",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9",
+     "EV-c7adaa08e561"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::farah::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T09:15:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   }
+  ],
+  "timeline": [
+   {
+    "timestamp": "2026-10-04T20:58:00+08:00",
+    "description": "idp_signin: event_time=2026-10-04T20:58:00+08:00, source=signin, application=SSO portal, result=success, mfa=push_approved, src_ip=192.0.2.44, device=SALES-LT-07 (managed), record_id=SC1-B1-01 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-22f944b03062"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:02:00+08:00",
+    "description": "crm_signin: event_time=2026-10-04T21:02:00+08:00, source=signin, application=CRM, auth=SSO, result=success, src_ip=192.0.2.44, session_id=crm-s-7731, record_id=SC1-B1-02 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-a5fce70c3324"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:15:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:15:00+08:00, source=endpoint, process=Teams.exe, signed=true, parent=explorer.exe, record_id=SC1-B1-03 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:30:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:30:00+08:00, source=dns, query=update.vendor-os.example, answer=198.51.100.140, record_id=SC1-B1-04 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-a6e65d97bc84"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:36:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:36:00+08:00, source=dns, query=pdf-editor-free.example, answer=203.0.113.10, record_id=SC1-B1-05 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-2beb0d81a6c2"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:38:00+08:00",
+    "description": "http_download: event_time=2026-10-04T21:38:00+08:00, source=firewall, url=https://pdf-editor-free.example/dl/PDFEditorSetup.exe, dst_ip=203.0.113.10, bytes_in=4718592, verdict=allowed, url_category=uncategorised, record_id=SC1-B1-06 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-f05839cea7ff"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:40:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:40:00+08:00, source=endpoint, process=PDFEditorSetup.exe, signed=false, parent=explorer.exe, path=C:\\Users\\farah\\Downloads\\PDFEditorSetup.exe, sha256=e18c80a7aaf1a837f26618548b51ed72139a19150b4fbaad4852f6a95906ce5a, record_id=SC1-B1-07 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:40:20+08:00",
+    "description": "process_start: event_time=2026-10-04T21:40:20+08:00, source=endpoint, process=svchost-update.exe, signed=false, parent=PDFEditorSetup.exe, path=C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe, sha256=0387e06330c2a66b7bdc84d6d86641f300cf0bd952bcd8cd4e2830959450e4e6, record_id=SC1-B1-08 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:41:05+08:00",
+    "description": "edr_alert: event_time=2026-10-04T21:41:05+08:00, source=endpoint, alert=Unsigned process read browser password and cookie stores, process=svchost-update.exe, files=Chrome Login Data; Chrome Cookies, severity=high, rule=CRED-BROWSER-READ, record_id=SC1-B1-09 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-5976bc957636"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:41:30+08:00",
+    "description": "file_create: event_time=2026-10-04T21:41:30+08:00, source=endpoint, path=C:\\Users\\farah\\AppData\\Local\\Temp\\b7.zip, process=svchost-update.exe, size_bytes=2457600, record_id=SC1-B1-10 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-1026b676e170"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:42:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:42:00+08:00, source=dns, query=cdn-sync-update.example, answer=203.0.113.45, record_id=SC1-B1-11 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-5698fd4198f6"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:42:30+08:00",
+    "description": "network_upload: event_time=2026-10-04T21:42:30+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=2457600, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-12 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-6c1d5cdc1643"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:43:10+08:00",
+    "description": "registry_set: event_time=2026-10-04T21:43:10+08:00, source=endpoint, key=HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run, value_name=SyncUpdate, value_data=C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe, record_id=SC1-B1-13 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-f0cbb6dba43d"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:50:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:50:00+08:00, source=endpoint, process=OneDrive.exe, signed=true, parent=explorer.exe, record_id=SC1-B1-14 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T22:12:00+08:00",
+    "description": "network_connection: event_time=2026-10-04T22:12:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-15 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-5d6cea1fb718"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T22:42:00+08:00",
+    "description": "network_connection: event_time=2026-10-04T22:42:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-16 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-a9a778f02891"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T07:58:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T07:58:00+08:00, source=signin, application=SSO portal, result=success, mfa=push_approved, src_ip=192.0.2.61, record_id=SC1-B1-17 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-1e99182c8350"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:12:00+08:00",
+    "description": "network_connection: event_time=2026-10-05T08:12:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-18 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-bdc21bd24462"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:40:00+08:00",
+    "description": "edr_alert: event_time=2026-10-05T08:40:00+08:00, source=endpoint, alert=Correlated: unsigned installer -> browser credential access -> upload to 203.0.113.45, severity=high, alert_id=EDR-2026-1005-014, record_id=SC1-B1-19 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-8355588a08b4"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:55:00+08:00",
+    "description": "analyst_note: event_time=2026-10-05T08:55:00+08:00, source=analyst_note, note=Farah (Sales) ran an unsigned 'PDF editor' installer on SALES-LT-07 on 4 Oct 21:40; browser password+cookie stores read; 2.4 MB sent to 203.0.113.45. She uses SSO for mail and CRM (customer data). Laptop still online., author=soc.analyst, record_id=SC1-B1-20 (analyst_notes.json)",
+    "evidence_ids": [
+     "EV-a895e99bdcf9"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T09:00:00+08:00",
+    "description": "defender: action result \u2014 isolate_host on HOST::SALES-LT-07: execution=completed, validation=effective (SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.)",
+    "evidence_ids": []
+   },
+   {
+    "timestamp": "2026-10-05T09:05:00+08:00",
+    "description": "defender: action result \u2014 revoke_sessions on ACCOUNT::farah: execution=partially_completed, validation=ineffective (Sessions for farah revoked in: idp, mail. FAILED in crm (CRM admin API unavailable: scheduled vendor maintenance until 10:30). Sessions in crm remain valid.)",
+    "evidence_ids": []
+   },
+   {
+    "timestamp": "2026-10-05T09:15:00+08:00",
+    "description": "edr_containment: event_time=2026-10-05T09:15:00+08:00, source=endpoint, event=Outbound connection to 203.0.113.45 dropped by network containment, process=svchost-update.exe, verdict=blocked, record_id=SC1-B2-04 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-c7adaa08e561"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T09:30:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T09:30:00+08:00, source=signin, application=SSO portal, result=success, mfa=push_approved, src_ip=192.0.2.61, record_id=SC1-B2-05 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-c7f28cca6212"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:05:00+08:00",
+    "description": "crm_signin: event_time=2026-10-05T10:05:00+08:00, source=signin, application=CRM, auth=SSO, result=success, src_ip=192.0.2.61, session_id=crm-s-8120, record_id=SC1-B2-06 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-cd733e8cd4eb"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:18:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T10:18:00+08:00, source=signin, src_ip=198.51.100.23, device=unregistered Windows / Chrome, auth=session cookie, result=failure, reason=session revoked, record_id=SC1-B2-08 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-356a23cdcb96"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:19:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T10:19:00+08:00, source=signin, src_ip=198.51.100.23, auth=password, result=failure, reason=MFA push denied by user, record_id=SC1-B2-09 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-cf09caed38f3"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:20:00+08:00",
+    "description": "crm_signin: event_time=2026-10-05T10:20:00+08:00, source=signin, application=CRM, src_ip=198.51.100.23, session_id=crm-s-7731, auth=existing session token, device=new device fingerprint, result=success, record_id=SC1-B2-11 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-c62fe1853c3c"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:24:00+08:00",
+    "description": "crm_export: event_time=2026-10-05T10:24:00+08:00, source=crm_audit, report=Customers - Central region, record_count=1200, columns=name, phone, email, company, src_ip=198.51.100.23, session_id=crm-s-7731, record_id=SC1-B2-13 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-5b11141073a9"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:27:00+08:00",
+    "description": "crm_file_download: event_time=2026-10-05T10:27:00+08:00, source=crm_audit, file=export_customers_central.csv, bytes=412000, src_ip=198.51.100.23, record_id=SC1-B2-14 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-37c9ec0c2ce3"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:35:00+08:00",
+    "description": "analyst_note: event_time=2026-10-05T10:35:00+08:00, source=analyst_note, note=CRM vendor status page: admin API maintenance 08:00-10:30 has finished; the admin API is available again., author=soc.analyst, record_id=SC1-B2-15 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-a1bd4c5c72d5"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:40:00+08:00",
+    "description": "analyst_note: event_time=2026-10-05T10:40:00+08:00, source=analyst_note, note=Called Farah: she installed a free PDF editor on Sunday night. She has been in a client meeting since 10:00 and has not used the CRM today., author=soc.analyst, record_id=SC1-B2-16 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-83e169301cb1"
+    ]
+   },
+   {
+    "timestamp": "2026-10-15T07:57:13.296400Z",
+    "description": "defender: action rejected \u2014 reset_password on ACCOUNT::farah (Hold: revoke sessions first. A reset now tips off the attacker while stolen cookies stay valid. Re-propose after revocation.)",
+    "evidence_ids": []
+   }
+  ],
+  "findings": [],
+  "attack_mapping": [],
+  "hypotheses": [],
+  "missing_evidence": [],
+  "actions": [
+   "ACT-6668e1403f73",
+   "ACT-32ab5b7797b7",
+   "ACT-ae795ae45437",
+   "ACT-89259d6b7791",
+   "ACT-d47ce00ac07b",
+   "ACT-02438ad25a43",
+   "ACT-5f2e92e3dc99",
+   "ACT-b13a014e6662",
+   "ACT-e448ffc69ed0",
+   "ACT-5bd26545fb20",
+   "ACT-183dd440e0b3"
+  ],
+  "action_results": [
+   "EXEC-59803299791e",
+   "EXEC-b006f8e00acc"
+  ],
+  "recovery_status": "investigating",
+  "created_at": "2026-10-15T07:57:41.810827Z",
+  "parent_version": 7,
+  "change_reason": "evidence upload: crm_audit_and_signin_followup.json (10 records)",
+  "created_from": "evidence_upload",
+  "observed_response_status": null,
+  "recommended_response_focus": null,
+  "response_objective": null,
+  "response_prerequisites": [],
+  "routing_rationale": null,
+  "routing_evidence_ids": [],
+  "routing_confidence": null,
+  "routing_transition": null,
+  "report_sections_complete": [],
+  "report_sections_pending": [],
+  "report_sections_invalidated": [],
+  "latest_report_id": null,
+  "latest_report_version": null,
+  "report_status": null
+ },
+ "state_v9": {
+  "case_id": "CASE-742CD2AB",
+  "version": 9,
+  "entities": [
+   {
+    "id": "ACCOUNT::aina",
+    "type": "account",
+    "name": "aina",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5",
+     "EV-c7f28cca6212",
+     "EV-cd733e8cd4eb"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T10:05:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "ACCOUNT::daniel",
+    "type": "account",
+    "name": "daniel",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "ACCOUNT::farah",
+    "type": "account",
+    "name": "farah",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9",
+     "EV-c7adaa08e561",
+     "EV-356a23cdcb96",
+     "EV-cf09caed38f3",
+     "EV-c62fe1853c3c",
+     "EV-5b11141073a9",
+     "EV-37c9ec0c2ce3",
+     "EV-83e169301cb1"
+    ],
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T10:40:00+08:00",
+    "condition": "contained"
+   },
+   {
+    "id": "DOMAIN::cdn-sync-update.example",
+    "type": "domain",
+    "name": "cdn-sync-update.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-5698fd4198f6"
+    ],
+    "first_seen": "2026-10-04T21:42:00+08:00",
+    "last_seen": "2026-10-04T21:42:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "DOMAIN::pdf-editor-free.example",
+    "type": "domain",
+    "name": "pdf-editor-free.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-2beb0d81a6c2"
+    ],
+    "first_seen": "2026-10-04T21:36:00+08:00",
+    "last_seen": "2026-10-04T21:36:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "DOMAIN::update.vendor-os.example",
+    "type": "domain",
+    "name": "update.vendor-os.example",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-a6e65d97bc84"
+    ],
+    "first_seen": "2026-10-04T21:30:00+08:00",
+    "last_seen": "2026-10-04T21:30:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "FILE::SALES-LT-07::c:/users/farah/appdata/roaming/syncupdate/svchost-update.exe",
+    "type": "file",
+    "name": "C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "condition": null
+   },
+   {
+    "id": "FILE::SALES-LT-07::c:/users/farah/downloads/pdfeditorsetup.exe",
+    "type": "file",
+    "name": "C:\\Users\\farah\\Downloads\\PDFEditorSetup.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::HR-LT-02",
+    "type": "host",
+    "name": "HR-LT-02",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::MKT-LT-11",
+    "type": "host",
+    "name": "MKT-LT-11",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5",
+     "EV-c7f28cca6212",
+     "EV-cd733e8cd4eb"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T10:05:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "HOST::SALES-LT-07",
+    "type": "host",
+    "name": "SALES-LT-07",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9",
+     "EV-c7adaa08e561"
+    ],
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T09:15:00+08:00",
+    "condition": "isolated"
+   },
+   {
+    "id": "PROCESS::HR-LT-02::onedrive.exe",
+    "type": "process",
+    "name": "OneDrive.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::MKT-LT-11::teams.exe",
+    "type": "process",
+    "name": "Teams.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ],
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-04T21:15:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::SALES-LT-07::pdfeditorsetup.exe",
+    "type": "process",
+    "name": "PDFEditorSetup.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "PROCESS::SALES-LT-07::svchost-update.exe",
+    "type": "process",
+    "name": "svchost-update.exe",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "condition": null
+   },
+   {
+    "id": "SESSION::aina::crm-s-8120",
+    "type": "session",
+    "name": "crm-s-8120",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-cd733e8cd4eb"
+    ],
+    "first_seen": "2026-10-05T10:05:00+08:00",
+    "last_seen": "2026-10-05T10:05:00+08:00",
+    "condition": null
+   },
+   {
+    "id": "SESSION::farah::crm-s-7731",
+    "type": "session",
+    "name": "crm-s-7731",
+    "attributes": {},
+    "evidence_ids": [
+     "EV-a5fce70c3324",
+     "EV-c62fe1853c3c",
+     "EV-5b11141073a9"
+    ],
+    "first_seen": "2026-10-04T21:02:00+08:00",
+    "last_seen": "2026-10-05T10:24:00+08:00",
+    "condition": null
+   }
+  ],
+  "relationships": [
+   {
+    "source": "ACT-32ab5b7797b7",
+    "relation": "action_attempted_on",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [],
+    "status": "observed",
+    "id": "REL::action_attempted_on::ACT-32ab5b7797b7::HOST::SALES-LT-07::EXEC-59803299791e",
+    "category": "response",
+    "first_seen": null,
+    "last_seen": null,
+    "attributes": {
+     "tool_name": "isolate_host",
+     "execution_status": "completed",
+     "validation_status": "effective",
+     "result_source": "simulator"
+    },
+    "action_id": "ACT-32ab5b7797b7",
+    "execution_id": "EXEC-59803299791e"
+   },
+   {
+    "source": "ACT-8ef0642f9145",
+    "relation": "action_attempted_on",
+    "target": "ACCOUNT::farah",
+    "evidence_ids": [],
+    "status": "observed",
+    "id": "REL::action_attempted_on::ACT-8ef0642f9145::ACCOUNT::farah::EXEC-7c20360c2a97",
+    "category": "response",
+    "first_seen": null,
+    "last_seen": null,
+    "attributes": {
+     "tool_name": "revoke_sessions",
+     "execution_status": "completed",
+     "validation_status": "effective",
+     "result_source": "simulator"
+    },
+    "action_id": "ACT-8ef0642f9145",
+    "execution_id": "EXEC-7c20360c2a97"
+   },
+   {
+    "source": "ACT-b13a014e6662",
+    "relation": "action_attempted_on",
+    "target": "ACCOUNT::farah",
+    "evidence_ids": [],
+    "status": "observed",
+    "id": "REL::action_attempted_on::ACT-b13a014e6662::ACCOUNT::farah::EXEC-b006f8e00acc",
+    "category": "response",
+    "first_seen": null,
+    "last_seen": null,
+    "attributes": {
+     "tool_name": "revoke_sessions",
+     "execution_status": "partially_completed",
+     "validation_status": "ineffective",
+     "result_source": "simulator"
+    },
+    "action_id": "ACT-b13a014e6662",
+    "execution_id": "EXEC-b006f8e00acc"
+   },
+   {
+    "source": "PROCESS::HR-LT-02::onedrive.exe",
+    "relation": "executed_on",
+    "target": "HOST::HR-LT-02",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::HR-LT-02::onedrive.exe::HOST::HR-LT-02",
+    "category": "context",
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::MKT-LT-11::teams.exe",
+    "relation": "executed_on",
+    "target": "HOST::MKT-LT-11",
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::MKT-LT-11::teams.exe::HOST::MKT-LT-11",
+    "category": "context",
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-04T21:15:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::SALES-LT-07::pdfeditorsetup.exe",
+    "relation": "executed_on",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::SALES-LT-07::pdfeditorsetup.exe::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T21:40:00+08:00",
+    "last_seen": "2026-10-04T21:40:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "PROCESS::SALES-LT-07::svchost-update.exe",
+    "relation": "executed_on",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ],
+    "status": "observed",
+    "id": "REL::executed_on::PROCESS::SALES-LT-07::svchost-update.exe::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T21:40:20+08:00",
+    "last_seen": "2026-10-04T21:40:20+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::aina",
+    "relation": "logged_into",
+    "target": "HOST::MKT-LT-11",
+    "evidence_ids": [
+     "EV-1e99182c8350",
+     "EV-dba9720418c5",
+     "EV-c7f28cca6212",
+     "EV-cd733e8cd4eb"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::aina::HOST::MKT-LT-11",
+    "category": "context",
+    "first_seen": "2026-10-04T21:15:00+08:00",
+    "last_seen": "2026-10-05T10:05:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::daniel",
+    "relation": "logged_into",
+    "target": "HOST::HR-LT-02",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::daniel::HOST::HR-LT-02",
+    "category": "context",
+    "first_seen": "2026-10-04T21:50:00+08:00",
+    "last_seen": "2026-10-04T21:50:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   },
+   {
+    "source": "ACCOUNT::farah",
+    "relation": "logged_into",
+    "target": "HOST::SALES-LT-07",
+    "evidence_ids": [
+     "EV-22f944b03062",
+     "EV-a5fce70c3324",
+     "EV-b78b7a249d06",
+     "EV-8d6ef7d053b8",
+     "EV-5976bc957636",
+     "EV-1026b676e170",
+     "EV-f0cbb6dba43d",
+     "EV-8355588a08b4",
+     "EV-a6e65d97bc84",
+     "EV-2beb0d81a6c2",
+     "EV-5698fd4198f6",
+     "EV-f05839cea7ff",
+     "EV-6c1d5cdc1643",
+     "EV-5d6cea1fb718",
+     "EV-a9a778f02891",
+     "EV-bdc21bd24462",
+     "EV-a895e99bdcf9",
+     "EV-c7adaa08e561"
+    ],
+    "status": "observed",
+    "id": "REL::logged_into::ACCOUNT::farah::HOST::SALES-LT-07",
+    "category": "context",
+    "first_seen": "2026-10-04T20:58:00+08:00",
+    "last_seen": "2026-10-05T09:15:00+08:00",
+    "attributes": {},
+    "action_id": null,
+    "execution_id": null
+   }
+  ],
+  "timeline": [
+   {
+    "timestamp": "2026-10-04T20:58:00+08:00",
+    "description": "idp_signin: event_time=2026-10-04T20:58:00+08:00, source=signin, application=SSO portal, result=success, mfa=push_approved, src_ip=192.0.2.44, device=SALES-LT-07 (managed), record_id=SC1-B1-01 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-22f944b03062"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:02:00+08:00",
+    "description": "crm_signin: event_time=2026-10-04T21:02:00+08:00, source=signin, application=CRM, auth=SSO, result=success, src_ip=192.0.2.44, session_id=crm-s-7731, record_id=SC1-B1-02 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-a5fce70c3324"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:15:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:15:00+08:00, source=endpoint, process=Teams.exe, signed=true, parent=explorer.exe, record_id=SC1-B1-03 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-dba9720418c5"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:30:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:30:00+08:00, source=dns, query=update.vendor-os.example, answer=198.51.100.140, record_id=SC1-B1-04 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-a6e65d97bc84"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:36:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:36:00+08:00, source=dns, query=pdf-editor-free.example, answer=203.0.113.10, record_id=SC1-B1-05 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-2beb0d81a6c2"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:38:00+08:00",
+    "description": "http_download: event_time=2026-10-04T21:38:00+08:00, source=firewall, url=https://pdf-editor-free.example/dl/PDFEditorSetup.exe, dst_ip=203.0.113.10, bytes_in=4718592, verdict=allowed, url_category=uncategorised, record_id=SC1-B1-06 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-f05839cea7ff"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:40:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:40:00+08:00, source=endpoint, process=PDFEditorSetup.exe, signed=false, parent=explorer.exe, path=C:\\Users\\farah\\Downloads\\PDFEditorSetup.exe, sha256=e18c80a7aaf1a837f26618548b51ed72139a19150b4fbaad4852f6a95906ce5a, record_id=SC1-B1-07 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-b78b7a249d06"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:40:20+08:00",
+    "description": "process_start: event_time=2026-10-04T21:40:20+08:00, source=endpoint, process=svchost-update.exe, signed=false, parent=PDFEditorSetup.exe, path=C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe, sha256=0387e06330c2a66b7bdc84d6d86641f300cf0bd952bcd8cd4e2830959450e4e6, record_id=SC1-B1-08 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-8d6ef7d053b8"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:41:05+08:00",
+    "description": "edr_alert: event_time=2026-10-04T21:41:05+08:00, source=endpoint, alert=Unsigned process read browser password and cookie stores, process=svchost-update.exe, files=Chrome Login Data; Chrome Cookies, severity=high, rule=CRED-BROWSER-READ, record_id=SC1-B1-09 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-5976bc957636"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:41:30+08:00",
+    "description": "file_create: event_time=2026-10-04T21:41:30+08:00, source=endpoint, path=C:\\Users\\farah\\AppData\\Local\\Temp\\b7.zip, process=svchost-update.exe, size_bytes=2457600, record_id=SC1-B1-10 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-1026b676e170"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:42:00+08:00",
+    "description": "dns_query: event_time=2026-10-04T21:42:00+08:00, source=dns, query=cdn-sync-update.example, answer=203.0.113.45, record_id=SC1-B1-11 (dns_queries.json)",
+    "evidence_ids": [
+     "EV-5698fd4198f6"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:42:30+08:00",
+    "description": "network_upload: event_time=2026-10-04T21:42:30+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=2457600, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-12 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-6c1d5cdc1643"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:43:10+08:00",
+    "description": "registry_set: event_time=2026-10-04T21:43:10+08:00, source=endpoint, key=HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run, value_name=SyncUpdate, value_data=C:\\Users\\farah\\AppData\\Roaming\\SyncUpdate\\svchost-update.exe, record_id=SC1-B1-13 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-f0cbb6dba43d"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T21:50:00+08:00",
+    "description": "process_start: event_time=2026-10-04T21:50:00+08:00, source=endpoint, process=OneDrive.exe, signed=true, parent=explorer.exe, record_id=SC1-B1-14 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-00300441471d"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T22:12:00+08:00",
+    "description": "network_connection: event_time=2026-10-04T22:12:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-15 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-5d6cea1fb718"
+    ]
+   },
+   {
+    "timestamp": "2026-10-04T22:42:00+08:00",
+    "description": "network_connection: event_time=2026-10-04T22:42:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-16 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-a9a778f02891"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T07:58:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T07:58:00+08:00, source=signin, application=SSO portal, result=success, mfa=push_approved, src_ip=192.0.2.61, record_id=SC1-B1-17 (idp_signin_logs.json)",
+    "evidence_ids": [
+     "EV-1e99182c8350"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:12:00+08:00",
+    "description": "network_connection: event_time=2026-10-05T08:12:00+08:00, source=firewall, dst_ip=203.0.113.45, dst_port=443, bytes_out=1840, process=svchost-update.exe, verdict=allowed, record_id=SC1-B1-18 (firewall_proxy_logs.json)",
+    "evidence_ids": [
+     "EV-bdc21bd24462"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:40:00+08:00",
+    "description": "edr_alert: event_time=2026-10-05T08:40:00+08:00, source=endpoint, alert=Correlated: unsigned installer -> browser credential access -> upload to 203.0.113.45, severity=high, alert_id=EDR-2026-1005-014, record_id=SC1-B1-19 (edr_endpoint_events.json)",
+    "evidence_ids": [
+     "EV-8355588a08b4"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T08:55:00+08:00",
+    "description": "analyst_note: event_time=2026-10-05T08:55:00+08:00, source=analyst_note, note=Farah (Sales) ran an unsigned 'PDF editor' installer on SALES-LT-07 on 4 Oct 21:40; browser password+cookie stores read; 2.4 MB sent to 203.0.113.45. She uses SSO for mail and CRM (customer data). Laptop still online., author=soc.analyst, record_id=SC1-B1-20 (analyst_notes.json)",
+    "evidence_ids": [
+     "EV-a895e99bdcf9"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T09:00:00+08:00",
+    "description": "defender: action result \u2014 isolate_host on HOST::SALES-LT-07: execution=completed, validation=effective (SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.)",
+    "evidence_ids": []
+   },
+   {
+    "timestamp": "2026-10-05T09:05:00+08:00",
+    "description": "defender: action result \u2014 revoke_sessions on ACCOUNT::farah: execution=partially_completed, validation=ineffective (Sessions for farah revoked in: idp, mail. FAILED in crm (CRM admin API unavailable: scheduled vendor maintenance until 10:30). Sessions in crm remain valid.)",
+    "evidence_ids": []
+   },
+   {
+    "timestamp": "2026-10-05T09:15:00+08:00",
+    "description": "edr_containment: event_time=2026-10-05T09:15:00+08:00, source=endpoint, event=Outbound connection to 203.0.113.45 dropped by network containment, process=svchost-update.exe, verdict=blocked, record_id=SC1-B2-04 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-c7adaa08e561"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T09:30:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T09:30:00+08:00, source=signin, application=SSO portal, result=success, mfa=push_approved, src_ip=192.0.2.61, record_id=SC1-B2-05 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-c7f28cca6212"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:05:00+08:00",
+    "description": "crm_signin: event_time=2026-10-05T10:05:00+08:00, source=signin, application=CRM, auth=SSO, result=success, src_ip=192.0.2.61, session_id=crm-s-8120, record_id=SC1-B2-06 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-cd733e8cd4eb"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:18:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T10:18:00+08:00, source=signin, src_ip=198.51.100.23, device=unregistered Windows / Chrome, auth=session cookie, result=failure, reason=session revoked, record_id=SC1-B2-08 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-356a23cdcb96"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:19:00+08:00",
+    "description": "idp_signin: event_time=2026-10-05T10:19:00+08:00, source=signin, src_ip=198.51.100.23, auth=password, result=failure, reason=MFA push denied by user, record_id=SC1-B2-09 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-cf09caed38f3"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:20:00+08:00",
+    "description": "crm_signin: event_time=2026-10-05T10:20:00+08:00, source=signin, application=CRM, src_ip=198.51.100.23, session_id=crm-s-7731, auth=existing session token, device=new device fingerprint, result=success, record_id=SC1-B2-11 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-c62fe1853c3c"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:24:00+08:00",
+    "description": "crm_export: event_time=2026-10-05T10:24:00+08:00, source=crm_audit, report=Customers - Central region, record_count=1200, columns=name, phone, email, company, src_ip=198.51.100.23, session_id=crm-s-7731, record_id=SC1-B2-13 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-5b11141073a9"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:27:00+08:00",
+    "description": "crm_file_download: event_time=2026-10-05T10:27:00+08:00, source=crm_audit, file=export_customers_central.csv, bytes=412000, src_ip=198.51.100.23, record_id=SC1-B2-14 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-37c9ec0c2ce3"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:35:00+08:00",
+    "description": "analyst_note: event_time=2026-10-05T10:35:00+08:00, source=analyst_note, note=CRM vendor status page: admin API maintenance 08:00-10:30 has finished; the admin API is available again., author=soc.analyst, record_id=SC1-B2-15 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-a1bd4c5c72d5"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:40:00+08:00",
+    "description": "analyst_note: event_time=2026-10-05T10:40:00+08:00, source=analyst_note, note=Called Farah: she installed a free PDF editor on Sunday night. She has been in a client meeting since 10:00 and has not used the CRM today., author=soc.analyst, record_id=SC1-B2-16 (crm_audit_and_signin_followup.json)",
+    "evidence_ids": [
+     "EV-83e169301cb1"
+    ]
+   },
+   {
+    "timestamp": "2026-10-05T10:45:00+08:00",
+    "description": "defender: action result \u2014 revoke_sessions on ACCOUNT::farah: execution=completed, validation=effective (Active sessions for farah revoked in: idp, mail, crm.)",
+    "evidence_ids": []
+   },
+   {
+    "timestamp": "2026-10-15T07:57:13.296400Z",
+    "description": "defender: action rejected \u2014 reset_password on ACCOUNT::farah (Hold: revoke sessions first. A reset now tips off the attacker while stolen cookies stay valid. Re-propose after revocation.)",
+    "evidence_ids": []
+   },
+   {
+    "timestamp": "2026-10-15T07:58:20.124826Z",
+    "description": "defender: action approved \u2014 disable_account on ACCOUNT::farah",
+    "evidence_ids": []
+   }
+  ],
+  "findings": [],
+  "attack_mapping": [],
+  "hypotheses": [],
+  "missing_evidence": [],
+  "actions": [
+   "ACT-6668e1403f73",
+   "ACT-32ab5b7797b7",
+   "ACT-ae795ae45437",
+   "ACT-89259d6b7791",
+   "ACT-d47ce00ac07b",
+   "ACT-02438ad25a43",
+   "ACT-5f2e92e3dc99",
+   "ACT-b13a014e6662",
+   "ACT-e448ffc69ed0",
+   "ACT-5bd26545fb20",
+   "ACT-183dd440e0b3",
+   "ACT-8ef0642f9145",
+   "ACT-f473d0ac9b06"
+  ],
+  "action_results": [
+   "EXEC-59803299791e",
+   "EXEC-b006f8e00acc",
+   "EXEC-7c20360c2a97"
+  ],
+  "recovery_status": "investigating",
+  "created_at": "2026-10-15T07:58:27.253908Z",
+  "parent_version": 8,
+  "change_reason": "action result EXEC-7c20360c2a97 (revoke_sessions on ACCOUNT::farah)",
+  "created_from": "action_result",
+  "observed_response_status": null,
+  "recommended_response_focus": null,
+  "response_objective": null,
+  "response_prerequisites": [],
+  "routing_rationale": null,
+  "routing_evidence_ids": [],
+  "routing_confidence": null,
+  "routing_transition": null,
+  "report_sections_complete": [],
+  "report_sections_pending": [],
+  "report_sections_invalidated": [],
+  "latest_report_id": null,
+  "latest_report_version": null,
+  "report_status": null
+ },
+ "audit": [
+  {
+   "audit_id": "AUDIT-4f6786b026da",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "case_created",
+   "details": {
+    "title": "EDR alert: unsigned installer and browser credential access on SALES-LT-07"
+   },
+   "timestamp": "2026-10-15T07:55:33.168276+00:00"
+  },
+  {
+   "audit_id": "AUDIT-3907ed45036e",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "idp_signin_logs.json",
+    "sha256": "462caabbde41ee4d20eef5c00b1d0c52d6b80f12fe9f9a7c8afc0cd1a6b102a4",
+    "kind": "json",
+    "item_count": 3,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/462caabbde41-idp_signin_logs.json"
+   },
+   "timestamp": "2026-10-15T07:55:35.729049+00:00"
+  },
+  {
+   "audit_id": "AUDIT-b7fa2f8a6794",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 1,
+    "parent_version": null,
+    "created_from": "evidence_upload",
+    "entity_count": 5
+   },
+   "timestamp": "2026-10-15T07:55:35.729697+00:00"
+  },
+  {
+   "audit_id": "AUDIT-fa8566802761",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "edr_endpoint_events.json",
+    "sha256": "ea7902626aba3af1b41be3a8a7661b059ff8cdc1db7de987c90c1b0cd38b2760",
+    "kind": "json",
+    "item_count": 8,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/ea7902626aba-edr_endpoint_events.json"
+   },
+   "timestamp": "2026-10-15T07:55:37.171049+00:00"
+  },
+  {
+   "audit_id": "AUDIT-54a6b67eec4a",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 2,
+    "parent_version": 1,
+    "created_from": "evidence_upload",
+    "entity_count": 13
+   },
+   "timestamp": "2026-10-15T07:55:37.172555+00:00"
+  },
+  {
+   "audit_id": "AUDIT-5103f5b0f052",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "dns_queries.json",
+    "sha256": "2acd9213e359cc5d48e87b1b30f06efefa6913995f1442d56c3bc25224dc31f8",
+    "kind": "json",
+    "item_count": 3,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/2acd9213e359-dns_queries.json"
+   },
+   "timestamp": "2026-10-15T07:55:38.568467+00:00"
+  },
+  {
+   "audit_id": "AUDIT-27935359d65a",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 3,
+    "parent_version": 2,
+    "created_from": "evidence_upload",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:55:38.571935+00:00"
+  },
+  {
+   "audit_id": "AUDIT-6fc88bd0bfb1",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "firewall_proxy_logs.json",
+    "sha256": "ea15b8ef84501f16748602b6e35180c8c4005e84ddd6a7c28db6403e6a26e10c",
+    "kind": "json",
+    "item_count": 5,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/ea15b8ef8450-firewall_proxy_logs.json"
+   },
+   "timestamp": "2026-10-15T07:55:39.989784+00:00"
+  },
+  {
+   "audit_id": "AUDIT-58acdfdadbca",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 4,
+    "parent_version": 3,
+    "created_from": "evidence_upload",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:55:39.991465+00:00"
+  },
+  {
+   "audit_id": "AUDIT-5b3a35864e7e",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "analyst_notes.json",
+    "sha256": "8b7cdfb696bb7d94e17568c998387d4279da7d88c8e46ca9ee6d29eca36ba901",
+    "kind": "json",
+    "item_count": 1,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/8b7cdfb696bb-analyst_notes.json"
+   },
+   "timestamp": "2026-10-15T07:55:41.378580+00:00"
+  },
+  {
+   "audit_id": "AUDIT-f9cd527372f6",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 5,
+    "parent_version": 4,
+    "created_from": "evidence_upload",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:55:41.381415+00:00"
+  },
+  {
+   "audit_id": "AUDIT-cf2477e6b699",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "plan_created",
+   "details": {
+    "plan_id": "PLAN-7abc56490815",
+    "stage": "containment",
+    "action_count": 6,
+    "missing_evidence_count": 7
+   },
+   "timestamp": "2026-10-15T07:55:53.224308+00:00"
+  },
+  {
+   "audit_id": "AUDIT-6e4f82806ee2",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_rejected",
+   "details": {
+    "action_id": "ACT-89259d6b7791",
+    "approval_id": "APV-cfe1381832af",
+    "analyst": "Fieqah A.",
+    "approver_role": "soc_analyst",
+    "required_role": null,
+    "reason": "Hold: revoke sessions first. A reset now tips off the attacker while stolen cookies stay valid. Re-propose after revocation."
+   },
+   "timestamp": "2026-10-15T07:57:13.296626+00:00"
+  },
+  {
+   "audit_id": "AUDIT-18e25410fa38",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_approved",
+   "details": {
+    "action_id": "ACT-32ab5b7797b7",
+    "approval_id": "APV-f2deb70e1115",
+    "analyst": "Fieqah A.",
+    "approver_role": "soc_analyst",
+    "required_role": "soc_analyst",
+    "reason": ""
+   },
+   "timestamp": "2026-10-15T07:57:18.923159+00:00"
+  },
+  {
+   "audit_id": "AUDIT-56a822197d0c",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_executed",
+   "details": {
+    "action_id": "ACT-32ab5b7797b7",
+    "execution_id": "EXEC-59803299791e",
+    "execution_status": "completed",
+    "validation_status": "effective"
+   },
+   "timestamp": "2026-10-15T07:57:21.821275+00:00"
+  },
+  {
+   "audit_id": "AUDIT-e8d9c1bd9dd5",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 6,
+    "parent_version": 5,
+    "created_from": "action_result",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:57:21.823353+00:00"
+  },
+  {
+   "audit_id": "AUDIT-d82335fca6ea",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "plan_created",
+   "details": {
+    "plan_id": "PLAN-520e68078579",
+    "stage": "containment",
+    "action_count": 5,
+    "missing_evidence_count": 7
+   },
+   "timestamp": "2026-10-15T07:57:29.898249+00:00"
+  },
+  {
+   "audit_id": "AUDIT-bd64b9822a49",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_approved",
+   "details": {
+    "action_id": "ACT-b13a014e6662",
+    "approval_id": "APV-34c414a27d81",
+    "analyst": "Fieqah A.",
+    "approver_role": "soc_analyst",
+    "required_role": "soc_analyst",
+    "reason": ""
+   },
+   "timestamp": "2026-10-15T07:57:34.521501+00:00"
+  },
+  {
+   "audit_id": "AUDIT-14207645cfcb",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_executed",
+   "details": {
+    "action_id": "ACT-b13a014e6662",
+    "execution_id": "EXEC-b006f8e00acc",
+    "execution_status": "partially_completed",
+    "validation_status": "ineffective"
+   },
+   "timestamp": "2026-10-15T07:57:37.159630+00:00"
+  },
+  {
+   "audit_id": "AUDIT-8cb968f2fcd4",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 7,
+    "parent_version": 6,
+    "created_from": "action_result",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:57:37.162288+00:00"
+  },
+  {
+   "audit_id": "AUDIT-44bf7f5270f4",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "crm_audit_and_signin_followup.json",
+    "sha256": "a0e76b5e4708a6361a65c8874a732dc64fd8e7ee733cef5cc4c1f31306535807",
+    "kind": "json",
+    "item_count": 10,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/a0e76b5e4708-crm_audit_and_signin_followup.json"
+   },
+   "timestamp": "2026-10-15T07:57:41.808572+00:00"
+  },
+  {
+   "audit_id": "AUDIT-95b014f8627d",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 8,
+    "parent_version": 7,
+    "created_from": "evidence_upload",
+    "entity_count": 17
+   },
+   "timestamp": "2026-10-15T07:57:41.811564+00:00"
+  },
+  {
+   "audit_id": "AUDIT-561b3b63bfb4",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "plan_created",
+   "details": {
+    "plan_id": "PLAN-38c1c0b65dee",
+    "stage": "containment",
+    "action_count": 2,
+    "missing_evidence_count": 7
+   },
+   "timestamp": "2026-10-15T07:58:07.137255+00:00"
+  },
+  {
+   "audit_id": "AUDIT-296493572a30",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_approved",
+   "details": {
+    "action_id": "ACT-f473d0ac9b06",
+    "approval_id": "APV-51b54e428e13",
+    "analyst": "Fieqah A.",
+    "approver_role": "it_manager",
+    "required_role": "it_manager",
+    "reason": ""
+   },
+   "timestamp": "2026-10-15T07:58:20.124969+00:00"
+  },
+  {
+   "audit_id": "AUDIT-6752931f1837",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_approved",
+   "details": {
+    "action_id": "ACT-8ef0642f9145",
+    "approval_id": "APV-fddd8706eff0",
+    "analyst": "Fieqah A.",
+    "approver_role": "soc_analyst",
+    "required_role": "soc_analyst",
+    "reason": ""
+   },
+   "timestamp": "2026-10-15T07:58:24.700146+00:00"
+  },
+  {
+   "audit_id": "AUDIT-450fc09963ed",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_executed",
+   "details": {
+    "action_id": "ACT-8ef0642f9145",
+    "execution_id": "EXEC-7c20360c2a97",
+    "execution_status": "completed",
+    "validation_status": "effective"
+   },
+   "timestamp": "2026-10-15T07:58:27.251935+00:00"
+  },
+  {
+   "audit_id": "AUDIT-efd9fa72257d",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 9,
+    "parent_version": 8,
+    "created_from": "action_result",
+    "entity_count": 17
+   },
+   "timestamp": "2026-10-15T07:58:27.254524+00:00"
+  },
+  {
+   "audit_id": "AUDIT-5e063ce00e32",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "report_generated",
+   "details": {
+    "report_id": "RPT-4c844cf2b259",
+    "pdf_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/reports/RPT-4c844cf2b259.pdf"
+   },
+   "timestamp": "2026-10-15T07:58:35.499514+00:00"
+  }
+ ],
+ "plans": [
+  {
+   "plan_id": "PLAN-7abc56490815",
+   "case_id": "CASE-742CD2AB",
+   "based_on_state_version": 5,
+   "stage": "containment",
+   "missing_evidence": [
+    "Hash reputation/sandbox verdicts for PDFEditorSetup.exe (e18c80a7\u2026) and svchost-update.exe (0387e063\u2026) and whether either is known-bad in threat intel",
+    "Full process tree and any additional child processes or dropped files beyond b7.zip, plus memory image of SALES-LT-07 before remediation",
+    "Confirmation of what exactly was in the 2.4 MB upload (b7.zip contents) and whether it included CRM/mail session cookies or customer records",
+    "Ownership/registration of 203.0.113.45, 203.0.113.10, cdn-sync-update.example and pdf-editor-free.example, and any proxy/DNS logs showing other internal hosts resolving them",
+    "Attribution of the 2026-10-05 07:58 SSO sign-in from 192.0.2.61 (state links it to account aina / MKT-LT-11) \u2014 confirm whether it is unrelated or a post-compromise access, and review farah's CRM/mail audit logs from 2026-10-04 21:42 onward for use of the stolen session",
+    "Whether the download was user-initiated via search/advertisement or delivered through an email/message (no phishing artefact in this batch)",
+    "Any change-management record that could explain the download/installation on SALES-LT-07"
+   ],
+   "action_ids": [
+    "ACT-6668e1403f73",
+    "ACT-32ab5b7797b7",
+    "ACT-ae795ae45437",
+    "ACT-89259d6b7791",
+    "ACT-d47ce00ac07b",
+    "ACT-02438ad25a43"
+   ],
+   "created_at": "2026-10-15T07:55:53.224221+00:00",
+   "analysis": {
+    "incident_type": "infostealer_session_hijack",
+    "scope": "SALES-LT-07 and account farah (SSO, mail and CRM sessions); C2 at 203.0.113.45 / cdn-sync-update.example",
+    "severity": "high",
+    "confidence": 0.86,
+    "findings": [
+     {
+      "summary": "SALES-LT-07 ran an unsigned installer (PDFEditorSetup.exe) downloaded from pdf-editor-free.example, which started an unsigned svchost-update.exe from AppData\\Roaming\\SyncUpdate.",
+      "evidence_ids": [
+       "EV-2beb0d81a6c2",
+       "EV-f05839cea7ff",
+       "EV-b78b7a249d06",
+       "EV-8d6ef7d053b8"
+      ],
+      "confidence": 0.9
+     },
+     {
+      "summary": "svchost-update.exe read the Chrome password and cookie stores (EDR rule CRED-BROWSER-READ): farah's saved credentials and session cookies must be treated as stolen.",
+      "evidence_ids": [
+       "EV-5976bc957636",
+       "EV-8355588a08b4"
+      ],
+      "confidence": 0.9
+     },
+     {
+      "summary": "A 2.4 MB archive (b7.zip) was staged and uploaded to 203.0.113.45, resolved from cdn-sync-update.example.",
+      "evidence_ids": [
+       "EV-1026b676e170",
+       "EV-5698fd4198f6",
+       "EV-6c1d5cdc1643"
+      ],
+      "confidence": 0.85
+     },
+     {
+      "summary": "Persistence was set through the HKCU Run key 'SyncUpdate' and the host kept beaconing to 203.0.113.45 until 08:12 on 5 Oct: the infection is still active.",
+      "evidence_ids": [
+       "EV-f0cbb6dba43d",
+       "EV-5d6cea1fb718",
+       "EV-a9a778f02891",
+       "EV-bdc21bd24462"
+      ],
+      "confidence": 0.85
+     },
+     {
+      "summary": "farah holds an SSO session and a CRM session (crm-s-7731) opened from SALES-LT-07 before the theft; the CRM stores customer data.",
+      "evidence_ids": [
+       "EV-22f944b03062",
+       "EV-a5fce70c3324",
+       "EV-a895e99bdcf9"
+      ],
+      "confidence": 0.7
+     },
+     {
+      "summary": "Activity on MKT-LT-11 (aina) and HR-LT-02 (daniel) is signed, routine software and is not linked to this incident.",
+      "evidence_ids": [
+       "EV-dba9720418c5",
+       "EV-00300441471d",
+       "EV-1e99182c8350"
+      ],
+      "confidence": 0.6
+     }
+    ],
+    "attack_techniques": [
+     "T1204.002",
+     "T1036.005",
+     "T1547.001",
+     "T1555.003",
+     "T1071.001",
+     "T1041"
+    ]
+   }
+  },
+  {
+   "plan_id": "PLAN-520e68078579",
+   "case_id": "CASE-742CD2AB",
+   "based_on_state_version": 6,
+   "stage": "containment",
+   "missing_evidence": [
+    "Hash reputation/sandbox verdicts for PDFEditorSetup.exe (e18c80a7\u2026) and svchost-update.exe (0387e063\u2026) and whether either is known-bad in threat intel",
+    "Full process tree and any additional child processes or dropped files beyond b7.zip, plus memory image of SALES-LT-07 before remediation",
+    "Confirmation of what exactly was in the 2.4 MB upload (b7.zip contents) and whether it included CRM/mail session cookies or customer records",
+    "Ownership/registration of 203.0.113.45, 203.0.113.10, cdn-sync-update.example and pdf-editor-free.example, and any proxy/DNS logs showing other internal hosts resolving them",
+    "Attribution of the 2026-10-05 07:58 SSO sign-in from 192.0.2.61 (state links it to account aina / MKT-LT-11) \u2014 confirm whether it is unrelated or a post-compromise access, and review farah's CRM/mail audit logs from 2026-10-04 21:42 onward for use of the stolen session",
+    "Whether the download was user-initiated via search/advertisement or delivered through an email/message (no phishing artefact in this batch)",
+    "Any change-management record that could explain the download/installation on SALES-LT-07"
+   ],
+   "action_ids": [
+    "ACT-5f2e92e3dc99",
+    "ACT-b13a014e6662",
+    "ACT-e448ffc69ed0",
+    "ACT-5bd26545fb20",
+    "ACT-183dd440e0b3"
+   ],
+   "created_at": "2026-10-15T07:57:29.898165+00:00",
+   "analysis": {
+    "incident_type": "infostealer_session_hijack",
+    "scope": "SALES-LT-07 and account farah (SSO, mail and CRM sessions); C2 at 203.0.113.45 / cdn-sync-update.example",
+    "severity": "high",
+    "confidence": 0.86,
+    "findings": [
+     {
+      "summary": "SALES-LT-07 ran an unsigned installer (PDFEditorSetup.exe) downloaded from pdf-editor-free.example, which started an unsigned svchost-update.exe from AppData\\Roaming\\SyncUpdate.",
+      "evidence_ids": [
+       "EV-2beb0d81a6c2",
+       "EV-f05839cea7ff",
+       "EV-b78b7a249d06",
+       "EV-8d6ef7d053b8"
+      ],
+      "confidence": 0.9
+     },
+     {
+      "summary": "svchost-update.exe read the Chrome password and cookie stores (EDR rule CRED-BROWSER-READ): farah's saved credentials and session cookies must be treated as stolen.",
+      "evidence_ids": [
+       "EV-5976bc957636",
+       "EV-8355588a08b4"
+      ],
+      "confidence": 0.9
+     },
+     {
+      "summary": "A 2.4 MB archive (b7.zip) was staged and uploaded to 203.0.113.45, resolved from cdn-sync-update.example.",
+      "evidence_ids": [
+       "EV-1026b676e170",
+       "EV-5698fd4198f6",
+       "EV-6c1d5cdc1643"
+      ],
+      "confidence": 0.85
+     },
+     {
+      "summary": "Persistence was set through the HKCU Run key 'SyncUpdate' and the host kept beaconing to 203.0.113.45 until 08:12 on 5 Oct: the infection is still active.",
+      "evidence_ids": [
+       "EV-f0cbb6dba43d",
+       "EV-5d6cea1fb718",
+       "EV-a9a778f02891",
+       "EV-bdc21bd24462"
+      ],
+      "confidence": 0.85
+     },
+     {
+      "summary": "farah holds an SSO session and a CRM session (crm-s-7731) opened from SALES-LT-07 before the theft; the CRM stores customer data.",
+      "evidence_ids": [
+       "EV-22f944b03062",
+       "EV-a5fce70c3324",
+       "EV-a895e99bdcf9"
+      ],
+      "confidence": 0.7
+     },
+     {
+      "summary": "Activity on MKT-LT-11 (aina) and HR-LT-02 (daniel) is signed, routine software and is not linked to this incident.",
+      "evidence_ids": [
+       "EV-dba9720418c5",
+       "EV-00300441471d",
+       "EV-1e99182c8350"
+      ],
+      "confidence": 0.6
+     }
+    ],
+    "attack_techniques": [
+     "T1204.002",
+     "T1036.005",
+     "T1547.001",
+     "T1555.003",
+     "T1071.001",
+     "T1041"
+    ]
+   }
+  },
+  {
+   "plan_id": "PLAN-38c1c0b65dee",
+   "case_id": "CASE-742CD2AB",
+   "based_on_state_version": 8,
+   "stage": "containment",
+   "missing_evidence": [
+    "CRM admin API is back online (vendor maintenance ended 10:30) \u2014 revoke remaining CRM session crm-s-7731 and confirm no other live sessions for farah.",
+    "Full inventory of credentials and cookies stolen from farah's browser stores (which additional apps/accounts the stolen cookies can still access).",
+    "Complete CRM audit trail of the attacker session crm-s-7731 (all views, exports, changes, and any further downloads beyond export_customers_central.csv).",
+    "Verification whether the SSO sign-ins from 192.0.2.61 at 2026-10-05 07:58 and 09:30 and the CRM sign-in crm-s-8120 at 10:05 were the legitimate user or the attacker (user reported being in a meeting from 10:00).",
+    "Sweep for the same installer binary/hash (PDFEditorSetup.exe, svchost-update.exe) or related C2 (203.0.113.45, cdn-sync-update.example, pdf-editor-free.example) on other endpoints and accounts.",
+    "Malware/C2 analysis of the dropped binary and staging archive to confirm stealer family and any secondary payloads or lateral movement.",
+    "Ownership/registration verification of pdf-editor-free.example, cdn-sync-update.example and 203.0.113.45."
+   ],
+   "action_ids": [
+    "ACT-8ef0642f9145",
+    "ACT-f473d0ac9b06"
+   ],
+   "created_at": "2026-10-15T07:58:07.137143+00:00",
+   "analysis": {
+    "incident_type": "infostealer_session_hijack",
+    "scope": "Account farah and CRM customer data; SALES-LT-07 contained; attacker at 198.51.100.23",
+    "severity": "critical",
+    "confidence": 0.9,
+    "findings": [
+     {
+      "summary": "farah's stolen CRM session crm-s-7731 was replayed from 198.51.100.23 on a new device fingerprint at 10:20, after the IdP session had been revoked.",
+      "evidence_ids": [
+       "EV-356a23cdcb96",
+       "EV-c62fe1853c3c"
+      ],
+      "confidence": 0.95
+     },
+     {
+      "summary": "The replayed session exported 1,200 customer records (name, phone, email, company) and downloaded export_customers_central.csv.",
+      "evidence_ids": [
+       "EV-5b11141073a9",
+       "EV-37c9ec0c2ce3"
+      ],
+      "confidence": 0.95
+     },
+     {
+      "summary": "The earlier session revocation failed in the CRM during vendor maintenance; the CRM admin API is available again.",
+      "evidence_ids": [
+       "EV-a1bd4c5c72d5"
+      ],
+      "confidence": 0.85
+     },
+     {
+      "summary": "Farah was in a client meeting from 10:00 and has not used the CRM today: the 10:20 CRM activity is the attacker.",
+      "evidence_ids": [
+       "EV-83e169301cb1"
+      ],
+      "confidence": 0.85
+     },
+     {
+      "summary": "SALES-LT-07 is contained: its outbound connection to 203.0.113.45 was dropped.",
+      "evidence_ids": [
+       "EV-c7adaa08e561"
+      ],
+      "confidence": 0.9
+     }
+    ],
+    "attack_techniques": [
+     "T1204.002",
+     "T1036.005",
+     "T1547.001",
+     "T1555.003",
+     "T1071.001",
+     "T1041",
+     "T1550.004",
+     "T1213"
+    ]
+   }
+  }
+ ],
+ "replan_v3": {
+  "plan_id": "PLAN-38c1c0b65dee",
+  "case_id": "CASE-742CD2AB",
+  "based_on_state_version": 8,
+  "stage": "containment",
+  "missing_evidence": [
+   "CRM admin API is back online (vendor maintenance ended 10:30) \u2014 revoke remaining CRM session crm-s-7731 and confirm no other live sessions for farah.",
+   "Full inventory of credentials and cookies stolen from farah's browser stores (which additional apps/accounts the stolen cookies can still access).",
+   "Complete CRM audit trail of the attacker session crm-s-7731 (all views, exports, changes, and any further downloads beyond export_customers_central.csv).",
+   "Verification whether the SSO sign-ins from 192.0.2.61 at 2026-10-05 07:58 and 09:30 and the CRM sign-in crm-s-8120 at 10:05 were the legitimate user or the attacker (user reported being in a meeting from 10:00).",
+   "Sweep for the same installer binary/hash (PDFEditorSetup.exe, svchost-update.exe) or related C2 (203.0.113.45, cdn-sync-update.example, pdf-editor-free.example) on other endpoints and accounts.",
+   "Malware/C2 analysis of the dropped binary and staging archive to confirm stealer family and any secondary payloads or lateral movement.",
+   "Ownership/registration verification of pdf-editor-free.example, cdn-sync-update.example and 203.0.113.45."
+  ],
+  "action_ids": [
+   "ACT-8ef0642f9145",
+   "ACT-f473d0ac9b06"
+  ],
+  "created_at": "2026-10-15T07:58:07.137143+00:00",
+  "analysis": {
+   "incident_type": "infostealer_session_hijack",
+   "scope": "Account farah and CRM customer data; SALES-LT-07 contained; attacker at 198.51.100.23",
+   "severity": "critical",
+   "confidence": 0.9,
+   "findings": [
+    {
+     "summary": "farah's stolen CRM session crm-s-7731 was replayed from 198.51.100.23 on a new device fingerprint at 10:20, after the IdP session had been revoked.",
+     "evidence_ids": [
+      "EV-356a23cdcb96",
+      "EV-c62fe1853c3c"
+     ],
+     "confidence": 0.95
+    },
+    {
+     "summary": "The replayed session exported 1,200 customer records (name, phone, email, company) and downloaded export_customers_central.csv.",
+     "evidence_ids": [
+      "EV-5b11141073a9",
+      "EV-37c9ec0c2ce3"
+     ],
+     "confidence": 0.95
+    },
+    {
+     "summary": "The earlier session revocation failed in the CRM during vendor maintenance; the CRM admin API is available again.",
+     "evidence_ids": [
+      "EV-a1bd4c5c72d5"
+     ],
+     "confidence": 0.85
+    },
+    {
+     "summary": "Farah was in a client meeting from 10:00 and has not used the CRM today: the 10:20 CRM activity is the attacker.",
+     "evidence_ids": [
+      "EV-83e169301cb1"
+     ],
+     "confidence": 0.85
+    },
+    {
+     "summary": "SALES-LT-07 is contained: its outbound connection to 203.0.113.45 was dropped.",
+     "evidence_ids": [
+      "EV-c7adaa08e561"
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "attack_techniques": [
+    "T1204.002",
+    "T1036.005",
+    "T1547.001",
+    "T1555.003",
+    "T1071.001",
+    "T1041",
+    "T1550.004",
+    "T1213"
+   ]
+  },
+  "actions": [
+   {
+    "action_id": "ACT-8ef0642f9145",
+    "case_id": "CASE-742CD2AB",
+    "plan_id": "PLAN-38c1c0b65dee",
+    "version": 1,
+    "based_on_state_version": 8,
+    "proposal": {
+     "tool_name": "revoke_sessions",
+     "target_id": "ACCOUNT::farah",
+     "evidence_ids": [
+      "EV-a5fce70c3324",
+      "EV-c62fe1853c3c",
+      "EV-5b11141073a9",
+      "EV-c7adaa08e561"
+     ],
+     "policy_refs": [
+      "POL-07",
+      "POL-11"
+     ],
+     "rationale": "The stolen CRM session crm-s-7731 was replayed from 198.51.100.23 and used to export 1,200 customer records. The first revocation failed in the CRM during vendor maintenance; the admin API is back, so revoking again closes the attacker's live session. POL-07 permits a SOC analyst to approve revoking sessions alone.",
+     "prerequisites": [
+      "CRM admin API available"
+     ],
+     "risk": "Farah is signed out of every service again.",
+     "expected_effect": "Active sessions for farah revoked in idp, mail and crm, including crm-s-7731.",
+     "validation_checks": [
+      "CRM sign-ins with crm-s-7731 fail",
+      "No new CRM exports from 198.51.100.23"
+     ]
+    },
+    "status": "awaiting_approval",
+    "decided_by": null,
+    "decided_at": null,
+    "reason": null,
+    "created_at": "2026-10-15T07:58:07.136955Z"
+   },
+   {
+    "action_id": "ACT-f473d0ac9b06",
+    "case_id": "CASE-742CD2AB",
+    "plan_id": "PLAN-38c1c0b65dee",
+    "version": 1,
+    "based_on_state_version": 8,
+    "proposal": {
+     "tool_name": "disable_account",
+     "target_id": "ACCOUNT::farah",
+     "evidence_ids": [
+      "EV-5976bc957636",
+      "EV-c62fe1853c3c",
+      "EV-cf09caed38f3",
+      "EV-356a23cdcb96"
+     ],
+     "policy_refs": [
+      "POL-02"
+     ],
+     "rationale": "The attacker holds farah's stolen browser credentials and is actively trying to sign in from 198.51.100.23. Disabling the account blocks new sign-ins until a user-assisted reset is done. POL-02 requires IT-manager approval to disable a staff account.",
+     "prerequisites": [
+      "IT manager approval"
+     ],
+     "risk": "Farah cannot work until the account is re-enabled.",
+     "expected_effect": "New sign-ins for farah are blocked at the identity provider.",
+     "validation_checks": [
+      "Sign-in attempts for farah are rejected as disabled"
+     ]
+    },
+    "status": "awaiting_approval",
+    "decided_by": null,
+    "decided_at": null,
+    "reason": null,
+    "created_at": "2026-10-15T07:58:07.137087Z"
+   }
+  ]
+ },
+ "upload_b2": {
+  "source_file": "crm_audit_and_signin_followup.json",
+  "sha256": "a0e76b5e4708a6361a65c8874a732dc64fd8e7ee733cef5cc4c1f31306535807",
+  "kind": "json",
+  "item_count": 10,
+  "evidence_ids": [
+   "EV-c7adaa08e561",
+   "EV-c7f28cca6212",
+   "EV-cd733e8cd4eb",
+   "EV-356a23cdcb96",
+   "EV-cf09caed38f3",
+   "EV-c62fe1853c3c",
+   "EV-5b11141073a9",
+   "EV-37c9ec0c2ce3",
+   "EV-a1bd4c5c72d5",
+   "EV-83e169301cb1"
+  ],
+  "new_state_version": 8
+ },
+ "results": [
+  {
+   "execution_id": "EXEC-59803299791e",
+   "case_id": "CASE-742CD2AB",
+   "action_id": "ACT-32ab5b7797b7",
+   "tool_name": "isolate_host",
+   "target_id": "HOST::SALES-LT-07",
+   "execution_status": "completed",
+   "validation_status": "effective",
+   "observed_effect": "SALES-LT-07 network-contained by the EDR; only the EDR management channel remains.",
+   "simulated_at": "2026-10-05T09:00:00+08:00",
+   "services": {},
+   "side_effects": [
+    "farah cannot use SALES-LT-07 until isolation is lifted."
+   ],
+   "result_source": "simulator",
+   "created_at": "2026-10-15T07:57:21.821230+00:00"
+  },
+  {
+   "execution_id": "EXEC-b006f8e00acc",
+   "case_id": "CASE-742CD2AB",
+   "action_id": "ACT-b13a014e6662",
+   "tool_name": "revoke_sessions",
+   "target_id": "ACCOUNT::farah",
+   "execution_status": "partially_completed",
+   "validation_status": "ineffective",
+   "observed_effect": "Sessions for farah revoked in: idp, mail. FAILED in crm (CRM admin API unavailable: scheduled vendor maintenance until 10:30). Sessions in crm remain valid.",
+   "simulated_at": "2026-10-05T09:05:00+08:00",
+   "services": {
+    "idp": "succeeded",
+    "mail": "succeeded",
+    "crm": "failed"
+   },
+   "side_effects": [],
+   "result_source": "simulator",
+   "created_at": "2026-10-15T07:57:37.159580+00:00"
+  },
+  {
+   "execution_id": "EXEC-7c20360c2a97",
+   "case_id": "CASE-742CD2AB",
+   "action_id": "ACT-8ef0642f9145",
+   "tool_name": "revoke_sessions",
+   "target_id": "ACCOUNT::farah",
+   "execution_status": "completed",
+   "validation_status": "effective",
+   "observed_effect": "Active sessions for farah revoked in: idp, mail, crm.",
+   "simulated_at": "2026-10-05T10:45:00+08:00",
+   "services": {
+    "idp": "succeeded",
+    "mail": "succeeded",
+    "crm": "succeeded"
+   },
+   "side_effects": [],
+   "result_source": "simulator",
+   "created_at": "2026-10-15T07:58:27.251901+00:00"
+  }
+ ],
+ "trace": [
+  [
+   {
+    "node": "load_state",
+    "case": "CASE-742CD2AB",
+    "version": 5,
+    "entities": 16,
+    "relationships": 7,
+    "timeline": 20,
+    "t": 1792050949.2173367
+   },
+   {
+    "node": "analyze:start",
+    "t": 1792050949.2175834
+   },
+   {
+    "node": "analyze:end",
+    "incident_type": "infostealer_session_hijack",
+    "severity": "high",
+    "confidence": 0.86,
+    "stage": "containment",
+    "sufficient": true,
+    "findings": 6,
+    "techniques": [
+     "T1204.002",
+     "T1036.005",
+     "T1547.001",
+     "T1555.003",
+     "T1071.001",
+     "T1041"
+    ],
+    "missing": 7,
+    "t": 1792050951.219
+   },
+   {
+    "node": "retrieve",
+    "rules": [
+     "POL-02",
+     "POL-04",
+     "POL-07",
+     "POL-09",
+     "POL-10",
+     "POL-11",
+     "POL-15",
+     "POL-16",
+     "POL-17"
+    ],
+    "pack": 19,
+    "t": 1792050951.2209816
+   },
+   {
+    "node": "propose:start",
+    "t": 1792050951.2214262
+   },
+   {
+    "node": "propose:end",
+    "raw_actions": 6,
+    "t": 1792050953.2226574
+   },
+   {
+    "node": "validate",
+    "kept": 6,
+    "stage": "containment",
+    "based_on": 5,
+    "actions": [
+     "preserve_evidence -> HOST::SALES-LT-07",
+     "isolate_host -> HOST::SALES-LT-07",
+     "revoke_sessions -> ACCOUNT::farah",
+     "reset_password -> ACCOUNT::farah",
+     "block_domain -> DOMAIN::cdn-sync-update.example",
+     "block_domain -> DOMAIN::pdf-editor-free.example"
+    ],
+    "policy_refs": [
+     [],
+     [
+      "POL-04"
+     ],
+     [
+      "POL-11",
+      "POL-07"
+     ],
+     [
+      "POL-07"
+     ],
+     [
+      "POL-09"
+     ],
+     [
+      "POL-09"
+     ]
+    ],
+    "t": 1792050953.223649
+   }
+  ],
+  [
+   {
+    "node": "load_state",
+    "case": "CASE-742CD2AB",
+    "version": 6,
+    "entities": 16,
+    "relationships": 8,
+    "timeline": 22,
+    "t": 1792051045.8928826
+   },
+   {
+    "node": "analyze:start",
+    "t": 1792051045.8929873
+   },
+   {
+    "node": "analyze:end",
+    "incident_type": "infostealer_session_hijack",
+    "severity": "high",
+    "confidence": 0.86,
+    "stage": "containment",
+    "sufficient": true,
+    "findings": 6,
+    "techniques": [
+     "T1204.002",
+     "T1036.005",
+     "T1547.001",
+     "T1555.003",
+     "T1071.001",
+     "T1041"
+    ],
+    "missing": 7,
+    "t": 1792051047.894004
+   },
+   {
+    "node": "retrieve",
+    "rules": [
+     "POL-02",
+     "POL-04",
+     "POL-07",
+     "POL-09",
+     "POL-10",
+     "POL-11",
+     "POL-15",
+     "POL-16",
+     "POL-17"
+    ],
+    "pack": 19,
+    "t": 1792051047.89516
+   },
+   {
+    "node": "propose:start",
+    "t": 1792051047.8956075
+   },
+   {
+    "node": "propose:end",
+    "raw_actions": 5,
+    "t": 1792051049.8968754
+   },
+   {
+    "node": "validate",
+    "kept": 5,
+    "stage": "containment",
+    "based_on": 6,
+    "actions": [
+     "preserve_evidence -> HOST::SALES-LT-07",
+     "revoke_sessions -> ACCOUNT::farah",
+     "reset_password -> ACCOUNT::farah",
+     "block_domain -> DOMAIN::cdn-sync-update.example",
+     "block_domain -> DOMAIN::pdf-editor-free.example"
+    ],
+    "policy_refs": [
+     [],
+     [
+      "POL-11",
+      "POL-07"
+     ],
+     [
+      "POL-07"
+     ],
+     [
+      "POL-09"
+     ],
+     [
+      "POL-09"
+     ]
+    ],
+    "t": 1792051049.897785
+   }
+  ],
+  [
+   {
+    "node": "load_state",
+    "case": "CASE-742CD2AB",
+    "version": 8,
+    "entities": 17,
+    "relationships": 9,
+    "timeline": 33,
+    "t": 1792051083.1286585
+   },
+   {
+    "node": "analyze:start",
+    "t": 1792051083.1288822
+   },
+   {
+    "node": "analyze:end",
+    "incident_type": "infostealer_session_hijack",
+    "severity": "critical",
+    "confidence": 0.9,
+    "stage": "containment",
+    "sufficient": true,
+    "findings": 5,
+    "techniques": [
+     "T1204.002",
+     "T1036.005",
+     "T1547.001",
+     "T1555.003",
+     "T1071.001",
+     "T1041",
+     "T1550.004",
+     "T1213"
+    ],
+    "missing": 7,
+    "t": 1792051085.1310806
+   },
+   {
+    "node": "retrieve",
+    "rules": [
+     "POL-02",
+     "POL-04",
+     "POL-07",
+     "POL-09",
+     "POL-10",
+     "POL-11",
+     "POL-15",
+     "POL-16",
+     "POL-17"
+    ],
+    "pack": 19,
+    "t": 1792051085.1326096
+   },
+   {
+    "node": "propose:start",
+    "t": 1792051085.1334832
+   },
+   {
+    "node": "propose:end",
+    "raw_actions": 2,
+    "t": 1792051087.135595
+   },
+   {
+    "node": "validate",
+    "kept": 2,
+    "stage": "containment",
+    "based_on": 8,
+    "actions": [
+     "revoke_sessions -> ACCOUNT::farah",
+     "disable_account -> ACCOUNT::farah"
+    ],
+    "policy_refs": [
+     [
+      "POL-07",
+      "POL-11"
+     ],
+     [
+      "POL-02"
+     ]
+    ],
+    "t": 1792051087.136655
+   }
+  ]
+ ],
+ "stale": {
+  "action_id": "ACT-f473d0ac9b06",
+  "status": 409,
+  "body": {
+   "detail": "approval was invalidated by a newer incident state; create a new planning run and review the replacement action"
+  }
+ },
+ "evidence_count": 30,
+ "audit_final": [
+  {
+   "audit_id": "AUDIT-4f6786b026da",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "case_created",
+   "details": {
+    "title": "EDR alert: unsigned installer and browser credential access on SALES-LT-07"
+   },
+   "timestamp": "2026-10-15T07:55:33.168276+00:00"
+  },
+  {
+   "audit_id": "AUDIT-3907ed45036e",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "idp_signin_logs.json",
+    "sha256": "462caabbde41ee4d20eef5c00b1d0c52d6b80f12fe9f9a7c8afc0cd1a6b102a4",
+    "kind": "json",
+    "item_count": 3,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/462caabbde41-idp_signin_logs.json"
+   },
+   "timestamp": "2026-10-15T07:55:35.729049+00:00"
+  },
+  {
+   "audit_id": "AUDIT-b7fa2f8a6794",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 1,
+    "parent_version": null,
+    "created_from": "evidence_upload",
+    "entity_count": 5
+   },
+   "timestamp": "2026-10-15T07:55:35.729697+00:00"
+  },
+  {
+   "audit_id": "AUDIT-fa8566802761",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "edr_endpoint_events.json",
+    "sha256": "ea7902626aba3af1b41be3a8a7661b059ff8cdc1db7de987c90c1b0cd38b2760",
+    "kind": "json",
+    "item_count": 8,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/ea7902626aba-edr_endpoint_events.json"
+   },
+   "timestamp": "2026-10-15T07:55:37.171049+00:00"
+  },
+  {
+   "audit_id": "AUDIT-54a6b67eec4a",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 2,
+    "parent_version": 1,
+    "created_from": "evidence_upload",
+    "entity_count": 13
+   },
+   "timestamp": "2026-10-15T07:55:37.172555+00:00"
+  },
+  {
+   "audit_id": "AUDIT-5103f5b0f052",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "dns_queries.json",
+    "sha256": "2acd9213e359cc5d48e87b1b30f06efefa6913995f1442d56c3bc25224dc31f8",
+    "kind": "json",
+    "item_count": 3,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/2acd9213e359-dns_queries.json"
+   },
+   "timestamp": "2026-10-15T07:55:38.568467+00:00"
+  },
+  {
+   "audit_id": "AUDIT-27935359d65a",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 3,
+    "parent_version": 2,
+    "created_from": "evidence_upload",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:55:38.571935+00:00"
+  },
+  {
+   "audit_id": "AUDIT-6fc88bd0bfb1",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "firewall_proxy_logs.json",
+    "sha256": "ea15b8ef84501f16748602b6e35180c8c4005e84ddd6a7c28db6403e6a26e10c",
+    "kind": "json",
+    "item_count": 5,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/ea15b8ef8450-firewall_proxy_logs.json"
+   },
+   "timestamp": "2026-10-15T07:55:39.989784+00:00"
+  },
+  {
+   "audit_id": "AUDIT-58acdfdadbca",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 4,
+    "parent_version": 3,
+    "created_from": "evidence_upload",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:55:39.991465+00:00"
+  },
+  {
+   "audit_id": "AUDIT-5b3a35864e7e",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "analyst_notes.json",
+    "sha256": "8b7cdfb696bb7d94e17568c998387d4279da7d88c8e46ca9ee6d29eca36ba901",
+    "kind": "json",
+    "item_count": 1,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/8b7cdfb696bb-analyst_notes.json"
+   },
+   "timestamp": "2026-10-15T07:55:41.378580+00:00"
+  },
+  {
+   "audit_id": "AUDIT-f9cd527372f6",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 5,
+    "parent_version": 4,
+    "created_from": "evidence_upload",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:55:41.381415+00:00"
+  },
+  {
+   "audit_id": "AUDIT-cf2477e6b699",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "plan_created",
+   "details": {
+    "plan_id": "PLAN-7abc56490815",
+    "stage": "containment",
+    "action_count": 6,
+    "missing_evidence_count": 7
+   },
+   "timestamp": "2026-10-15T07:55:53.224308+00:00"
+  },
+  {
+   "audit_id": "AUDIT-6e4f82806ee2",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_rejected",
+   "details": {
+    "action_id": "ACT-89259d6b7791",
+    "approval_id": "APV-cfe1381832af",
+    "analyst": "Fieqah A.",
+    "approver_role": "soc_analyst",
+    "required_role": null,
+    "reason": "Hold: revoke sessions first. A reset now tips off the attacker while stolen cookies stay valid. Re-propose after revocation."
+   },
+   "timestamp": "2026-10-15T07:57:13.296626+00:00"
+  },
+  {
+   "audit_id": "AUDIT-18e25410fa38",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_approved",
+   "details": {
+    "action_id": "ACT-32ab5b7797b7",
+    "approval_id": "APV-f2deb70e1115",
+    "analyst": "Fieqah A.",
+    "approver_role": "soc_analyst",
+    "required_role": "soc_analyst",
+    "reason": ""
+   },
+   "timestamp": "2026-10-15T07:57:18.923159+00:00"
+  },
+  {
+   "audit_id": "AUDIT-56a822197d0c",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_executed",
+   "details": {
+    "action_id": "ACT-32ab5b7797b7",
+    "execution_id": "EXEC-59803299791e",
+    "execution_status": "completed",
+    "validation_status": "effective"
+   },
+   "timestamp": "2026-10-15T07:57:21.821275+00:00"
+  },
+  {
+   "audit_id": "AUDIT-e8d9c1bd9dd5",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 6,
+    "parent_version": 5,
+    "created_from": "action_result",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:57:21.823353+00:00"
+  },
+  {
+   "audit_id": "AUDIT-d82335fca6ea",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "plan_created",
+   "details": {
+    "plan_id": "PLAN-520e68078579",
+    "stage": "containment",
+    "action_count": 5,
+    "missing_evidence_count": 7
+   },
+   "timestamp": "2026-10-15T07:57:29.898249+00:00"
+  },
+  {
+   "audit_id": "AUDIT-bd64b9822a49",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_approved",
+   "details": {
+    "action_id": "ACT-b13a014e6662",
+    "approval_id": "APV-34c414a27d81",
+    "analyst": "Fieqah A.",
+    "approver_role": "soc_analyst",
+    "required_role": "soc_analyst",
+    "reason": ""
+   },
+   "timestamp": "2026-10-15T07:57:34.521501+00:00"
+  },
+  {
+   "audit_id": "AUDIT-14207645cfcb",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_executed",
+   "details": {
+    "action_id": "ACT-b13a014e6662",
+    "execution_id": "EXEC-b006f8e00acc",
+    "execution_status": "partially_completed",
+    "validation_status": "ineffective"
+   },
+   "timestamp": "2026-10-15T07:57:37.159630+00:00"
+  },
+  {
+   "audit_id": "AUDIT-8cb968f2fcd4",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 7,
+    "parent_version": 6,
+    "created_from": "action_result",
+    "entity_count": 16
+   },
+   "timestamp": "2026-10-15T07:57:37.162288+00:00"
+  },
+  {
+   "audit_id": "AUDIT-44bf7f5270f4",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "evidence_uploaded",
+   "details": {
+    "source_file": "crm_audit_and_signin_followup.json",
+    "sha256": "a0e76b5e4708a6361a65c8874a732dc64fd8e7ee733cef5cc4c1f31306535807",
+    "kind": "json",
+    "item_count": 10,
+    "stored_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/uploads/CASE-742CD2AB/a0e76b5e4708-crm_audit_and_signin_followup.json"
+   },
+   "timestamp": "2026-10-15T07:57:41.808572+00:00"
+  },
+  {
+   "audit_id": "AUDIT-95b014f8627d",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 8,
+    "parent_version": 7,
+    "created_from": "evidence_upload",
+    "entity_count": 17
+   },
+   "timestamp": "2026-10-15T07:57:41.811564+00:00"
+  },
+  {
+   "audit_id": "AUDIT-561b3b63bfb4",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "plan_created",
+   "details": {
+    "plan_id": "PLAN-38c1c0b65dee",
+    "stage": "containment",
+    "action_count": 2,
+    "missing_evidence_count": 7
+   },
+   "timestamp": "2026-10-15T07:58:07.137255+00:00"
+  },
+  {
+   "audit_id": "AUDIT-296493572a30",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_approved",
+   "details": {
+    "action_id": "ACT-f473d0ac9b06",
+    "approval_id": "APV-51b54e428e13",
+    "analyst": "Fieqah A.",
+    "approver_role": "it_manager",
+    "required_role": "it_manager",
+    "reason": ""
+   },
+   "timestamp": "2026-10-15T07:58:20.124969+00:00"
+  },
+  {
+   "audit_id": "AUDIT-6752931f1837",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_approved",
+   "details": {
+    "action_id": "ACT-8ef0642f9145",
+    "approval_id": "APV-fddd8706eff0",
+    "analyst": "Fieqah A.",
+    "approver_role": "soc_analyst",
+    "required_role": "soc_analyst",
+    "reason": ""
+   },
+   "timestamp": "2026-10-15T07:58:24.700146+00:00"
+  },
+  {
+   "audit_id": "AUDIT-450fc09963ed",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "action_executed",
+   "details": {
+    "action_id": "ACT-8ef0642f9145",
+    "execution_id": "EXEC-7c20360c2a97",
+    "execution_status": "completed",
+    "validation_status": "effective"
+   },
+   "timestamp": "2026-10-15T07:58:27.251935+00:00"
+  },
+  {
+   "audit_id": "AUDIT-efd9fa72257d",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "state_version_created",
+   "details": {
+    "version": 9,
+    "parent_version": 8,
+    "created_from": "action_result",
+    "entity_count": 17
+   },
+   "timestamp": "2026-10-15T07:58:27.254524+00:00"
+  },
+  {
+   "audit_id": "AUDIT-5e063ce00e32",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "report_generated",
+   "details": {
+    "report_id": "RPT-4c844cf2b259",
+    "pdf_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/reports/RPT-4c844cf2b259.pdf"
+   },
+   "timestamp": "2026-10-15T07:58:35.499514+00:00"
+  },
+  {
+   "audit_id": "AUDIT-03cf41c56098",
+   "case_id": "CASE-742CD2AB",
+   "event_type": "report_generated",
+   "details": {
+    "report_id": "RPT-65da42a2f468",
+    "pdf_path": "/tmp/claude-0/-home-user-hackai-caventas-apu/32216d5a-3284-52ab-b2e0-12f307a4848e/scratchpad/demo/runtime/reports/RPT-65da42a2f468.pdf"
+   },
+   "timestamp": "2026-10-15T07:59:20.772558+00:00"
+  }
+ ],
+ "report_id": "RPT-65da42a2f468"
+}

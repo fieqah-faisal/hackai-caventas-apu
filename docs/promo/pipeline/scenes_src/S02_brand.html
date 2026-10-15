@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+#lock { left: 0; top: 0; width: 1920px; height: 1080px; }
+#grp { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 960px 420px; }
+#mark { position: absolute; left: 840px; top: 290px; width: 240px; transform-origin: 50% 50%; }
+#word { position: absolute; left: 470px; top: 555px; width: 980px; }
+#tag { position: absolute; left: 662px; top: 720px; width: 596px; }
+#sub { position: absolute; left: 0; width: 1920px; top: 820px; text-align: center; font-family: Plex; font-weight: 500; font-size: 26px; letter-spacing: .32em; color: var(--accent); }
+#tier { position: absolute; left: 0; width: 1920px; top: 640px; text-align: center; font-family: Barlow; font-weight: 600; font-size: 40px; color: var(--text); }
+.pillar { position: absolute; top: 760px; width: 400px; height: 132px; border-radius: 12px; border: 1px solid var(--line2); background: rgba(16,24,39,.9); padding: 22px 26px; }
+.pillar .k { font-family: Plex; font-size: 16px; letter-spacing: .22em; color: var(--muted); }
+.pillar .v { font-family: Barlow; font-weight: 700; font-size: 44px; margin-top: 6px; }
+#sweep { position: absolute; top: 0; bottom: 0; width: 260px; background: linear-gradient(90deg, transparent, rgba(157,237,0,.10), transparent); }
+</style></head><body><div id="stage"><div class="grid" id="grid"></div></div>
+<script src="lib.js"></script>
+<script>
+const st = $('#stage');
+const grp = el('div', '', st); grp.id = 'grp';
+const glow = el('div', 'abs', grp); setStyle(glow, { left: '660px', top: '110px', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(157,237,0,.22), transparent 65%)' });
+const mark = el('img', '', grp); mark.id = 'mark'; mark.src = 'assets/mark.png';
+const word = el('img', '', grp); word.id = 'word'; word.src = 'assets/wordmark.png';
+const tag = el('img', '', grp); tag.id = 'tag'; tag.src = 'assets/tagline.png';
+const sub = el('div', '', st, 'AGENTIC INCIDENT RESPONSE PLANNING'); sub.id = 'sub';
+const tier = el('div', '', st, 'Built for Tier 1 &amp; junior Tier 2 SOC analysts'); tier.id = 'tier';
+const P = [['THE AGENT', 'Recommends', 'var(--info)', 10.6], ['THE ANALYST', 'Decides', 'var(--accent)', 12.1], ['EXECUTION', 'Simulated', 'var(--warn)', 12.7]];
+const pillars = P.map(([k, v, c, t0], i) => { const e = el('div', 'pillar', st, `<div class="k">${k}</div><div class="v" style="color:${c}">${v}</div>`); e.style.left = (960 - 640 + i * 440) + 'px'; e.style.borderColor = c; return e; });
+const sweep = el('div', '', st); sweep.id = 'sweep';
+el('div', 'vignette', st);
+const black = el('div', 'abs', st); setStyle(black, { inset: '0', background: '#000' });
+window.render = (t) => {
+  $('#grid').style.transform = `translate(${-(t * 5) % 64}px, 0)`;
+  black.style.opacity = 1 - ease(prog(t, 0.0, 0.5));
+  // logo assembly
+  const km = easeOut(prog(t, 0.35, 1.6));
+  const up = ease(prog(t, 7.3, 8.3));           // move lockup up for the second half
+  grp.style.transform = `translateY(${-250 * up}px) scale(${1 - 0.42 * up})`;
+  mark.style.opacity = km;
+  mark.style.filter = `blur(${(1 - km) * 14}px) drop-shadow(0 0 ${18 + 10 * Math.sin(t * 2)}px rgba(157,237,0,.45))`;
+  mark.style.transform = `scale(${0.7 + 0.3 * km}) rotate(${(1 - km) * -25}deg)`;
+  const kw = prog(t, 1.2, 2.4);
+  word.style.clipPath = `inset(0 ${(1 - easeOut(kw)) * 50}% 0 ${(1 - easeOut(kw)) * 50}%)`;
+  word.style.opacity = kw > 0 ? 1 : 0;
+  tag.style.opacity = ease(prog(t, 2.4, 3.2)) * (1 - up);
+  sub.style.opacity = ease(prog(t, 4.2, 5.0)) * (1 - ease(prog(t, 7.0, 7.5)));
+  sub.style.letterSpacing = (0.32 + 0.1 * (1 - easeOut(prog(t, 4.2, 5.6)))) + 'em';
+  glow.style.opacity = km * (0.8 + 0.2 * Math.sin(t * 1.7)) * (1 - 0.4 * up);
+  tier.style.opacity = ease(prog(t, 7.8, 8.6));
+  tier.style.top = (640 - 190 + (1 - easeOut(prog(t, 7.8, 8.6))) * 20) + 'px';
+  pillars.forEach((e, i) => { const k = easeOut(prog(t, P[i][3], P[i][3] + 0.5)); e.style.opacity = k; e.style.transform = `translateY(${(1 - k) * 30}px)`; e.style.top = (760 - 160) + 'px'; });
+  sweep.style.left = (-300 + ((t - 1.2) / 1.4) * 2400) + 'px'; sweep.style.opacity = t > 1.2 && t < 2.8 ? 1 : 0;
+  black.style.opacity = Math.max(black.style.opacity, ease(prog(t, 13.45, 13.8)));
+};
+</script></body></html>

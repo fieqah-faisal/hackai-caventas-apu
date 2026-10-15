@@ -1,0 +1,68 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+#bg { position: absolute; inset: -20px; background-size: cover; filter: brightness(.32) saturate(.7); }
+#t { left: 170px; width: 1580px; }
+#t pre { font-size: 22px; line-height: 1.6; }
+#lbl { position: absolute; left: 170px; font-family: Plex; font-size: 16px; letter-spacing: .2em; color: var(--accent); }
+.hl { background: rgba(157,237,0,.16); border-radius: 4px; padding: 0 4px; color: var(--accent); }
+.hld { background: rgba(255,93,93,.16); border-radius: 4px; padding: 0 4px; color: var(--danger); }
+.tag { display: inline-block; width: 112px; font-size: 14px; letter-spacing: .12em; }
+</style></head><body><div id="stage"><div id="bg"></div></div>
+<script src="lib.js"></script>
+<script>
+const id = location.search.slice(1);
+const st = $('#stage'), C = DATA.case, H = 'localhost:8000';
+const term = el('div', 'term', st); term.id = 't';
+term.innerHTML = '<div class="bar"><i style="background:#ff5d5d"></i><i style="background:#f2b84b"></i><i style="background:#9ded00"></i><span></span></div><pre></pre>';
+const pre = term.querySelector('pre'), bar = term.querySelector('.bar span');
+const lbl = el('div', '', st); lbl.id = 'lbl';
+let chapter = '', lines = [], tTop = 250, height = 480, dur = 4, bg = 'bg_timeline';
+const j = (o) => JSON.stringify(o, null, 2);
+if (id === 'T07') {
+  const u = DATA.upload_b2; dur = 3.8; chapter = '<b>07</b> CONTINUOUS REPLANNING'; bar.textContent = 'SOC pipeline  →  Caventas API'; lbl.textContent = 'NEW EVIDENCE ARRIVES MID-INVESTIGATION';
+  lines = [
+    { t: 0.15, type: 'comment', text: '# forward the CRM audit + sign-in logs into the open case' },
+    { t: 0.3, type: 'cmd', cps: 150, text: `curl -s -F file=@${u.source_file} ${H}/cases/${C}/evidence | jq '{source_file, item_count, new_state_version}'` },
+    { t: 1.7, type: 'out', html: true, text: `{\n  "source_file": "${u.source_file}",\n  "item_count": ${u.item_count},\n  "new_state_version": <span class="hl">${u.new_state_version}</span>\n}` },
+  ];
+} else if (id === 'T08') {
+  const s = DATA.stale; dur = 3.0; chapter = '<b>07</b> CONTINUOUS REPLANNING'; bar.textContent = 'Caventas API'; lbl.textContent = 'A STALE APPROVAL CANNOT EXECUTE'; bg = 'bg_approvals'; height = 400;
+  lines = [
+    { t: 0.1, type: 'comment', text: '# disable_account: approved at state v8 — this case has since moved to v9' },
+    { t: 0.25, type: 'cmd', cps: 160, text: `curl -s -w '\\nHTTP %{http_code}\\n' -X POST ${H}/cases/${C}/actions/${s.action_id}/execute` },
+    { t: 1.15, type: 'out', html: true, text: `{"detail": "<span class="c-dan">approval was invalidated by a newer incident state; create a new planning run and review the replacement action</span>"}\n<span class="hld">HTTP ${s.status}</span>` },
+  ];
+} else if (id === 'T09') {
+  const r = DATA.replan_v3; dur = 6.0; chapter = '<b>07</b> CONTINUOUS REPLANNING'; bar.textContent = 'Caventas API'; lbl.textContent = 'RE-PLAN AGAINST THE NEW STATE'; bg = 'bg_approvals'; height = 520;
+  const acts = r.actions.map((a) => `    "${a.proposal.tool_name} → ${a.proposal.target_id}  ${a.proposal.policy_refs.join(',')}"`).join(',\n');
+  lines = [
+    { t: 0.2, type: 'cmd', cps: 170, text: `curl -s -X POST ${H}/cases/${C}/runs | jq '{based_on_state_version, stage, actions: [.actions[].proposal | "\\(.tool_name) → \\(.target_id)  \\(.policy_refs | join(","))"], open_questions: (.missing_evidence | length)}'` },
+    { t: 2.0, type: 'out', html: true, text: `{\n  "based_on_state_version": <span class="hl">${r.based_on_state_version}</span>,\n  "stage": "${r.stage}",\n  "actions": [\n${acts.replace(/POL-02/, '<span class="c-warn">POL-02</span>')}\n  ],\n  "open_questions": ${r.missing_evidence.length}\n}` },
+  ];
+} else if (id === 'T11') {
+  dur = 4.8; chapter = '<b>08</b> ACCOUNTABILITY'; bar.textContent = 'Caventas API  ·  audit trail'; lbl.textContent = 'EVERY PROPOSAL AND DECISION IS RECORDED'; bg = 'bg_report'; tTop = 130; height = 860;
+  const ev = DATA.audit_final.filter((e) => e.event_type !== 'state_version_created');
+  const who = (t) => t === 'plan_created' ? ['AGENT', 'c-info'] : /action_(approved|rejected)/.test(t) ? ['ANALYST', 'c-acc'] : ['SYSTEM', 'c-mut'];
+  const rows = ev.map((e) => { const [w, c] = who(e.event_type); const d = e.details || {};
+    const extra = [d.analyst, d.approver_role, (d.reason || '').slice(0, 44) + ((d.reason || '').length > 44 ? '…' : '')].filter(Boolean).join('\t');
+    return `<span class="tag ${c}">● ${w}</span><span class="c-mut">${e.timestamp.slice(11, 19)}</span>\t<span class="${c === 'c-mut' ? 'c-txt' : c}">${e.event_type}</span>${extra ? '\t' + esc(extra) : ''}`; });
+  lines = [
+    { t: 0.1, type: 'cmd', cps: 190, text: `curl -s ${H}/cases/${C}/audit | jq -r '.[] | select(.event_type != "state_version_created") | [.timestamp[11:19], .event_type, .details.analyst, .details.approver_role, .details.reason[0:44]] | @tsv'` },
+    ...rows.map((r, i) => ({ t: 1.0 + i * 0.07, type: 'out', html: true, text: r })),
+  ];
+}
+$('#bg').style.backgroundImage = `url(assets/${bg}.jpg)`;
+term.style.top = tTop + 'px'; term.style.height = height + 'px'; lbl.style.top = (tTop - 40) + 'px';
+pre.style.tabSize = 4;
+if (id === 'T11') { pre.style.fontSize = '18px'; pre.style.lineHeight = '1.5'; pre.style.tabSize = 2; }
+el('div', 'chapter', st, chapter);
+el('div', 'vignette', st);
+window.DUR = dur;
+window.render = (t) => {
+  const k = easeOut(prog(t, 0, 0.3));
+  term.style.opacity = k; term.style.transform = `translateY(${(1 - k) * 24}px) scale(${0.98 + 0.02 * k})`;
+  lbl.style.opacity = ease(prog(t, 0.1, 0.4));
+  $('#bg').style.transform = `scale(${1.04 + t * 0.006})`;
+  renderTerm(pre, lines, t);
+};
+</script></body></html>

@@ -1,0 +1,61 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+.frag { position: absolute; font-family: Plex; font-size: 15px; color: var(--text2); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: rgba(27,38,55,.9); white-space: nowrap; }
+.chain { position: absolute; top: 470px; height: 120px; width: 252px; border-radius: 12px; border: 1.5px solid var(--accent); background: rgba(12,20,32,.95); padding: 16px 18px; box-shadow: 0 0 26px rgba(157,237,0,.22); }
+.chain .k { font-family: Plex; font-size: 13px; letter-spacing: .18em; color: var(--muted); }
+.chain .v { font-family: Barlow; font-weight: 700; font-size: 30px; margin-top: 4px; }
+.chain .s { font-family: Plex; font-size: 14px; color: var(--accent); margin-top: 2px; }
+#grp { position: absolute; inset: 0; }
+#mark { position: absolute; left: 870px; top: 250px; width: 180px; }
+#word { position: absolute; left: 592px; top: 452px; width: 736px; }
+#words { left: 0; width: 1920px; top: 650px; text-align: center; font-family: Plex; font-weight: 500; font-size: 28px; letter-spacing: .4em; }
+#line { left: 0; width: 1920px; top: 640px; text-align: center; font-family: Barlow; font-weight: 600; font-size: 46px; }
+#line span { margin: 0 14px; }
+#fine { left: 0; width: 1920px; bottom: 56px; text-align: center; font-family: Plex; font-size: 15px; color: var(--muted); line-height: 1.7; }
+</style></head><body><div id="stage"><div class="grid"></div><canvas id="cv" width="1920" height="1080" class="abs" style="left:0;top:0"></canvas></div>
+<script src="lib.js"></script>
+<script>
+const st = $('#stage');
+const R = rng(11);
+const TXT = ['edr_alert CRED-BROWSER-READ', 'dns_query cdn-sync-update.example', 'network_upload → 203.0.113.45', 'crm_signin 198.51.100.23', 'crm_export 1,200 records', 'idp_signin session revoked', 'registry_set Run\\SyncUpdate', 'process_start svchost-update.exe', 'analyst_note callback', 'http_download PDFEditorSetup.exe', 'network_connection 203.0.113.45', 'file_create b7.zip'];
+const frags = [...Array(30).keys()].map((i) => { const e = el('div', 'frag', st, esc(TXT[i % TXT.length])); return { e, x: R() * 1700 + 40, y: R() * 1000 + 20, r: (R() - 0.5) * 30 }; });
+const D = DATA, nPlans = D.plans.length, nEv = D.evidence_count, nVer = D.states.length;
+const dec = D.audit_final.filter((e) => /action_(approved|rejected)/.test(e.event_type)).length;
+const sims = D.results.length;
+const CH = [['EVIDENCE', `${nEv}`, 'records, hashed'], ['STATE', `v${nVer}`, `${nVer} immutable versions`], ['PLANS', `${nPlans}`, 'bound to state versions'], ['DECISIONS', `${dec}`, 'analyst approvals / rejections'], ['SIMULATIONS', `${sims}`, 'executed ≠ effective'], ['REPORT', 'PDF', 'structured + exported']];
+const chain = CH.map(([k, v, s], i) => { const e = el('div', 'chain', st, `<div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div>`); e.style.left = (92 + i * 296) + 'px'; return e; });
+const grp = el('div', '', st); grp.id = 'grp';
+const mark = el('img', '', grp); mark.id = 'mark'; mark.src = 'assets/mark.png';
+const word = el('img', '', grp); word.id = 'word'; word.src = 'assets/wordmark.png';
+const words = el('div', 'abs', st, '<span id="w1">UNDERSTAND</span>  ·  <span id="w2">DECIDE</span>  ·  <span id="w3">ACT</span>'); words.id = 'words';
+const line = el('div', 'abs', st, '<span id="l1">Evidence connected.</span><span id="l2">Decisions explained.</span><span id="l3" style="color:var(--accent)">Response controlled.</span>'); line.id = 'line';
+const fine = el('div', 'abs', st, 'Product footage: Caventas analyst workspace and API, main @ 9253749  ·  synthetic incident data  ·  every response action simulated<br>Planner output in this demo replayed from a recorded live run  ·  HackAI 2026 · Track 1 · Agentic Cyber Defense'); fine.id = 'fine';
+el('div', 'vignette', st);
+const black = el('div', 'abs', st); setStyle(black, { inset: '0', background: '#000' });
+const cx = $('#cv').getContext('2d');
+window.render = (t) => {
+  black.style.opacity = 1 - ease(prog(t, 0, 0.3)) + ease(prog(t, 10.6, 11.0));
+  // fragments converge into the chain
+  const c = ease(prog(t, 0.3, 2.4));
+  frags.forEach((f, i) => {
+    const tgt = chain[i % chain.length]; const tx = parseFloat(tgt.style.left) + 126, ty = 530;
+    const x = f.x + (tx - f.x) * c, y = f.y + (ty - f.y) * c;
+    f.e.style.transform = `translate(${x - 100}px, ${y - 16}px) rotate(${f.r * (1 - c)}deg) scale(${1 - 0.6 * c})`;
+    f.e.style.opacity = (0.85 * (1 - ease(prog(t, 2.0, 2.6)))) * ease(prog(t, 0, 0.4));
+    f.e.style.left = '0px'; f.e.style.top = '0px';
+  });
+  chain.forEach((e, i) => { const k = easeOut(prog(t, 1.9 + i * 0.12, 2.4 + i * 0.12)); e.style.opacity = k * (1 - ease(prog(t, 3.5, 4.0))); e.style.transform = `translateY(${(1 - k) * 20}px)`; });
+  cx.clearRect(0, 0, 1920, 1080);
+  const kl = prog(t, 2.0, 3.0) * (1 - ease(prog(t, 3.5, 4.0)));
+  if (kl > 0) { cx.strokeStyle = `rgba(157,237,0,${0.8 * kl})`; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(92 + 252, 530); cx.lineTo(92 + 252 + (5 * 296 - 252 + 44) * Math.min(1, kl * 1.4), 530); cx.stroke(); }
+  // logo + words
+  const kg = easeOut(prog(t, 3.8, 4.8));
+  grp.style.opacity = kg; grp.style.transform = `translateY(${(1 - kg) * 20 - 60 * ease(prog(t, 8.0, 8.8))}px) scale(${0.96 + 0.04 * kg})`;
+  mark.style.filter = `drop-shadow(0 0 ${16 + 8 * Math.sin(t * 2)}px rgba(157,237,0,.45))`;
+  ['w1', 'w2', 'w3'].forEach((id, i) => { const e = $('#' + id); const tt = [5.2, 6.0, 6.6][i]; e.style.color = t > tt ? 'var(--accent)' : 'rgba(129,145,173,.35)'; });
+  words.style.opacity = ease(prog(t, 4.6, 5.0)) * (1 - ease(prog(t, 7.9, 8.3)));
+  ['l1', 'l2', 'l3'].forEach((id, i) => { const k = easeOut(prog(t, 8.3 + i * 0.45, 8.8 + i * 0.45)); const e = $('#' + id); e.style.opacity = k; e.style.display = 'inline-block'; e.style.transform = `translateY(${(1 - k) * 14}px)`; });
+  line.style.top = '600px';
+  fine.style.opacity = ease(prog(t, 9.3, 9.9)) * 0.9;
+};
+</script></body></html>

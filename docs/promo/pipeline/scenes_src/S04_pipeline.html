@@ -1,0 +1,84 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+#title { left: 90px; top: 96px; font-family: Barlow; font-weight: 700; font-size: 46px; }
+#title small { display: block; font-family: Plex; font-weight: 400; font-size: 17px; letter-spacing: .08em; color: var(--muted); margin-top: 8px; }
+.node { position: absolute; top: 262px; width: 262px; height: 118px; border-radius: 12px; border: 1.5px solid var(--line2); background: rgba(16,24,39,.94); padding: 16px 18px; }
+.node .n { font-family: Plex; font-size: 14px; color: var(--muted); letter-spacing: .12em; }
+.node .nm { font-family: Barlow; font-weight: 700; font-size: 27px; margin-top: 2px; }
+.node .ty { position: absolute; left: 18px; bottom: 12px; font-family: Plex; font-size: 12px; letter-spacing: .16em; padding: 2px 8px; border-radius: 999px; border: 1px solid; }
+.sum { position: absolute; top: 396px; width: 262px; font-family: Plex; font-size: 16px; color: var(--accent); text-align: center; }
+.det { position: absolute; left: 90px; top: 470px; width: 1732px; height: 420px; border-radius: 14px; border: 1px solid var(--line2); background: rgba(10,16,27,.92); padding: 30px 40px; font-family: Plex; font-size: 25px; line-height: 1.6; color: var(--text2); }
+.det .h { font-size: 16px; letter-spacing: .2em; color: var(--muted); margin-bottom: 16px; }
+.det .row { white-space: nowrap; }
+.det .k { display: inline-block; width: 300px; color: var(--muted); }
+.det .chipx { display: inline-block; font-size: 22px; padding: 3px 12px; border: 1px solid var(--line2); border-radius: 7px; margin: 0 10px 12px 0; color: var(--text); }
+.ok { color: var(--accent); }
+#legend { left: 90px; bottom: 100px; font-family: Plex; font-size: 16px; color: var(--muted); }
+#legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin: 0 8px 0 22px; vertical-align: -1px; }
+</style></head><body><div id="stage"><div class="grid"></div><canvas id="cv" width="1920" height="1080" class="abs" style="left:0;top:0"></canvas></div>
+<script src="lib.js"></script>
+<script>
+const st = $('#stage');
+const run = DATA.trace[0];
+const N = Object.fromEntries(run.map((e) => [e.node, e]));
+const plan = DATA.plans[0];
+const title = el('div', 'abs', st, `Planning run  ·  ${DATA.case}<small>DECISION TRACE  —  logged node outputs, not model reasoning</small>`); title.id = 'title';
+const LLM = 'var(--info)', DET = 'var(--accent)';
+const A = N['analyze:end'];
+const steps = [
+  ['01', 'Load state', 'DETERMINISTIC', DET, 2.3, `state v${N.load_state.version}`, `<div class="h">01 · LOAD STATE — ONE EXACT, IMMUTABLE VERSION</div><div class="row"><span class="k">case</span><span class="c-txt">${DATA.case}</span></div><div class="row"><span class="k">state version</span><span class="ok">v${N.load_state.version}</span></div><div class="row"><span class="k">entities</span>${N.load_state.entities}</div><div class="row"><span class="k">relationships</span>${N.load_state.relationships}</div><div class="row"><span class="k">timeline events</span>${N.load_state.timeline}</div>`],
+  ['02', 'Analyse', 'LLM', LLM, 4.45, `${A.severity} · ${A.confidence}`, `<div class="h">02 · ANALYSE — EVIDENCE TEXT IS TREATED AS DATA, NOT INSTRUCTIONS</div><div class="row"><span class="k">incident_type</span><span class="c-txt">${A.incident_type}</span></div><div class="row"><span class="k">severity</span><span class="c-warn">${A.severity}</span>   <span class="c-mut">confidence</span> ${A.confidence}</div><div class="row"><span class="k">findings</span>${A.findings}, each citing stored evidence ids</div><div class="row"><span class="k">ATT&amp;CK</span>${A.techniques.join('  ')}</div><div class="row"><span class="k">route</span>sufficient = true  →  <span class="ok">retrieve guidance</span></div>`],
+  ['03', 'Retrieve guidance', 'DETERMINISTIC', DET, 5.95, `${N.retrieve.rules.length} / ${N.retrieve.pack} rules`, `<div class="h">03 · RETRIEVE GUIDANCE — ONLY THE RULES FOR THIS STAGE</div><div class="row"><span class="k">stage</span>${A.stage}</div><div class="row"><span class="k">policy pack</span>${N.retrieve.pack} rules  →  <span class="ok">${N.retrieve.rules.length} selected</span></div><div style="margin-top:18px">${N.retrieve.rules.map((r) => `<span class="chipx">${r}</span>`).join('')}</div><div class="row c-mut" style="font-size:20px">tool allow-list and asset list always stay complete</div>`],
+  ['04', 'Propose', 'LLM', LLM, 9.0, `${N['propose:end'].raw_actions} actions`, `<div class="h">04 · PROPOSE — ${N['propose:end'].raw_actions} ACTIONS FOR ANALYST REVIEW</div>${N.validate.actions.map((a, i) => { const [tool, tgt] = a.split(' -> '); const refs = N.validate.policy_refs[i]; return `<div class="row" style="font-size:23px;line-height:1.55"><span style="display:inline-block;width:300px" class="c-txt">${tool}</span><span style="display:inline-block;width:640px">${esc(tgt)}</span><span class="ok">${refs.join(' ') || '—'}</span></div>`; }).join('')}`],
+  ['05', 'Validate', 'DETERMINISTIC', DET, 10.8, `kept ${N.validate.kept} / ${N['propose:end'].raw_actions}`, ''],
+  ['06', 'Store plan', 'DETERMINISTIC', DET, 15.1, plan.plan_id.slice(0, 13) + '…', `<div class="h">06 · STORE PLAN — RECOMMENDATIONS, NOT AUTHORIZATION</div><div class="row"><span class="k">plan</span><span class="c-txt">${plan.plan_id}</span></div><div class="row"><span class="k">bound to</span>state <span class="ok">v${plan.based_on_state_version}</span></div><div class="row"><span class="k">contents</span>${plan.action_ids.length} actions · ${plan.missing_evidence.length} open questions (missing evidence)</div><div class="row"><span class="k">status</span><span class="c-txt">awaiting analyst approval</span></div>`],
+];
+const CHECKS = [['tool in approved catalogue', 12.1], ['target exists in state v5', 12.8], ['tool fits target type', 13.3], ['evidence ids exist in case', 13.85], ['policy refs ⊂ retrieved rules', 14.45]];
+const X0 = 90, DX = 294;
+const nodes = steps.map(([n, nm, ty, c, t0, sm, det], i) => {
+  const e = el('div', 'node', st, `<div class="n">${n}</div><div class="nm">${nm}</div><div class="ty" style="color:${c};border-color:${c}">${ty}</div>`); e.style.left = (X0 + i * DX) + 'px';
+  const su = el('div', 'sum', st, esc(sm)); su.style.left = (X0 + i * DX) + 'px'; su.style.color = c;
+  const d = el('div', 'det', st, det);
+  return { e, d, su, c, t0 };
+});
+const vdet = nodes[4].d;
+vdet.innerHTML = '<div class="h">05 · VALIDATE — DETERMINISTIC BACKEND CHECKS BEFORE ANYTHING IS STORED</div>' + CHECKS.map(([c]) => `<div class="row chk"><span class="ok">✓</span>  ${c}</div>`).join('') + `<div class="row kept" style="margin-top:6px">kept <span class="ok">${N.validate.kept} / ${N['propose:end'].raw_actions}</span> proposed actions</div>`;
+const chks = [...vdet.querySelectorAll('.chk')], kept = vdet.querySelector('.kept');
+const legend = el('div', 'abs', st, `<i style="background:var(--info)"></i>LLM step (LangGraph node)<i style="background:var(--accent)"></i>deterministic backend step`); legend.id = 'legend';
+el('div', 'chapter', st, '<b>04</b> AGENT ANALYSIS');
+el('div', 'vignette', st);
+const black = el('div', 'abs', st); setStyle(black, { inset: '0', background: '#000' });
+const cx = $('#cv').getContext('2d');
+window.render = (t) => {
+  black.style.opacity = 1 - ease(prog(t, 0, 0.35)) + ease(prog(t, 17.1, 17.4));
+  title.style.opacity = ease(prog(t, 0.2, 0.8));
+  legend.style.opacity = ease(prog(t, 1.0, 1.6));
+  let active = -1;
+  nodes.forEach((n, i) => {
+    const k = easeOut(prog(t, 0.5 + i * 0.12, 1.0 + i * 0.12));
+    n.e.style.opacity = 0.35 + 0.65 * k * (t >= n.t0 ? 1 : 0.55);
+    if (t >= n.t0) active = i;
+    const on = t >= n.t0;
+    n.e.style.borderColor = on ? n.c : 'var(--line2)';
+    n.e.style.boxShadow = on ? `0 0 ${active === i ? 34 : 12}px ${n.c === LLM ? 'rgba(104,160,255,.35)' : 'rgba(157,237,0,.30)'}` : 'none';
+    n.su.style.opacity = ease(prog(t, n.t0 + 0.2, n.t0 + 0.6));
+  });
+  nodes.forEach((n, i) => {
+    const next = nodes[i + 1] ? nodes[i + 1].t0 : 99;
+    const kd = Math.min(easeOut(prog(t, n.t0, n.t0 + 0.35)), 1 - ease(prog(t, next - 0.05, next + 0.2)));
+    n.d.style.opacity = Math.max(0, kd);
+    n.d.style.transform = `translateY(${(1 - easeOut(prog(t, n.t0, n.t0 + 0.4))) * 18}px)`;
+  });
+  chks.forEach((c, i) => { c.style.opacity = ease(prog(t, CHECKS[i][1], CHECKS[i][1] + 0.3)); });
+  kept.style.opacity = ease(prog(t, 14.9, 15.2));
+  // connectors + travelling pulse
+  cx.clearRect(0, 0, 1920, 1080);
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const x1 = X0 + i * DX + 262, x2 = X0 + (i + 1) * DX, y = 321;
+    const on = t >= nodes[i + 1].t0;
+    cx.strokeStyle = on ? 'rgba(157,237,0,.8)' : 'rgba(57,69,88,1)'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(x1, y); cx.lineTo(x2, y); cx.stroke();
+    const a = nodes[i].t0, b = nodes[i + 1].t0;
+    if (t > b - 0.45 && t < b) { const u = (t - (b - 0.45)) / 0.45; cx.fillStyle = '#d6ff6e'; cx.shadowColor = '#9ded00'; cx.shadowBlur = 16; cx.beginPath(); cx.arc(x1 + (x2 - x1) * u, y, 6, 0, 6.3); cx.fill(); cx.shadowBlur = 0; }
+  }
+};
+</script></body></html>

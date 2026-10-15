@@ -1,0 +1,30 @@
+@font-face { font-family: Barlow; font-weight: 400; src: url(file:///home/user/hackai-caventas-apu/frontend/node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2); }
+@font-face { font-family: Barlow; font-weight: 500; src: url(file:///home/user/hackai-caventas-apu/frontend/node_modules/@fontsource/barlow/files/barlow-latin-500-normal.woff2); }
+@font-face { font-family: Barlow; font-weight: 600; src: url(file:///home/user/hackai-caventas-apu/frontend/node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2); }
+@font-face { font-family: Barlow; font-weight: 700; src: url(file:///home/user/hackai-caventas-apu/frontend/node_modules/@fontsource/barlow/files/barlow-latin-700-normal.woff2); }
+@font-face { font-family: Barlow; font-weight: 800; src: url(file:///home/user/hackai-caventas-apu/frontend/node_modules/@fontsource/barlow/files/barlow-latin-800-normal.woff2); }
+@font-face { font-family: Plex; font-weight: 400; src: url(file:///home/user/hackai-caventas-apu/frontend/node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2); }
+@font-face { font-family: Plex; font-weight: 500; src: url(file:///home/user/hackai-caventas-apu/frontend/node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2); }
+@font-face { font-family: Plex; font-weight: 600; src: url(file:///home/user/hackai-caventas-apu/frontend/node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2); }
+:root { --accent:#9ded00; --warn:#f2b84b; --danger:#ff5d5d; --info:#68a0ff; --text:#ececed; --text2:#bac5d7; --muted:#8191ad; --line:#2b374a; --line2:#394558; --surface:#1b2637; --canvas:#101827; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #05080f; color: var(--text); font-family: Barlow, sans-serif; }
+.mono { font-family: Plex, monospace; }
+#stage { position: absolute; inset: 0; overflow: hidden;
+  background: radial-gradient(ellipse 80% 70% at 50% 45%, #0f1a2c 0%, #070c16 60%, #04070d 100%); }
+.grid { position: absolute; inset: -64px; background-image:
+  linear-gradient(rgba(157,237,0,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(157,237,0,.045) 1px, transparent 1px);
+  background-size: 64px 64px; }
+.vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, rgba(0,0,0,.65) 100%); }
+.abs { position: absolute; }
+.chip { display: inline-block; font-family: Plex; font-size: 15px; letter-spacing: .06em; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line2); color: var(--text2); background: rgba(7,11,19,.85); }
+.chapter { position: absolute; left: 30px; bottom: 30px; height: 40px; padding: 0 15px; display: flex; align-items: center; gap: 14px;
+  font-family: Plex; font-weight: 500; font-size: 17px; border-radius: 6px; background: rgba(7,11,19,.88); border: 1px solid rgba(157,237,0,.43); }
+.chapter b { color: var(--accent); font-weight: 500; }
+.term { position: absolute; border-radius: 12px; background: rgba(9,14,24,.96); border: 1px solid var(--line2);
+  box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(157,237,0,.06), 0 0 60px rgba(157,237,0,.08); overflow: hidden; }
+.term .bar { height: 40px; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 18px; gap: 9px; background: #0d1522; }
+.term .bar i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; opacity: .75; }
+.term .bar span { margin-left: 14px; font-family: Plex; font-size: 14px; color: var(--muted); }
+.term pre { font-family: Plex; font-size: 21px; line-height: 1.55; padding: 22px 28px; white-space: pre-wrap; color: var(--text2); }
+.c-acc { color: var(--accent); } .c-warn { color: var(--warn); } .c-dan { color: var(--danger); } .c-info { color: var(--info); } .c-mut { color: var(--muted); } .c-txt { color: var(--text); }

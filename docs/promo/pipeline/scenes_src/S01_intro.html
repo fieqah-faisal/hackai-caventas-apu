@@ -1,0 +1,195 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+#clock { left: 110px; top: 96px; font-family: Plex; font-weight: 500; font-size: 104px; letter-spacing: .02em; color: var(--text); }
+#clocksub { left: 116px; top: 222px; font-family: Plex; font-size: 20px; letter-spacing: .14em; color: var(--muted); }
+#feed { left: 940px; top: 300px; width: 900px; height: 430px; }
+#feed .bar span { color: var(--muted); }
+#feed pre { font-size: 18px; line-height: 1.8; white-space: pre; }
+.lane { position: absolute; top: 230px; width: 400px; height: 860px; overflow: hidden; }
+.lane h4 { font-family: Plex; font-weight: 500; font-size: 17px; letter-spacing: .2em; color: var(--muted); padding-bottom: 12px; border-bottom: 1px solid var(--line2); margin-bottom: 12px; }
+.card { position: absolute; left: 0; width: 400px; height: 70px; border-radius: 8px; background: rgba(27,38,55,.92); border: 1px solid var(--line); padding: 9px 14px 0 18px; overflow: hidden; }
+.card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--sev); }
+.card .t { font-family: Plex; font-size: 14px; color: var(--muted); }
+.card .m { font-family: Plex; font-size: 16px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; }
+#flash { inset: 0; background: rgba(255,60,60,.0); mix-blend-mode: screen; }
+#black { inset: 0; background: #000; }
+#cap { left: 110px; bottom: 120px; font-family: Plex; font-size: 18px; letter-spacing: .14em; color: var(--muted); }
+</style></head><body><div id="stage"><div class="grid" id="grid"></div><canvas id="cv" width="1920" height="1080" class="abs" style="left:0;top:0"></canvas></div>
+<script src="lib.js"></script>
+<script>
+const st = document.getElementById('stage');
+const cv = $('#cv'), cx = cv.getContext('2d');
+const clock = el('div', 'abs', st); clock.id = 'clock';
+const sub = el('div', 'abs', st); sub.id = 'clocksub';
+const feed = el('div', 'term', st); feed.id = 'feed';
+feed.innerHTML = '<div class="bar"><i style="background:#ff5d5d"></i><i style="background:#f2b84b"></i><i style="background:#9ded00"></i><span>EDR · DNS · FIREWALL  —  SALES-LT-07</span></div><pre></pre>';
+const fpre = feed.querySelector('pre');
+const FEED = [
+  [2.0, '21:38:00', 'FW ', 'http_download   pdf-editor-free.example/…/PDFEditorSetup.exe', ''],
+  [3.1, '21:40:00', 'EDR', 'process_start   PDFEditorSetup.exe  signed=false', ''],
+  [4.3, '21:40:20', 'EDR', 'process_start   svchost-update.exe  parent=PDFEditorSetup.exe', ''],
+  [6.5, '21:41:05', 'EDR', 'ALERT  CRED-BROWSER-READ  Chrome Login Data; Cookies', 'dan'],
+  [8.1, '21:41:30', 'EDR', 'file_create     Temp\\b7.zip  2.4 MB', ''],
+  [8.9, '21:42:00', 'DNS', 'cdn-sync-update.example  →  203.0.113.45', ''],
+  [9.7, '21:42:30', 'FW ', 'network_upload  2,457,600 B  →  203.0.113.45:443', 'warn'],
+  [10.9, '21:43:10', 'EDR', 'registry_set    HKCU\\…\\Run\\SyncUpdate', ''],
+];
+// Phase 2 lanes
+const LANES = ['ENDPOINT', 'DNS', 'FIREWALL', 'SIGN-IN'];
+const laneEls = LANES.map((n, i) => { const l = el('div', 'lane', st); l.style.left = (110 + i * 438) + 'px'; l.innerHTML = '<h4>' + n + '</h4>'; return l; });
+const POOL = [
+  ['EDR', 'edr_alert  CRED-BROWSER-READ  SALES-LT-07', 0, 'dan'], ['EDR', 'process_start  svchost-update.exe  SALES-LT-07', 0, 'warn'],
+  ['EDR', 'registry_set  Run\\SyncUpdate  SALES-LT-07', 0, 'warn'], ['EDR', 'process_start  Teams.exe  MKT-LT-11', 0, ''],
+  ['EDR', 'process_start  OneDrive.exe  HR-LT-02', 0, ''], ['EDR', 'edr_alert  Correlated: installer → cred access → upload', 0, 'dan'],
+  ['DNS', 'dns_query  cdn-sync-update.example', 1, 'warn'], ['DNS', 'dns_query  pdf-editor-free.example', 1, ''],
+  ['DNS', 'dns_query  update.vendor-os.example', 1, ''], ['DNS', 'dns_query  teams.example', 1, ''],
+  ['FW', 'network_connection  → 203.0.113.45:443  1,840 B', 2, 'warn'], ['FW', 'network_upload  → 203.0.113.45  2.4 MB', 2, 'dan'],
+  ['FW', 'http_download  PDFEditorSetup.exe  4.7 MB', 2, 'warn'], ['FW', 'network_connection  → 198.51.100.140:443', 2, ''],
+  ['IDP', 'idp_signin  farah  SSO portal  push_approved', 3, ''], ['IDP', 'idp_signin  aina  192.0.2.61  push_approved', 3, ''],
+  ['IDP', 'crm_signin  farah  session crm-s-7731', 3, 'warn'], ['IDP', 'idp_signin  daniel  SSO portal', 3, ''],
+];
+const R = rng(7);
+const cards = [];
+let tt = 12.9;
+for (let k = 0; k < 120; k++) {
+  const p = POOL[Math.floor(R() * POOL.length)];
+  const secs = (21 * 3600 + 43 * 60 + k * 330 + Math.floor(R() * 300)) % 86400;
+  cards.push({ t: tt, lane: p[2], txt: p[1], sev: p[3], time: fmt(secs) });
+  tt += Math.max(0.045, 0.3 * Math.pow(0.9, k));
+}
+const cardEls = cards.map((c) => { const e = el('div', 'card', laneEls[c.lane]); e.innerHTML = `<div class="t">${c.time}  ·  ${LANES[c.lane]}</div><div class="m">${esc(c.txt)}</div>`;
+  e.style.setProperty('--sev', c.sev === 'dan' ? 'var(--danger)' : c.sev === 'warn' ? 'var(--warn)' : '#394558'); return e; });
+const cap = el('div', 'abs', st); cap.id = 'cap';
+const flash = el('div', 'abs', st); flash.id = 'flash';
+el('div', 'vignette', st);
+const black = el('div', 'abs', st); black.id = 'black';
+
+function clockText(t) {
+  if (t < 1.3) { const s = 58 + Math.floor(t / 0.65); return s >= 60 ? '21:40:00' : '21:39:' + s; }
+  if (t < 11.6) { const k = (t - 1.3) / (11.6 - 1.3); const secs = 21 * 3600 + 40 * 60 + k * 190; return fmt(secs); }
+  if (t < 12.6) { const k = ease((t - 11.6) / 1.0); const a = 21 * 3600 + 43 * 60 + 10, b = (24 + 8) * 3600 + 40 * 60; return fmt(a + (b - a) * k); }
+  return fmt((24 + 8) * 3600 + 40 * 60 + (t - 12.6) * 7);
+}
+function fmt(s) { s = Math.floor(s) % 86400; return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map((v) => String(v).padStart(2, '0')).join(':'); }
+
+function drawViz(t, a) {
+  cx.clearRect(0, 0, 1920, 1080);
+  if (a <= 0) return;
+  cx.save(); cx.globalAlpha = a;
+  const L = { x: 360, y: 640 }, E = { x: 820, y: 420 };
+  // ambient dots
+  const r = rng(3);
+  for (let i = 0; i < 90; i++) { const x = r() * 950, y = 300 + r() * 700, s = r(); cx.fillStyle = `rgba(129,145,173,${0.08 + 0.12 * s})`; cx.beginPath(); cx.arc(x + Math.sin(t * 0.3 + i) * 4, y, 1.5 + s * 1.5, 0, 6.3); cx.fill(); }
+  // processes
+  const procs = [[3.1, 250, 830, 'PDFEditorSetup.exe'], [4.3, 520, 850, 'svchost-update.exe']];
+  for (const [t0, x, y, name] of procs) {
+    const k = easeOut(prog(t, t0, t0 + 0.5)); if (!k) continue;
+    cx.strokeStyle = `rgba(242,184,75,${0.55 * k})`; cx.setLineDash([6, 6]); cx.lineWidth = 2;
+    cx.beginPath(); cx.moveTo(L.x, L.y + 40); cx.lineTo(x, y - 24); cx.stroke(); cx.setLineDash([]);
+    cx.fillStyle = `rgba(242,184,75,${0.18 * k})`; cx.strokeStyle = `rgba(242,184,75,${k})`;
+    cx.beginPath(); cx.arc(x, y, 22 * k, 0, 6.3); cx.fill(); cx.stroke();
+    cx.font = '500 17px Plex'; cx.fillStyle = `rgba(236,236,237,${k})`; cx.textAlign = 'center'; cx.fillText(name, x, y + 50);
+  }
+  // upload stream
+  const up = prog(t, 9.7, 11.6);
+  if (t > 8.9) {
+    const k = easeOut(prog(t, 8.9, 9.5));
+    cx.strokeStyle = `rgba(255,93,93,${0.35 * k})`; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(L.x, L.y);
+    cx.quadraticCurveTo(560, 380, E.x, E.y); cx.stroke();
+    cx.fillStyle = `rgba(255,93,93,${0.2 * k})`; cx.strokeStyle = `rgba(255,93,93,${k})`; cx.beginPath(); cx.arc(E.x, E.y, 30 * k, 0, 6.3); cx.fill(); cx.stroke();
+    cx.font = '600 19px Plex'; cx.fillStyle = `rgba(255,140,140,${k})`; cx.textAlign = 'center'; cx.fillText('203.0.113.45', E.x, E.y - 48);
+    cx.font = '400 15px Plex'; cx.fillStyle = `rgba(186,197,215,${k})`; cx.fillText('cdn-sync-update.example', E.x, E.y + 56);
+    if (up > 0) for (let i = 0; i < 26; i++) {
+      const u = ((t * 0.9 + i / 26) % 1); if (u > up * 1.2) continue;
+      const x = (1 - u) * (1 - u) * L.x + 2 * (1 - u) * u * 560 + u * u * E.x, y = (1 - u) * (1 - u) * L.y + 2 * (1 - u) * u * 380 + u * u * E.y;
+      cx.fillStyle = `rgba(255,${120 + 80 * u},90,${0.9 * (1 - u * 0.4)})`; cx.beginPath(); cx.arc(x, y, 3.2, 0, 6.3); cx.fill();
+    }
+  }
+  // laptop node
+  const kl = easeOut(prog(t, 1.2, 1.9));
+  const alert = t > 6.5 ? 1 : 0;
+  const col = alert ? '255,93,93' : '157,237,0';
+  for (let i = 0; i < 3; i++) { const p = ((t * 0.6 + i / 3) % 1); cx.strokeStyle = `rgba(${col},${(1 - p) * 0.5 * kl})`; cx.lineWidth = 2; cx.beginPath(); cx.arc(L.x, L.y, 46 + p * 70, 0, 6.3); cx.stroke(); }
+  cx.fillStyle = `rgba(${col},${0.16 * kl})`; cx.strokeStyle = `rgba(${col},${kl})`; cx.lineWidth = 2.5; cx.beginPath(); cx.arc(L.x, L.y, 44 * kl, 0, 6.3); cx.fill(); cx.stroke();
+  // laptop glyph
+  cx.strokeStyle = `rgba(236,236,237,${kl})`; cx.lineWidth = 2.5; cx.strokeRect(L.x - 18, L.y - 14, 36, 22); cx.beginPath(); cx.moveTo(L.x - 25, L.y + 13); cx.lineTo(L.x + 25, L.y + 13); cx.stroke();
+  cx.font = '600 22px Plex'; cx.fillStyle = `rgba(236,236,237,${kl})`; cx.textAlign = 'center'; cx.fillText('SALES-LT-07', L.x, L.y - 70);
+  if (alert) { const k = easeOut(prog(t, 6.5, 6.9)); cx.font = '600 16px Plex'; cx.fillStyle = `rgba(255,93,93,${k})`; cx.fillText('BROWSER PASSWORDS + COOKIES READ', L.x, L.y + 92); }
+  cx.restore();
+}
+
+function drawLinks(t) {
+  const k = prog(t, 20.6, 22.6); if (!k) return;
+  // pick a chain of cards across lanes
+  const pts = [[2, 3], [1, 5], [0, 2], [3, 6], [2, 8], [0, 9]];
+  cx.save(); cx.lineWidth = 3;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const seg = clamp(k * (pts.length - 1) - i); if (seg <= 0) break;
+    const [l1, r1] = pts[i], [l2, r2] = pts[i + 1];
+    const x1 = 110 + l1 * 438 + 200, y1 = 230 + 46 + r1 * 80 + 35, x2 = 110 + l2 * 438 + 200, y2 = 230 + 46 + r2 * 80 + 35;
+    const flick = (Math.sin(t * 40 + i * 3) > -0.2) ? 1 : 0.15;
+    cx.strokeStyle = `rgba(157,237,0,${0.75 * flick})`; cx.setLineDash([8, 7]);
+    cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x1 + (x2 - x1) * seg, y1 + (y2 - y1) * seg); cx.stroke();
+    cx.setLineDash([]); cx.fillStyle = `rgba(157,237,0,${flick})`; cx.beginPath(); cx.arc(x1, y1, 5, 0, 6.3); cx.fill();
+  }
+  cx.restore();
+}
+
+window.setup = () => Promise.all(['500 17px Plex','600 22px Plex','600 19px Plex','400 15px Plex','600 16px Plex'].map((f) => document.fonts.load(f)));
+window.render = (t) => {
+  $('#grid').style.transform = `translate(${-(t * 6) % 64}px, ${-(t * 3) % 64}px)`;
+  const p1 = 1 - ease(prog(t, 12.0, 13.0));
+  clock.textContent = clockText(t);
+  clock.style.opacity = ease(prog(t, 0.2, 0.9)) * (t < 12.6 ? 1 : 1 - ease(prog(t, 12.6, 13.4)) * 0.55);
+  clock.style.transform = t > 12.6 ? `scale(${1 - 0.5 * ease(prog(t, 12.6, 13.4))})` : '';
+  clock.style.transformOrigin = '0 0';
+  clock.style.color = t > 6.5 && t < 12.6 ? '#ffd1d1' : 'var(--text)';
+  sub.textContent = t < 12.0 ? 'SALES-LT-07  ·  SALES  ·  04 OCT 2026' : '05 OCT 2026  ·  SOC QUEUE';
+  sub.style.opacity = ease(prog(t, 0.5, 1.2)) * (t > 11.8 && t < 12.6 ? 0.3 : 1);
+  sub.style.top = t > 12.6 ? (222 - 96 * ease(prog(t, 12.6, 13.4))) + 'px' : '222px';
+  sub.style.left = t > 12.6 ? (116 + 300 * ease(prog(t, 12.6, 13.4))) + 'px' : '116px';
+  feed.style.opacity = ease(prog(t, 1.6, 2.2)) * p1;
+  feed.style.transform = `translateY(${(1 - easeOut(prog(t, 1.6, 2.4))) * 30}px)`;
+  let html = '';
+  for (const [t0, time, src, msg, tone] of FEED) {
+    if (t < t0) break;
+    const fresh = t - t0 < 0.5;
+    const c = tone === 'dan' ? 'c-dan' : tone === 'warn' ? 'c-warn' : 'c-txt';
+    const shake = tone === 'dan' && t - t0 < 0.35 ? ` style="text-shadow: 3px 0 rgba(255,0,60,.8), -3px 0 rgba(0,200,255,.6)"` : '';
+    html += `<span class="c-mut">${time}</span>  <span class="${tone ? c : 'c-info'}">${src}</span>  <span class="${c}"${shake}>${esc(msg)}</span>${fresh ? '<span class="c-acc"> ◂</span>' : ''}\n`;
+  }
+  fpre.innerHTML = html;
+  drawViz(t, p1);
+  // flash + shake on the EDR alert
+  const fa = t > 6.5 && t < 7.1 ? (1 - (t - 6.5) / 0.6) : 0;
+  flash.style.background = `rgba(255,50,50,${0.22 * fa})`;
+  st.style.transform = fa > 0.5 ? `translate(${(rng(Math.floor(t * 60))() - 0.5) * 14}px, ${(rng(Math.floor(t * 60) + 9)() - 0.5) * 8}px)` : '';
+  // phase 2: lanes
+  const lanesA = ease(prog(t, 12.6, 13.2));
+  laneEls.forEach((l) => { l.style.opacity = lanesA; });
+  const counts = [0, 0, 0, 0];
+  const freeze = 18.1;
+  const tl = Math.min(t, freeze);
+  for (let i = cards.length - 1; i >= 0; i--) {
+    const c = cards[i], e = cardEls[i];
+    if (tl < c.t) { e.style.display = 'none'; continue; }
+    e.style.display = 'block';
+    const row = counts[c.lane]++;
+    const k = easeOut(prog(tl, c.t, c.t + 0.25));
+    e.style.top = (46 + row * 80 - (1 - k) * 40) + 'px';
+    e.style.opacity = k * (row > 9 ? 0 : 1) * (t > freeze ? 0.72 : 1);
+  }
+  laneEls.forEach((l) => { l.style.filter = t > freeze ? `saturate(${1 - 0.6 * prog(t, freeze, freeze + 0.6)})` : ''; });
+  cx.globalAlpha = 1;
+  if (t > 20.6) drawLinks(t);
+  cap.textContent = t > 12.6 ? '' : '';
+  // glitch out + black
+  const g = prog(t, 22.9, 23.6);
+  black.style.opacity = Math.min(1, ease(prog(t, 23.2, 23.75)) + (t < 0.25 ? 1 - t / 0.25 : 0));
+  if (g > 0 && g < 1) {
+    const r2 = rng(Math.floor(t * 30));
+    st.style.transform = `translate(${(r2() - 0.5) * 30 * g}px, 0)`;
+    st.style.filter = `hue-rotate(${(r2() - 0.5) * 60}deg) contrast(${1 + g})`;
+  } else if (!(fa > 0.5)) { st.style.filter = ''; }
+};
+</script></body></html>

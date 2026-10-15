@@ -1,0 +1,86 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+#rail { left: 90px; top: 150px; width: 520px; }
+#rail h3, #gtitle { font-family: Plex; font-weight: 500; font-size: 16px; letter-spacing: .22em; color: var(--muted); margin-bottom: 16px; }
+.ver { position: relative; height: 96px; margin-bottom: 14px; border-radius: 10px; border: 1px solid var(--line); background: rgba(16,24,39,.92); padding: 13px 18px; }
+.ver .v { font-family: Plex; font-weight: 600; font-size: 22px; color: var(--accent); }
+.ver .r { font-family: Plex; font-size: 15px; color: var(--text2); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ver .c { font-family: Plex; font-size: 13px; color: var(--muted); margin-top: 4px; }
+.ver .lock { position: absolute; right: 16px; top: 14px; font-family: Plex; font-size: 12px; letter-spacing: .14em; color: var(--muted); border: 1px solid var(--line2); border-radius: 999px; padding: 2px 9px; }
+#gtitle { left: 700px; top: 150px; }
+#cap { right: 60px; bottom: 34px; font-family: Plex; font-size: 15px; color: var(--muted); }
+svg text { font-family: Plex; }
+</style></head><body><div id="stage"><div class="grid"></div></div>
+<script src="lib.js"></script>
+<script>
+const st = $('#stage');
+const S = DATA.state_v5;
+const rail = el('div', 'abs', st, '<h3>STATE VERSIONS  ·  APPEND-ONLY</h3>'); rail.id = 'rail';
+const vers = DATA.states.filter((m) => m.version <= 5).map((m) => {
+  const e = el('div', 'ver', rail, `<div class="v">v${m.version}</div><div class="r">${esc(m.change_reason)}</div><div class="c">${m.entity_count} entities · ${m.relationship_count} relationships · ${m.timeline_count} timeline events</div><div class="lock">IMMUTABLE</div>`);
+  return e;
+});
+const gt = el('div', 'abs', st, `INCIDENT-STATE GRAPH  ·  v${S.version}`); gt.id = 'gtitle';
+const POS = {
+  'HOST::SALES-LT-07': [1210, 560, 1], 'ACCOUNT::farah': [880, 380, 1], 'PROCESS::SALES-LT-07::pdfeditorsetup.exe': [930, 800, 1],
+  'PROCESS::SALES-LT-07::svchost-update.exe': [1440, 800, 1], 'SESSION::farah::crm-s-7731': [1140, 290, 1],
+  'DOMAIN::cdn-sync-update.example': [1590, 400, 1], 'DOMAIN::pdf-editor-free.example': [1650, 590, 1], 'DOMAIN::update.vendor-os.example': [1640, 760, 0.6],
+  'FILE::SALES-LT-07::c:/users/farah/downloads/pdfeditorsetup.exe': [760, 640, 1], 'FILE::SALES-LT-07::c:/users/farah/appdata/roaming/syncupdate/svchost-update.exe': [1560, 930, 1],
+  'HOST::MKT-LT-11': [1680, 220, 0.5], 'ACCOUNT::aina': [1460, 190, 0.5], 'PROCESS::MKT-LT-11::teams.exe': [1820, 300, 0.5],
+  'HOST::HR-LT-02': [760, 930, 0.5], 'ACCOUNT::daniel': [960, 990, 0.5], 'PROCESS::HR-LT-02::onedrive.exe': [740, 1010, 0.5],
+};
+const COL = { host: '#9ded00', account: '#68a0ff', process: '#f2b84b', file: '#8191ad', domain: '#ff5d5d', session: '#c39bff', ip: '#ff5d5d' };
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('width', 1920); svg.setAttribute('height', 1080); svg.style.position = 'absolute'; svg.style.left = 0; svg.style.top = 0; st.appendChild(svg);
+svg.innerHTML = `<defs>${Object.entries({ a: '#bac5d7', g: '#9ded00' }).map(([k, c]) => `<marker id="ar${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join('')}
+<filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+const nodes = S.entities.map((e, i) => {
+  const [x, y, w] = POS[e.id] || [700 + (i % 6) * 190, 1000, 0.5];
+  const g = document.createElementNS(NS, 'g'); svg.appendChild(g);
+  const r = w >= 1 ? (e.type === 'host' ? 34 : 24) : 14;
+  const label = e.type === 'file' ? e.name.split('\\').pop() : e.name;
+  const c = COL[e.type] || '#bac5d7';
+  const below = w >= 1 && y > 700;
+  const ty1 = below ? r + 22 : -r - 26, ty2 = below ? r + 42 : -r - 9;
+  g.innerHTML = `<circle r="${r}" fill="${c}22" stroke="${c}" stroke-width="2.5" ${w >= 1 ? 'filter="url(#glow)"' : ''}/>
+    <text y="${ty1}" text-anchor="middle" font-size="${w >= 1 ? 13 : 11}" letter-spacing="2" fill="${c}" opacity=".85">${e.type.toUpperCase()}</text>
+    <text y="${ty2}" text-anchor="middle" font-size="${w >= 1 ? 18 : 14}" font-weight="500" fill="#ececed">${esc(label)}</text>`;
+  g.setAttribute('transform', `translate(${x},${y})`);
+  return { e, g, x, y, r, w, t0: 0.9 + (w >= 1 ? 0 : 0.5) + (i % 7) * 0.12 };
+});
+const byId = Object.fromEntries(nodes.map((n) => [n.e.id, n]));
+const edges = S.relationships.map((rel, i) => {
+  const a = byId[rel.source], b = byId[rel.target];
+  const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy);
+  const x1 = a.x + dx / L * (a.r + 6), y1 = a.y + dy / L * (a.r + 6), x2 = b.x - dx / L * (b.r + 8), y2 = b.y - dy / L * (b.r + 8);
+  const main = a.w >= 1 && b.w >= 1;
+  const p = document.createElementNS(NS, 'path'); p.setAttribute('d', `M${x1},${y1} L${x2},${y2}`);
+  p.setAttribute('stroke', main ? '#bac5d7' : '#5b6b86'); p.setAttribute('stroke-width', main ? 2.5 : 1.6); p.setAttribute('fill', 'none'); p.setAttribute('marker-end', 'url(#ara)');
+  svg.insertBefore(p, svg.children[1]);
+  const len = Math.hypot(x2 - x1, y2 - y1); p.setAttribute('stroke-dasharray', len);
+  const lab = document.createElementNS(NS, 'g'); svg.appendChild(lab);
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  const n = rel.evidence_ids.length;
+  lab.innerHTML = main ? `<rect x="-118" y="-30" width="236" height="50" rx="7" fill="#0b1320" stroke="#394558"/>
+    <text y="-9" text-anchor="middle" font-size="15" fill="#ececed">${rel.relation}  →</text>
+    <text y="11" text-anchor="middle" font-size="13" fill="#9ded00">${n} evidence record${n === 1 ? '' : 's'} · ${rel.status}</text>` : '';
+  lab.setAttribute('transform', `translate(${mx},${my})`);
+  return { p, lab, len, main, t0: 2.4 + i * 0.18, rel };
+});
+const cap = el('div', 'abs', st, `snapshot from GET /cases/${DATA.case}/states/5  ·  ${S.entities.length} entities · ${S.relationships.length} relationships`); cap.id = 'cap';
+el('div', 'chapter', st, '<b>03</b> RECONSTRUCT THE INCIDENT');
+el('div', 'vignette', st);
+const black = el('div', 'abs', st); setStyle(black, { inset: '0', background: '#000' });
+window.render = (t) => {
+  black.style.opacity = 1 - ease(prog(t, 0, 0.35)) + ease(prog(t, 5.7, 6.0));
+  vers.forEach((v, i) => { const k = easeOut(prog(t, 0.2 + i * 0.32, 0.6 + i * 0.32)); v.style.opacity = k; v.style.transform = `translateX(${(1 - k) * -30}px)`;
+    v.style.borderColor = i === vers.length - 1 && t > 1.9 ? 'rgba(157,237,0,.6)' : 'var(--line)'; });
+  gt.style.opacity = ease(prog(t, 0.6, 1.0));
+  for (const n of nodes) { const k = easeOut(prog(t, n.t0, n.t0 + 0.45)); n.g.style.opacity = k * (n.w >= 1 ? 1 : 0.7); n.g.setAttribute('transform', `translate(${n.x},${n.y}) scale(${0.6 + 0.4 * k})`); }
+  for (const e of edges) { const k = easeOut(prog(t, e.t0, e.t0 + 0.6)); e.p.setAttribute('stroke-dashoffset', e.len * (1 - k)); e.p.style.opacity = k > 0 ? 1 : 0; e.lab.style.opacity = ease(prog(t, e.t0 + 0.4, e.t0 + 0.8)); }
+  // pulse the evidence-heavy edge
+  const fe = edges.find((e) => e.rel.source === 'ACCOUNT::farah');
+  if (fe) fe.p.setAttribute('stroke', t > 3.9 ? `rgb(${157 + 98 * (0.5 + 0.5 * Math.cos((t - 3.9) * 6))}, 237, ${0 + 215 * (0.5 + 0.5 * Math.cos((t - 3.9) * 6))})` : '#bac5d7');
+  cap.style.opacity = ease(prog(t, 2.6, 3.2));
+};
+</script></body></html>

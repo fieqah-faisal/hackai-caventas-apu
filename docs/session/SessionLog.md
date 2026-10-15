@@ -3,6 +3,27 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Promo / demo video from main `9253749` (DONE)
+
+- `docs/promo/caventas-promo.mp4` (3:00.6, 1080p30, −16 LUFS) + `.srt`
+  captions: sc01 story on the real UI (`VITE_DATA_MODE=api`) and backend
+  (in-memory Firestore double, `SIMULATOR_PROFILE=demo`); planner LLM calls
+  replayed from the recorded live run (no key available); batch 2 rendered by
+  `scenarios/conditions.py` from the case's real action results.
+- Accuracy notes (what is real / replayed / not shown) and the full
+  production pipeline in `docs/promo/README.md` and `docs/promo/pipeline/`.
+- Requested beats the product lacks (UI graph view, agent animation, analyst
+  notes/dispute/sign-off, workspace upload/re-plan, UI PDF download) were not
+  mocked; new backlog items BL-043 (stale approver label vs 403 guard),
+  BL-044 (Analysis/Overview ignore plan analysis in API mode), BL-045 (no
+  workspace evidence-upload / re-plan controls).
+- Branch `claude/busy-bardeen-7clkpg` (base `9253749`); docs + media only, no
+  product code changed.
+- Tests on the base: backend `../.venv/bin/python -m pytest -q` **215
+  passed**; frontend `npm run test` **75 passed**.
+- Next: team review of the cut; decide whether to keep the 47 MB MP4 in git
+  or move it to release assets; BL-043/BL-044 before re-recording.
+
 ### 2026-10-14 BL-041 incident_type schema enum: live 12/12, 5/5, mean 92.7 (DONE)
 
 - The analyze prompt now requests exactly one of `infostealer_session_hijack`,

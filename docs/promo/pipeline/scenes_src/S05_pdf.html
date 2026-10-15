@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+#wrap { position: absolute; inset: 0; perspective: 1800px; }
+.pg { position: absolute; left: 50%; top: 50%; width: 520px; height: 735px; margin: -380px 0 0 -260px; background: #fff; border-radius: 4px; box-shadow: 0 30px 70px rgba(0,0,0,.6); background-size: cover; transform-style: preserve-3d; }
+#lbl { left: 0; width: 1920px; top: 70px; text-align: center; font-family: Plex; font-size: 20px; letter-spacing: .14em; color: var(--muted); }
+#lbl b { color: var(--accent); font-weight: 500; }
+</style></head><body><div id="stage"><div class="grid"></div><div id="wrap"></div></div>
+<script src="lib.js"></script>
+<script>
+const st = $('#stage'), wrap = $('#wrap');
+const pages = [1, 2, 3, 4, 5, 6].map((i) => { const p = el('div', 'pg', wrap); p.style.backgroundImage = `url(assets/pdf/p-${i}.png)`; return p; });
+const lbl = el('div', 'abs', st, `<b>PDF</b>  ·  RENDERED SERVER-SIDE FOR EVERY REPORT VERSION  ·  ${DATA.report_id || ''}`); lbl.id = 'lbl';
+el('div', 'chapter', st, '<b>09</b> STRUCTURED REPORT');
+el('div', 'vignette', st);
+const black = el('div', 'abs', st); setStyle(black, { inset: '0', background: '#000' });
+window.render = (t) => {
+  black.style.opacity = 1 - ease(prog(t, 0, 0.25));
+  lbl.style.opacity = ease(prog(t, 0.3, 0.8));
+  const k = easeOut(prog(t, 0.0, 1.3));
+  pages.forEach((p, i) => {
+    const n = pages.length - 1 - i; // page 1 on top
+    const spread = (i - 2.5) * 300 * k;
+    const ry = (i - 2.5) * -9 * k, rz = (i - 2.5) * 2.2 * k;
+    const z = -Math.abs(i - 2.5) * 120 * k + (i === 0 ? 0 : 0);
+    const drift = t * 10 * (i - 2.5);
+    p.style.zIndex = 10 - Math.abs(Math.round(i - 2.5));
+    p.style.transform = `translate3d(${spread + drift}px, ${(1 - k) * 200 + Math.abs(i - 2.5) * 18}px, ${z}px) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${0.62 + 0.04 * Math.sin(t + i)})`;
+    p.style.opacity = easeOut(prog(t, i * 0.06, 0.4 + i * 0.06));
+  });
+  black.style.opacity = Math.max(+black.style.opacity, ease(prog(t, 3.15, 3.4)));
+};
+</script></body></html>

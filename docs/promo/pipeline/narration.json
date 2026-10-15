@@ -1,0 +1,22 @@
+{
+ "n01": "Nine-forty P.M. A sales laptop runs an unsigned installer. Within a minute, its saved passwords and session cookies are being read, and an archive leaves the network.",
+ "n02": "By morning, alerts are piling up across endpoint, DNS, firewall and sign-in logs. The hard part isn't receiving alerts. It's connecting them, before the incident escalates.",
+ "n03": "Caventas transforms fragmented evidence into an evolving, evidence-backed incident investigation.",
+ "n04": "Built for Tier 1 and junior Tier 2 analysts. The agent recommends. The analyst decides.",
+ "n05": "An analyst opens a case, and gets a case I D. Evidence goes in as it arrives: sign-ins, endpoint, DNS, firewall logs, and analyst notes.",
+ "n06": "Every record is hashed, tied to its source, and versioned into the incident state.",
+ "n07": "Caventas rebuilds the timeline, and extracts the accounts, hosts, processes, files, domains and sessions involved.",
+ "n08": "Each change creates an immutable snapshot, whose relationships trace back to evidence.",
+ "n09": "Then the planning agent runs. It loads one exact state version, analyses the evidence, retrieves only the policy rules for this stage, and proposes actions. The backend validates every tool, target, evidence reference and policy, before storing the plan.",
+ "n10": "The verdict: info stealer and session hijack. Each action explains why, cites its evidence, and names the policy that governs it.",
+ "n11": "Nothing runs without an analyst. The password reset is rejected, with the reason recorded. Host isolation is approved, and runs in a bounded simulator, never on live systems.",
+ "n12": "But executed isn't effective. Revoking sessions only partly works: the C R M's admin A P I is down for maintenance.",
+ "n13": "Then new evidence lands. The stolen C R M session is replayed from an unfamiliar device, and twelve hundred customer records are exported.",
+ "n14": "Approvals bound to the old state version are flagged stale, and the backend refuses to run them.",
+ "n15": "The agent re-plans against the new state: revoke the sessions again, and disable the account.",
+ "n16": "Policy decides who may approve. Disabling an account needs the I T manager, so a SOC analyst is refused. With the right role, it goes through. And this time, revocation is validated effective.",
+ "n17": "Every agent proposal, and every human decision, stays on the record.",
+ "n18": "Finally, Caventas compiles a structured report from the stored records: classification, timeline, affected assets, attack techniques, decisions, validation results, and the gaps that remain.",
+ "n19": "Rendered to P D F.",
+ "n20": "From fragmented alerts, to an accountable response. Caventas helps analysts understand, decide, and act with confidence."
+}

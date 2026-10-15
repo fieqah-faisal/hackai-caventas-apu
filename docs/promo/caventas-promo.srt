@@ -1,0 +1,148 @@
+1
+00:00:01,300 --> 00:00:05,499
+Nine-forty P.M. A sales laptop runs an unsigned installer.
+
+2
+00:00:05,799 --> 00:00:11,694
+Within a minute, its saved passwords and session cookies are being read, and an archive leaves the network.
+
+3
+00:00:12,500 --> 00:00:17,790
+By morning, alerts are piling up across endpoint, DNS, firewall and sign-in logs.
+
+4
+00:00:18,090 --> 00:00:20,263
+The hard part isn't receiving alerts.
+
+5
+00:00:20,563 --> 00:00:23,364
+It's connecting them, before the incident escalates.
+
+6
+00:00:24,700 --> 00:00:31,066
+Caventas transforms fragmented evidence into an evolving, evidence-backed incident investigation.
+
+7
+00:00:31,400 --> 00:00:34,103
+Built for Tier 1 and junior Tier 2 analysts.
+
+8
+00:00:34,403 --> 00:00:35,619
+The agent recommends.
+
+9
+00:00:35,919 --> 00:00:37,200
+The analyst decides.
+
+10
+00:00:37,900 --> 00:00:40,809
+An analyst opens a case, and gets a case ID.
+
+11
+00:00:41,109 --> 00:00:47,383
+Evidence goes in as it arrives: sign-ins, endpoint, DNS, firewall logs, and analyst notes.
+
+12
+00:00:48,100 --> 00:00:52,423
+Every record is hashed, tied to its source, and versioned into the incident state.
+
+13
+00:00:53,300 --> 00:01:00,512
+Caventas rebuilds the timeline, and extracts the accounts, hosts, processes, files, domains and sessions involved.
+
+14
+00:01:01,300 --> 00:01:06,353
+Each change creates an immutable snapshot, whose relationships trace back to evidence.
+
+15
+00:01:07,400 --> 00:01:08,960
+Then the planning agent runs.
+
+16
+00:01:09,260 --> 00:01:17,463
+It loads one exact state version, analyses the evidence, retrieves only the policy rules for this stage, and proposes actions.
+
+17
+00:01:17,763 --> 00:01:23,697
+The backend validates every tool, target, evidence reference and policy, before storing the plan.
+
+18
+00:01:24,700 --> 00:01:27,263
+The verdict: infostealer and session hijack.
+
+19
+00:01:27,563 --> 00:01:32,561
+Each action explains why, cites its evidence, and names the policy that governs it.
+
+20
+00:01:33,500 --> 00:01:35,258
+Nothing runs without an analyst.
+
+21
+00:01:35,558 --> 00:01:38,853
+The password reset is rejected, with the reason recorded.
+
+22
+00:01:39,153 --> 00:01:44,469
+Host isolation is approved, and runs in a bounded simulator, never on live systems.
+
+23
+00:01:45,300 --> 00:01:46,923
+But executed isn't effective.
+
+24
+00:01:47,223 --> 00:01:52,977
+Revoking sessions only partly works: the CRM's admin API is down for maintenance.
+
+25
+00:01:53,700 --> 00:01:55,090
+Then new evidence lands.
+
+26
+00:01:55,390 --> 00:02:02,648
+The stolen CRM session is replayed from an unfamiliar device, and twelve hundred customer records are exported.
+
+27
+00:02:03,300 --> 00:02:08,859
+Approvals bound to the old state version are flagged stale, and the backend refuses to run them.
+
+28
+00:02:09,600 --> 00:02:15,025
+The agent re-plans against the new state: revoke the sessions again, and disable the account.
+
+29
+00:02:15,700 --> 00:02:17,506
+Policy decides who may approve.
+
+30
+00:02:17,806 --> 00:02:22,962
+Disabling an account needs the IT manager, so a SOC analyst is refused.
+
+31
+00:02:23,262 --> 00:02:24,960
+With the right role, it goes through.
+
+32
+00:02:25,260 --> 00:02:28,232
+And this time, revocation is validated effective.
+
+33
+00:02:29,000 --> 00:02:33,103
+Every agent proposal, and every human decision, stays on the record.
+
+34
+00:02:33,900 --> 00:02:45,830
+Finally, Caventas compiles a structured report from the stored records: classification, timeline, affected assets, ATT&CK techniques, decisions, validation results, and the gaps that remain.
+
+35
+00:02:46,700 --> 00:02:48,069
+Rendered to PDF.
+
+36
+00:02:50,200 --> 00:02:53,087
+From fragmented alerts, to an accountable response.
+
+37
+00:02:53,387 --> 00:02:57,678
+Caventas helps analysts understand, decide, and act with confidence.
+

@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style> html, body, #stage { background: transparent !important; } #t { left: 330px; top: 230px; width: 1260px; } #t pre { font-size: 23px; line-height: 1.62; } .k { display: inline-block; width: 300px; color: var(--muted); } </style>
+</head><body><div id="stage"></div>
+<script src="lib.js"></script>
+<script>
+const p = DATA.plans[0], a = p.analysis;
+const t = el('div', 'term', $('#stage')); t.id = 't';
+t.innerHTML = `<div class="bar"><i style="background:#ff5d5d"></i><i style="background:#f2b84b"></i><i style="background:#9ded00"></i><span>GET /cases/${DATA.case}/plans  →  ${p.plan_id}  ·  analysis</span></div><pre>` +
+`<span class="k">incident_type</span><span class="c-acc">${a.incident_type}</span>
+<span class="k">severity</span><span class="c-warn">${a.severity}</span>     <span class="c-mut">confidence</span> <span class="c-txt">${a.confidence}</span>
+<span class="k">scope</span><span class="c-txt">${esc(a.scope.split(';')[0])}</span>
+<span class="k">findings</span><span class="c-txt">${a.findings.length}</span>  <span class="c-mut">e.g. ${a.findings[1].evidence_ids.join(', ')}</span>
+<span class="k">attack_techniques</span><span class="c-txt">${a.attack_techniques.join('  ')}</span>
+<span class="k">stage</span><span class="c-txt">${p.stage}</span>     <span class="c-mut">bound to state</span> <span class="c-acc">v${p.based_on_state_version}</span>
+<span class="k">missing_evidence</span><span class="c-txt">${p.missing_evidence.length} open questions</span></pre>`;
+window.render = () => {};
+</script></body></html>

@@ -16,7 +16,7 @@
 > `feat/bl-017-analysis-persistence` adds DEC-015;
 > `feat/bl-020-untrusted-evidence` adds DEC-016.
 > `docs/report-schema-v1.3` adds DEC-017 and BL-040..BL-042.
-> Next free IDs: **BL-043** and **DEC-018**.
+> Next free IDs: **BL-046** and **DEC-018**.
 > API-mode frontend↔backend gaps are tracked in BL-013.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
@@ -80,6 +80,18 @@
   docs/report-schema/README.md. — open / Raaj
 - BL-042 — Frontend: add the v1.3 report fields to dto.ts (typed
   findings, action policy fields, planner_model). — open / Syafieqah
+
+- BL-043 — Approvals card still says "Approver: Any analyst (no approver
+  role in backend)" and "Required: Any analyst", but since PR #22 the backend
+  derives the required role and returns 403 (e.g. `disable_account` needs
+  `it_manager`, POL-02). The label now contradicts the guard; it is visible
+  in the promo footage next to the policy refusal. Show the backend's
+  required role instead (see also BL-028). — open / frontend
+- BL-044 — In API mode the Overview and Analysis tabs read only the incident
+  state, so after a planning run they still show "No analysis summary yet" /
+  "Not yet classified", 0 findings and no ATT&CK, although the plan document
+  holds the planner's analysis (DEC-015) and the report shows it. Read the
+  newest plan's `analysis` there. Related: BL-026 (d). — open / frontend
 
 ### P3
 
@@ -147,6 +159,11 @@
   `backend/uploads/` (24 files per run, measured in S6), because the
   evidence tests don't redirect `upload_dir` to `tmp_path` the way the
   report tests redirect `report_path`. — open / Raaj
+
+- BL-045 — The case workspace has no control to add evidence after case
+  creation or to start a re-plan; both exist only as API calls (`POST
+  /cases/{id}/evidence`, `POST /cases/{id}/runs`). The promo shows them as
+  API calls for that reason. — open / frontend
 
 ## Deferred
 - BL-006 (P3) — Add a thin `SKILL.md` wrapper pointing to
