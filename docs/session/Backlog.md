@@ -18,7 +18,8 @@
 > `docs/report-schema-v1.3` adds DEC-017 and BL-040..BL-042.
 > `chore/final-integration-fieqah` adds BL-043.
 > `feat/investigation-audit-ui-fieqah` adds DEC-019.
-> Next free IDs: **BL-046** and **DEC-020**.
+> `claude/laughing-bardeen-cfbl6d` adds DEC-020 and BL-046 (product film).
+> Next free IDs: **BL-047** and **DEC-021**.
 >
 > **Closed (removed):** BL-003 merged (PR #6 `b93fa6c`); BL-004 done
 > (PR #7 `3cecd3e`, re-confirmed by `link`'s emulator runs); BL-007 done
@@ -82,6 +83,10 @@
   classify arbitrary network activity as malicious solely by event name.
   — open / Raaj + Aidan
 ### P3
+- BL-046 (P3) — Re-record the product film (`docs/video/production/make_film.sh`)
+  with a live planner run instead of the replayed sc01 decisions once BL-043
+  is resolved and a key is available; keep the disclosure in
+  `docs/video/README.md` accurate. — open
 
 - BL-022 — Re-check ATT&CK technique IDs on attack.mitre.org (blocked in
   the build environment), esp. T1213.004. — open / Aidan

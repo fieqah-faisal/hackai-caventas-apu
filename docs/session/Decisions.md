@@ -570,3 +570,16 @@ DEC-001; BL-030; arXiv 2608.09524.
 **Tradeoff:** Projections can evolve without data migration, but old reports intentionally retain their generated shape and receive conservative frontend defaults. Trace completeness begins with asynchronous runs; the compatible synchronous `/runs` path does not invent a run trace. Replacement plans remain unknown unless a persisted relation explicitly establishes one.
 
 **Links:** `.kiro/specs/investigation-audit-ui/`, `backend/app/services/timeline_projection.py`, `backend/app/services/investigation_activity.py`, `backend/app/services/analysis_runs.py`.
+
+## DEC-020: Product film recorded against the real app with a replayed planner call (2026-10-15)
+
+**Context:** A 2–3 minute promotional film had to show the core workflow faithfully, without advertising unimplemented features, and be reproducible without cloud credentials or a live model key (the live planner is also intermittently failing, BL-043).
+
+**Options considered:** fixture-mode UI (complete contract, but includes surfaces the backend does not implement); fully animated mock-ups; the real API-mode UI with the deterministic `FakePlannerAdapter` (one generic action, no realistic analysis); the real API-mode UI with only the LLM HTTP call replayed from the recorded live evaluation decisions.
+
+**Decision:** Record the real API-mode workspace against the real FastAPI app, substituting only the in-memory test Firestore and the `LangGraphPlannerAdapter` LLM call (replay of the sc01 tools/targets/records/policy refs/missing evidence from `backend/evaluation/results/live.json`; rationale wording authored to match). Everything after the model call runs the product's code. Disclose this in `docs/video/README.md`. Cinematic cold-open graphics use the scenario's own records.
+
+**Tradeoff:** The UI shows the configured live model name for replayed output, and rationale text is not verbatim model output; both are disclosed. Re-recording with a live run is tracked as BL-046.
+
+**Links:** `docs/video/README.md`, `docs/video/production/capture_backend.py`, `backend/scenarios/sc01_infostealer/agent_inputs/demo_path/DEMO_PATH.md`.
+

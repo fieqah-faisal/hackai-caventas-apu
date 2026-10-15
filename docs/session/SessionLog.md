@@ -3,6 +3,14 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Caventas product film (DONE)
+
+- Added `docs/video/caventas-product-film.mp4` (3:02, 1080p30, H.264/AAC, -16 LUFS, 40.4 MB) plus poster, README and the reproducible pipeline in `docs/video/production/` (DEC-020). One continuous sc01 story: cinematic cold open → logo → nine product chapters (create case, multi-source evidence, timeline, directed graph, agent run + stored decision trace, evidence-backed plan, approve/simulate/reject, executed ≠ effective, new evidence → stale plan → replan, IT-manager policy guard, analyst reviews, report + PDF) → end card.
+- Product shots are real API-mode captures of the frontend against the real FastAPI app; only storage (test FakeFirestore) and the planner's LLM HTTP call (replay of the recorded `evaluation/results/live.json` sc01 decisions) are substituted. Simulator `demo` profile; off-camera steps follow `DEMO_PATH.md`. Narration: Kokoro `af_heart`; score/foley synthesised in `audio.py`.
+- Root README links the film (poster image). No backend/frontend source changed.
+- Verification: `cd backend && ../.venv/bin/python -m pytest -q` → **257 passed**; frame-by-frame review of rendered contact sheets; `ebur128` −16.1 LUFS / −1.9 dBTP; new files scanned for credentials/absolute paths (none).
+- Branch `claude/laughing-bardeen-cfbl6d`. Next: BL-046 (re-record with a live planner run once BL-043 is resolved).
+
 ### 2026-10-15 Root README refreshed after PR #28 (DONE)
 
 - Replaced the ASCII architecture diagram with the supplied workflow image (`docs/assets/caventas-workflow.png`) plus a components paragraph (workspace → API → Firestore → planner → policy guard → simulator → report, Compose deployment). Added the light/dark Caventas logo block (`docs/assets/caventas-logo-bw.png` + the existing transparent asset) and layout rows for `compose.yaml` / `firebase.json`.

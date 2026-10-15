@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-15 (post-#28 root README refresh).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-15 (product film added).
 
 ## Project
 
@@ -222,6 +222,9 @@ Firestore; no credentials needed).
   1/2/3, plans bound to 1/2, response edge, persisted state-v3/plan-v2 stale
   report disclosure, per-action provenance, refresh recovery and a valid
   13,405-byte PDF. No live planner request was made; BL-043 remains open.
+- Product film (DEC-020): `docs/video/caventas-product-film.mp4` (3:02) with
+  sources in `docs/video/production/`; real API-mode captures, replayed
+  sc01 planner decisions, synthetic data only. Rebuild via `make_film.sh`.
 - Timeline: internal feature freeze 8/10; submission 15/10. The planning
   table was removed from the root README in the post-#28 docs refresh.
 
