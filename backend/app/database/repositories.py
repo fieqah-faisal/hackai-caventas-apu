@@ -15,9 +15,11 @@ Firestore layout (see .kiro/steering/structure.md):
         action_results/{exec_id}
         audit_events/{audit_id}
         reports/{report_id}
+        analyst_reviews/{review_id}
 """
 from __future__ import annotations
 
+from threading import Lock
 from typing import Any
 
 from app.database.firebase import get_db
@@ -31,6 +33,10 @@ APPROVALS = "approvals"
 ACTION_RESULTS = "action_results"
 REPORTS = "reports"
 AUDIT_EVENTS = "audit_events"
+ANALYSIS_RUNS = "analysis_runs"
+ANALYST_REVIEWS = "analyst_reviews"
+TRACE_STEPS = "trace_steps"
+_fake_run_lock = Lock()  # test fake has no transaction; real Firestore uses one
 
 
 def _case_ref(case_id: str):
@@ -46,6 +52,11 @@ def create_case(case_id: str, data: dict[str, Any]) -> None:
 def get_case(case_id: str) -> dict[str, Any] | None:
     snap = _case_ref(case_id).get()
     return snap.to_dict() if snap.exists else None
+
+
+def list_cases() -> list[dict[str, Any]]:
+    docs = get_db().collection(CASES).stream()
+    return [d.to_dict() for d in docs]
 
 
 def update_case(case_id: str, data: dict[str, Any]) -> None:
@@ -120,6 +131,11 @@ def list_plans(case_id: str) -> list[dict[str, Any]]:
     return [d.to_dict() for d in docs]
 
 
+def get_plan(case_id: str, plan_id: str) -> dict[str, Any] | None:
+    snap = _case_ref(case_id).collection(PLANS).document(plan_id).get()
+    return snap.to_dict() if snap.exists else None
+
+
 def add_action(case_id: str, action_id: str, data: dict[str, Any]) -> None:
     _case_ref(case_id).collection(ACTIONS).document(action_id).set(data)
 
@@ -165,6 +181,95 @@ def add_report(case_id: str, report_id: str, data: dict[str, Any]) -> None:
 def get_report(case_id: str, report_id: str) -> dict[str, Any] | None:
     snap = _case_ref(case_id).collection(REPORTS).document(report_id).get()
     return snap.to_dict() if snap.exists else None
+
+
+def list_reports(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(REPORTS).stream()
+    return [d.to_dict() for d in docs]
+
+
+# --- Analyst reviews -----------------------------------------------------
+
+def add_analyst_review(case_id: str, review_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(ANALYST_REVIEWS).document(review_id).set(data)
+
+
+def list_analyst_reviews(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(ANALYST_REVIEWS).stream()
+    return [d.to_dict() for d in docs]
+
+
+# --- Persisted analysis runs ------------------------------------------------
+
+def get_analysis_run(case_id: str, run_id: str) -> dict[str, Any] | None:
+    snap = _case_ref(case_id).collection(ANALYSIS_RUNS).document(run_id).get()
+    return snap.to_dict() if snap.exists else None
+
+
+def list_analysis_runs(case_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(ANALYSIS_RUNS).stream()
+    return [
+        data for doc in docs
+        if (data := doc.to_dict()) and data.get("case_id") == case_id
+        and data.get("based_on_state_version") is not None
+    ]
+
+
+def append_trace_step(case_id: str, run_id: str, step_id: str, data: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(ANALYSIS_RUNS).document(run_id).collection(TRACE_STEPS).document(step_id).create(data)
+
+
+def list_trace_steps(case_id: str, run_id: str) -> list[dict[str, Any]]:
+    docs = _case_ref(case_id).collection(ANALYSIS_RUNS).document(run_id).collection(TRACE_STEPS).stream()
+    return [doc.to_dict() for doc in docs]
+
+
+def get_active_analysis_run(case_id: str) -> dict[str, Any] | None:
+    marker = _case_ref(case_id).collection(ANALYSIS_RUNS).document("_active").get()
+    marker_data = marker.to_dict() if marker.exists else None
+    if not marker_data or not marker_data.get("active") or not marker_data.get("run_id"):
+        return None
+    return get_analysis_run(case_id, marker_data["run_id"])
+
+
+def update_analysis_run(case_id: str, run_id: str, fields: dict[str, Any]) -> None:
+    _case_ref(case_id).collection(ANALYSIS_RUNS).document(run_id).update(fields)
+
+
+def acquire_analysis_run(case_id: str, run_id: str, data: dict[str, Any]) -> bool:
+    """Atomically claim the one active analysis slot for a case.
+
+    The fixed marker is transactionally read and written in Firestore. The
+    in-memory fake has no transaction and uses a process-local lock instead.
+    """
+    db = get_db()
+    marker = _case_ref(case_id).collection(ANALYSIS_RUNS).document("_active")
+    run = _case_ref(case_id).collection(ANALYSIS_RUNS).document(run_id)
+    if hasattr(db, "transaction"):
+        from google.cloud import firestore
+
+        @firestore.transactional
+        def claim(transaction):
+            snap = marker.get(transaction=transaction)
+            if snap.exists and snap.to_dict().get("active"):
+                return False
+            transaction.set(marker, {"active": True, "run_id": run_id})
+            transaction.set(run, data)
+            return True
+
+        return claim(db.transaction())
+    with _fake_run_lock:
+        if (marker.get().to_dict() or {}).get("active"):
+            return False
+        marker.set({"active": True, "run_id": run_id})
+        run.set(data)
+        return True
+
+
+def release_analysis_run(case_id: str, run_id: str) -> None:
+    marker = _case_ref(case_id).collection(ANALYSIS_RUNS).document("_active")
+    if (marker.get().to_dict() or {}).get("run_id") == run_id:
+        marker.update({"active": False})
 
 
 # --- Audit events --------------------------------------------------------

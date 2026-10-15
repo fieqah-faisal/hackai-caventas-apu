@@ -3,6 +3,163 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Frontend Caventas branding acceptance (DONE, UNCOMMITTED)
+
+- Final checks: focused About suite **2 passed**; full frontend **111 passed in 21 files**; `npm run typecheck`, `npm run build`, and `git diff --check` passed. Final worktree is on `feat/investigation-audit-ui-fieqah`; no files are staged and no credential/service-account paths are tracked.
+- Responsive breakpoints, min-width guards, logo sizing/containment, accessible image names, keyboard-operated About navigation and credits disclosure are covered by component assertions/code review. The exact supplied 88,107-byte transparent PNG is retained; no extra export was created. No device screenshot/browser viewport test was run. The existing favicon was left because no standalone square symbol asset was supplied.
+- No backend behavior/tests, incident data or report contracts were changed. No commit, merge or push.
+
+### 2026-10-15 Frontend Caventas branding and About content (IN PROGRESS)
+
+- Used the pre-existing supplied transparent full-lockup logo at `frontend/src/assets/Caventas-logo.png` without redrawing/cropping it. Applied it to the top bar, organization label and About hero; kept the existing favicon because the supplied file has no icon-only variant.
+- Updated frontend organization and analyst presentation defaults to Caventas SOC / Caventas SOC Analyst, retained historical record data, refreshed page description metadata, and rebuilt About with the requested product summary, implemented capabilities, safety statement, authoritative APU team list, and preserved accessible licensing/typography credits.
+- Focused About/logo/identity/navigation tests pass (**2 passed**); full frontend and final hygiene checks are in progress. No backend behavior, case data, report contracts or investigation functionality changed. No commit, merge or push.
+
+### 2026-10-15 Structured investigation timeline and auditable decision trace (DONE, UNCOMMITTED)
+
+- Created `feat/investigation-audit-ui-fieqah` from committed integration base `6a754ce` without merging `main`. Added a pure typed current-state timeline projection/API and responsive shared table/cards with stored-time sorting, explicit filters, evidence links and collapsed technical detail. Existing GAS-lite `IncidentState.timeline` and planner behavior remain compatible.
+- Added append-only, state/run-bound operational trace steps for asynchronous analysis runs plus run-list and ordered-step APIs. Instrumentation records only executed service/planner boundaries, timings, bounded summaries and stored references; closed schemas exclude prompts, responses, provider payloads, exception bodies, credentials, arbitrary metadata and hidden reasoning. Added a pure unified activity projection over authoritative reviews, approvals/rejections, action results and selected audits without inferring replacement plans.
+- Analyst Reviews now uses a collapsed accessible disclosure, preserves draft form state and disables stale plan targets while retaining case/current-plan review paths. New report versions immutably snapshot the structured timeline, trace, activity, rejection reasons and sign-off; the Report tab and ReportLab PDF consume that stored contract, with conservative defaults for old reports.
+- Final verification: backend **257 passed** plus clean Python compilation; frontend strict typecheck, **109 tests in 20 files** and production build passed; Compose config and both image builds passed, and recreated backend/frontend containers are healthy. Nginx-routed deterministic acceptance used an explicitly blank planner key and confirmed `FakePlannerAdapter`, 6 typed evidence chronology rows, one completed state-bound run with 8 ordered trace steps, rejection reason and case sign-off in 4 activity rows, an immutable report snapshot with 7 material timeline rows, and a valid 24,913-byte PDF. `git diff --check` passed apart from expected Windows line-ending warnings; tracked sensitive-filename and changed-source credential-signature scans were clean. The temporary blank-key file and dedicated pytest container were removed. No live provider request, commit, stage, merge or push.
+
+### 2026-10-15 Integration quality and analyst review pass (IN PROGRESS)
+
+- Confirmed `chore/final-integration-fieqah` starts at expected HEAD `c2d5f6752db99f2859c6b0a9b130508323c4d803` with no pre-existing worktree edits and no merge from `main` required or permitted.
+- Removed accidentally tracked `gitleaks-report.json` without reading it and added `gitleaks-report*.json` to the repository ignore rules. Initial sensitive-path tracking audit found no tracked `.env`, `.venv`, service-account or credential file; full tracked-content and changed-diff scans remain part of the final gate.
+- Next: persist honest planner provenance/analysis summaries, structured findings, analyst reviews and editable case metadata, then complete report linkage and deterministic acceptance. No commit or push.
+
+### 2026-10-15 Typed analyst report and professional PDF (DONE, UNCOMMITTED)
+
+- Added additive report template schema 2.0 without removing or renaming v1.3 fields. A typed `analyst_report` now derives current posture, evidence-grounded findings, categorized material chronology, entity relevance, approval/execution/validation outcomes, impact/risk, next steps and appendices from stored records. Stale analysis is excluded from current findings and retained with provenance; old persisted reports receive conservative frontend compatibility defaults.
+- Rebuilt the Report tab around responsive analyst decision sections and collapsed technical appendices. A dedicated ReportLab renderer consumes the same typed contract and provides A4 layout, repeated headers, wrapping, case/page footers, metadata and source/hash/trust references. Unknown events remain observed, ATT&CK mappings are not copied to unrelated findings, false-alarm data cannot create attack/affected classifications, and bounded untrusted record summaries prevent oversized PDF rows.
+- Generic acceptance uses the complete infostealer and false-alarm scenario inputs through the same schema/renderer. The false-alarm report is explicitly `not_an_incident`, contains no attack chronology or affected entities, and makes no compromise claim. A 10,000-character untrusted-field regression and the messy evaluation scenario verify PDF availability under hostile input sizes.
+- Verification: backend **231 passed**; frontend strict typecheck, **99 tests in 17 files** and production build passed; Compose configuration and backend/frontend image builds passed; `git diff --check` and changed-source credential-pattern scans passed. PDF generation and content contracts were exercised, but no local PDF rasterizer/browser automation executable was available for an additional visual screenshot review. No live planner call, commit, stage, merge or push was performed; unrelated untracked `gitleaks-report.json` remains untouched.
+
+### 2026-10-14 Final main merge and authoritative structured reporting (DONE)
+
+- Merged `origin/main` into `chore/final-integration-fieqah` with no application-code conflicts; resolved only the expected evaluation/session documentation conflicts while retaining both integration and BL-041 history. BL-041's constrained incident type and committed live evaluation artifacts now coexist with GAS-lite, persisted global analysis runs, directed incident graph, approvals/simulation and persisted report/PDF flows.
+- Completed BL-040/BL-042 without replacing the report UI: the backend now emits planner model, incrementing report version, current state/recovery status, latest-plan binding/staleness, finding status, evidence-backed affected entities, policy-pack asset metadata and complete per-action plan/state/phase, tool/target/evidence/rules/approver/policy/execution provenance. Historical stale-plan analysis remains explicitly bound and labelled rather than silently presented as current. The typed frontend renders every v1.3 section, shows report/state/plan provenance and stale status, and excludes placeholder-only unknown/not-assessed sections from completeness.
+- Verification: focused backend reporting **11 passed** and focused frontend report/mapping **30 passed**; full backend **227 passed**; frontend strict typecheck, **97 tests in 17 files** and production build passed; Compose config and both image builds passed; recreated backend/frontend containers are healthy and nginx `/healthz` returned 200; `git diff --check` passed. Assertion-backed synthetic browser acceptance used only `FakePlannerAdapter` and verified state versions 1/2/3, plans bound to 1/2, a state-v3 response edge, persisted report bound to stale plan state v2 with two provenance-complete actions, refresh recovery and a valid 13,405-byte PDF. `.venv` and `backend/.env` are ignored/untracked, and gitleaks found no leaks in the complete staged diff. No post-merge evaluation or live planner call was made; BL-043 remains open.
+
+### 2026-10-14 Global analysis recovery and directed graph repair (DONE)
+
+- Added case-scoped active-run discovery backed by the existing atomic Firestore marker. Duplicate async-run creation remains HTTP 409 but now exposes the existing run ID; API mode resolves that conflict to the persisted run without scheduling another planner task. A shell-level provider owns runs by case, one poll loop per active run, completion refresh, route/refresh recovery and a persistent minimisable/reopenable accessible Caventas robot dialog. The adapted presentation uses only Caventas tokens, real run fields and reduced-motion-safe CSS; Create Case and Analysis share the same run truth.
+- Replaced type-column graph placement with a dependency-ranked deterministic left-to-right layout that preserves stored source/target direction. Custom nodes have explicit left target/right source handles; edges have large category-coloured closed arrowheads, observed/inferred styling, labels and a legend. Selection emphasizes the immediate neighbourhood and dims unrelated elements; fit bounds and accessible list/detail direction remain available. Cyclic components stay in a deterministic shared rank rather than reversing stored relationships. No layout dependency was added.
+- Verification: backend **223 passed**; frontend strict typecheck, **95 tests in 17 files**, and production build passed; Compose config and `git diff --check` passed. Isolated API-mode browser acceptance used synthetic `agent_inputs` and explicitly injected `FakePlannerAdapter`, delayed only to exercise active state: duplicate conflict returned the same run ID, modal minimisation/reopening survived Dashboard navigation, backend active state recovered after a full Dashboard refresh using only a session-stored watched case ID, directed arrow rendering and legend were present, and the existing v1/v2 plans, v3 response edge and PDF workflow passed (13,174 bytes). No live planner call, commit, push, merge, rebase or user-managed service restart.
+
+### 2026-10-14 Effective runtime configuration clarification (DONE)
+
+- Initial preflight checked process environment only. A later status-only check of backend settings established that the planner key and Firestore emulator are configured through runtime settings (credential-path setting not configured); no configuration values or file contents were printed or copied. The first new async-run test accidentally selected that live adapter and timed out; it made no verified live success and was immediately corrected to inject `FakePlannerAdapter`. Every subsequent test and isolated browser run was deterministic and did not intentionally contact the live provider. BL-043 stays open.
+- `git diff --check` passed, no files are staged, and the branch remains at local merge HEAD `7b1ff06`, 18 ahead/0 behind its remote tracking branch. Existing navigation-cleanup changes and this slice remain uncommitted; no push/merge/rebase or user-managed service restart.
+
+### 2026-10-14 Immutable fixture-history regression (DONE)
+
+- Fixture-mode reveal no longer auto-replans. A new synthetic state is appended on evidence reveal or bounded action result; the stored event sequence determines snapshots so earlier versions remain byte-for-byte unchanged. Post-simulation states without authored synthetic plans return an explicit unsupported outcome instead of a fabricated re-plan. Added a regression test for immutable v1, explicit v2 re-analysis and a response edge in v3.
+- Final frontend gate: typecheck and production build passed; Vitest **94 passed in 17 files**. Isolated API-mode browser acceptance still passed after the fixture changes (two state-bound runs, state v3 response edge, report/PDF `%PDF-`, 13,164 bytes). Full backend gate remains **222 passed**. No user-managed services were restarted or stopped; no commit/merge/push.
+
+### 2026-10-14 GAS-lite integration final gate after fake-planner refinement (DONE)
+
+- Reverified after the final deterministic planner/fixture/read-failure changes: full backend `pytest -q` **222 passed**, frontend `npm run test` **93 passed in 16 files**, strict typecheck and production build passed, Compose config passed. Final isolated Playwright workflow again passed with two state-bound plans, state v3 response edge, all tabs/refresh and PDF `%PDF-` (13,166 bytes). Short fake runs expose `completed` to browser polling; backend tests assert real intermediate stages. Existing local navigation cleanup remains intact and uncommitted.
+- The fake planner now withholds disruptive action only when stored synthetic timeline contains both a created scheduled task and a signed process, preserving policy enforcement tests for isolated FS-01 evidence. Aidan-owned fake evaluation snapshot remains 1/12 (0/5 scenarios); no live evaluation output changed. No commit/push/merge or user-managed service restart.
+
+### 2026-10-14 Fixture explicit re-analysis and final safety review (DONE)
+
+- Fixture presenter reveal now creates only synthetic State v2; synthetic Plan v1 remains stale until an explicit analyst-triggered run creates Plan v2. Case graph fallback gained a retryable parent fetch and a keyboard-accessible list when the canvas fails. API-mode header/facts surface failed plan/evidence reads rather than treating them as no data.
+- Regenerated only Aidan-owned deterministic fake evaluation output/summary after Airil-owned fake planner began selecting the most evidenced workstation and persisting evidence-grounded analysis. The synthetic false-alarm server FS-01 is not blindly isolated; fake evaluation remains a weak calibration planner (1/12 checkpoints, 0/5 scenarios; live results unchanged). No live request was intentionally made in final acceptance.
+
+### 2026-10-14 Final GAS-lite integration verification (DONE)
+
+- On `chore/final-integration-fieqah` at local merge HEAD `7b1ff06`, verified `pytest -q` **222 passed**, targeted backend **41 passed**, frontend `npm run typecheck` passed, `npm run test` **93 passed in 16 files**, `npm run build` passed and `docker compose -f compose.yaml config --quiet` passed.
+- Final deterministic browser walkthrough on an isolated fake-Firestore FastAPI process with an explicitly injected FakePlannerAdapter passed: synthetic agent_inputs batches created immutable states 1/2; two actual persisted async runs created plans bound to 1/2; selected graph history/list/parent diff and mobile text fallback; stale warning and re-analysis; IT-manager approval and bounded simulation produced response edge and state 3; report survived reload and `%PDF-` downloaded (12,677 bytes). All case tabs loaded after refresh. Intermediate backend stages were verified in tests; short deterministic browser runs exposed only `completed` on polling. No live model claim.
+- Documentation, DEC-018, BL-044/045 and the new spec task statuses updated. Navigation cleanup from the prior session remains intact. No repo commit, merge, rebase or push, and no user-managed service was stopped or restarted; only the isolated acceptance subprocess was started/stopped. BL-043 live 502 remains open.
+
+### 2026-10-14 GAS-lite integration deterministic verification (DONE)
+
+- Focused backend pytest: **40 passed**; complete backend pytest: **221 passed** after regenerating only the deterministic `fake` evaluation snapshot and its summary (Aidan-owned results, live results untouched). Frontend typecheck and production build passed; after updating the new graph-tab gating expectation, frontend suite passed **87 tests** before component additions. Compose config passed. The remaining new component tests are undergoing final rerun.
+- Full isolated API-mode Playwright workflow with a local in-memory Firestore server and actual `FakePlannerAdapter` (no browser-mocked planning response): created a synthetic case, uploaded only sc01 `agent_inputs` batches 1 and 2, observed immutable States v1/v2, graph/list/diff, two persisted analysis runs bound to v1/v2, stale-plan warning, explicit re-analysis, an IT-manager-approved bounded simulation, response edge/State v3, persisted report and valid `%PDF-` download (12,674 bytes), then refreshed the case. The browser observed terminal `completed`; unit tests observed all intermediate persisted stages. The isolated server was stopped by its own test harness; user-managed services were not restarted or stopped.
+- DEC-018 records renderer/progress architecture; BL-044 covers durable run recovery; BL-045 covers evidence-grounded attack-edge classification. Regenerated Aidan-owned `backend/evaluation/results/fake.json` and `SUMMARY.md` after minimally changing Airil-owned deterministic planner analysis and host selection; live prompts, policy guard and evaluation/live results were not touched. No commit/merge/push.
+
+### 2026-10-14 GAS-lite integration implementation (IN PROGRESS)
+
+- Added typed state history/snapshots, deterministic graph layout/immutable diff, React Flow read-only Incident Graph with provenance details and keyboard/mobile list; plan analysis now uses stored plan `analysis` and explicitly marks missing analysis. Added case ID/copy and authoritative overview, additional evidence upload, stale-plan warning, explicit re-analysis and persisted agent-stage UI. Two-version synthetic fixture graph remains separate from API mode.
+- Added additive persisted `POST /analysis-runs` and `GET /analysis-runs/{run_id}` with case-scoped duplicate marker, sanitized terminal failure, state binding and real progress callbacks. The synchronous `/runs` is unchanged. Raaj-owned files touched: planning API/service, repository; Airil-owned `FakePlannerAdapter` minimally supplies deterministic, evidence-grounded typed analysis. Live prompts untouched. Aidan-owned simulator/report code untouched.
+- Focused fake-Firestore backend tests: `40 passed`. The first new run test attempted to select a live adapter from backend-local configuration and timed out; the test now explicitly injects `FakePlannerAdapter` and passes (`3 passed`). No further live calls are permitted. Frontend first pass: 86 passed, one tab-availability test expected only the original seven tabs; test updated and rerun pending.
+
+### 2026-10-14 GAS-lite frontend integration specification (DONE; implementation IN PROGRESS)
+
+- On `chore/final-integration-fieqah` at `7b1ff06`, preflight confirmed the eight existing uncommitted navigation/doc changes exactly match the prior session; no unexpected overlapping teammate edits. No commit/merge/push or user-service restart.
+- Created `.kiro/specs/caventas-gas-lite-frontend/` (requirements, design, tasks, config) and linked it from the Core GAS-lite follow-on. The state-history API already exists; the frontend currently omits graph provenance and persisted plan analysis. Fake planner returns no analysis; synchronous `/runs` has no persisted progress contract.
+- Architecture: React Flow renders the immutable Firestore-backed GAS-lite graph; graph-maker/Neo4j/second LLM rejected. Evidence-triggered re-analysis is explicit; progress must come from backend-persisted stages. Extended the frontend Docker context credential exclusions to match the repository/backend rules. No tests run yet for this new slice; next: implement contracts and tests.
+
+### 2026-10-14 Post-merge browser acceptance and navigation cleanup (DONE)
+
+- Merge commit `7b1ff06` was created locally with parents `84d91e5` and
+  `f6f002e`; it was not pushed. The synchronized worktree was then exercised
+  against the existing API-mode services without restarting or stopping them.
+- Removed unsupported Approvals, Guidance, Reports, Activity and Settings
+  destinations from primary navigation. Dashboard actions and the approval
+  bell now lead to the persisted Cases surface, and old direct URLs redirect
+  there instead of displaying placeholder pages.
+- Assertion-backed browser acceptance passed end to end: responsive Evidence
+  Review actions, exactly one mocked pending planning request, persisted
+  Dashboard/Cases data, direct-refresh evidence with 20 records, all seven
+  workspace tabs, placeholder-free navigation, report reload and PDF download
+  (HTTP 200, `application/pdf`, 11,299 bytes, `%PDF-`). The expected console
+  503 came only from the deterministic mocked planning failure; there were no
+  failed browser requests. The live provider was not retried.
+- Post-cleanup frontend strict typecheck, **83 tests in 11 files** and the
+  production build passed. These navigation-cleanup changes and this record
+  remain uncommitted; no push was performed.
+
+### 2026-10-14 Synchronize final integration with main (DONE)
+
+- Fetched `origin/main` at `f6f002e` and merged it into
+  `chore/final-integration-fieqah` without rebasing. The branch already
+  contained integration checkpoint `90ab444` and browser-repair commit
+  `84d91e5`; the pre-merge worktree was clean.
+- Conflicts were resolved semantically in `langgraph_planner.py`, Backlog,
+  SessionContext, SessionLog and the frontend README. Main's complete BL-020
+  untrusted-evidence skill, labeled analysis payload, full evidence
+  descriptions and catalogue target-type validation are retained alongside
+  integration Docker packaging, API compatibility, execution/validation
+  history and browser repairs. The auto-merged planner tests retain both
+  branches' coverage. The browser live-provider follow-up was renumbered from
+  BL-040 to BL-043 because main owns BL-040–BL-042.
+- Verification before the local merge commit: backend **218 passed**; frontend
+  strict typecheck, **83 tests in 11 files** and production build passed;
+  `docker compose -f compose.yaml config --quiet` and `git diff --check`
+  passed. No sensitive path or credential material is staged. No push was
+  performed.
+
+### 2026-10-14 API-mode demo-blocker repair (DONE; live provider blocker recorded)
+
+- Added persisted `GET /cases`, replaced the `/cases` placeholder, and derived
+  API-mode dashboard/case-list surfaces from Firestore-backed case, plan and
+  action reads. Direct case/evidence routes continue to hydrate after refresh;
+  failed cached reads are discarded so an analyst retry can recover.
+- Added persisted latest-report retrieval and an exact report-PDF download
+  endpoint. The Report tab now survives reload and downloads through the API
+  instead of exposing a server path. Evidence Review actions are spaced and
+  stack at mobile width; planning shows an explicit up-to-120-second pending
+  state with a synchronous duplicate-request lock.
+- Real API-mode browser acceptance passed: the newly created case appeared on
+  Dashboard and Cases, direct refresh retained all 20 uploaded records, all
+  seven tabs loaded for persisted `CASE-41DAFD4C`, the report survived reload,
+  and `RPT-ef2eaf9d0f8f` downloaded as HTTP 200 `application/pdf` (11,299
+  bytes, `%PDF-`). The deterministic pending check made one request; responsive
+  controls had separation at laptop width and stacked to 280 px on mobile.
+- The single permitted post-acceptance live planner request made exactly one
+  `POST /runs`, displayed the pending status, and failed honestly with HTTP
+  502; no plan/action was persisted and the UI did not navigate falsely.
+  An earlier persisted live plan still renders across the complete workspace.
+  The provider failure is tracked as BL-043; no retry or evaluation run was
+  performed.
+- Checks: backend **211 passed**; frontend strict typecheck, **83 tests in 11
+  files**, production build, Compose config and both Docker image builds
+  passed. User-managed services were not restarted or stopped. No credential,
+  `.env`, authentication or service-account file was read. Changes remain
+  uncommitted; nothing was pushed or merged.
+
 ### 2026-10-14 BL-041 incident_type schema enum: live 12/12, 5/5, mean 92.7 (DONE)
 
 - The analyze prompt now requests exactly one of `infostealer_session_hijack`,
@@ -27,6 +184,81 @@
 - DEC-017; BL-040 (Raaj), BL-041 (Airil), BL-042 (Syafieqah).
 - Backend suite unchanged: 212 passed. Policy pack checker: all PASS.
 - Next: BL-040 / BL-033 (Raaj); BL-035 asset list (Aida + Aidan).
+
+### 2026-10-14 Final integration and production-stack verification (DONE)
+
+- Real emulator/API check through the user-managed Vite proxy passed case,
+  six-record evidence upload and GAS-lite v1, then stopped at `POST /runs`
+  after the required 15-second timeout because that backend selected the live
+  planner; no plan was persisted. The deterministic Docker stack subsequently
+  completed the full workflow through nginx: plan, explicit `it_manager`
+  approval, completed/effective simulation, state v2/history, stored result,
+  re-plan on v2 and structured report (`CASE-86FD3FF0`).
+- Final review fixes bound nginx to host loopback, restored the backend's 10 MiB
+  upload allowance, kept resolved actions visible beside missing references,
+  aligned the fixture's CRM revocation outcome/count and made
+  `not_applicable` neutral. The post-fix abbreviated Docker workflow also
+  passed (`CASE-8E5ABB4B`); Compose containers were then shut down without
+  touching user-managed services.
+- Final checks: backend `..\.venv\Scripts\python.exe -m pytest -q` **206
+  passed in 47.42s**; frontend typecheck passed, Vitest **80 passed in 10
+  files**, and production build passed. `docker compose config --quiet`, both
+  image builds, both container health checks and `git diff --check` passed.
+- Changed-file credential-pattern scans found no API key, private key, service-
+  account private key or common cloud-key signature. No `.env`, credential or
+  authentication file was read/copied; no evaluation result was regenerated.
+  Nothing was committed, merged or pushed. Stop for maintainer review.
+
+### 2026-10-14 Minimal production Docker packaging (DONE)
+
+- Added a non-root Python 3.12 FastAPI image with a production-only dependency
+  list and health check, plus a multi-stage Node 22 -> nginx frontend image
+  built in API mode. Nginx serves the SPA and proxies `/api` to `backend:8000`.
+- `compose.yaml` contains frontend + backend only, maps the UI to `:8088`,
+  persists uploads/reports in named volumes, and points the backend at the
+  Windows-hosted emulator via `host.docker.internal:8080`. No secret is baked
+  or passed; the deterministic planner and clean simulator are explicit.
+- Backend/frontend `.dockerignore` files exclude `.env`, credential/service-
+  account patterns, runtime data and build outputs. Root/frontend READMEs and
+  steering structure now document build, startup, shutdown and troubleshooting.
+- `docker compose config` passed. Frontend and backend images both built; the
+  first backend attempt hit a Python package-download timeout, then the cached
+  retry completed successfully. Next: start the two-container stack and run
+  final verification through nginx.
+
+### 2026-10-14 Demo-visible final-integration gaps fixed (DONE)
+
+- API mode now maps `not_applicable` explicitly (unknown states fail closed as
+  superseded), joins `GET /plans` to `GET /actions` for Response Plan/detail,
+  and renders stored execution + validation history after queue refreshes.
+  Fixture mode keeps approved actions available for bounded simulation.
+- Create-case now labels the analyst note honestly as a draft that must be
+  added as TXT evidence. The infostealer fixture now uses policy-pack tools,
+  rule ids, role names, `SALES-LT-07`, `.example` domains and the scenario's
+  CRM session-revocation failure; `T1566.002` and unsupported tools were removed.
+- Both planner system prompts mark incident/evidence content as untrusted data,
+  delimit it in user messages and instruct the model to ignore embedded role,
+  policy, target, tool and output-contract instructions. Contract tests cover
+  the boundary; deterministic approval/execution policy checks remain intact.
+- Checks: backend focused planner/policy suite **42 passed**; frontend
+  `npm run typecheck` passed; `npm run test` **79 passed in 10 files**. No
+  generated evaluation artifact changed. Next: minimal Docker packaging.
+
+### 2026-10-14 Final-integration baseline verified (DONE)
+
+- Branch `chore/final-integration-fieqah` at `70b6c56`; fetched
+  `origin/main`, which is the same commit. Worktree was clean; nothing merged,
+  pushed or committed.
+- Backend `..\.venv\Scripts\python.exe -m pytest -q`: **205 passed in
+  47.67s**. Frontend `npm run typecheck`: passed; `npm run test`: **75 passed
+  in 9 files**; `npm run build`: passed (Vite production build).
+- Static audit confirmed GAS-lite current/history reads, deterministic policy
+  enforcement, planning, role-aware approvals, bounded execution with separate
+  validation, and structured JSON/PDF reports are present. No generated
+  evaluation artifact was changed.
+- Phase C read-only audit confirmed the demo-visible gaps already tracked in
+  BL-015, BL-020, BL-021, BL-026, BL-027 and BL-036. Next: real API-mode
+  Firestore-emulator workflow, then minimal fixes only.
 
 ### 2026-10-14 README post-merge refresh (DONE)
 

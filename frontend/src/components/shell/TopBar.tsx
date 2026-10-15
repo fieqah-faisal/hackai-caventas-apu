@@ -2,19 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/icons/Icon";
 import { useDataMode } from "@/lib/useDataMode";
+import caventasLogo from "@/assets/Caventas-logo.png";
 
 function Wordmark() {
   return (
-    <div className="flex items-center gap-2">
-      <span
-        aria-hidden
-        className="grid h-7 w-7 place-items-center rounded border border-accent/40 bg-surface"
-      >
-        <Icon name="shield" size={18} className="text-accent" />
-      </span>
-      <span className="text-case font-semibold tracking-tight text-text-primary">
-        Caventas
-      </span>
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center">
+      <img src={caventasLogo} alt="Caventas" className="h-12 w-12 object-contain" />
     </div>
   );
 }
@@ -68,10 +61,10 @@ export function TopBar({
           </span>
         )}
         <button
-          onClick={() => navigate("/approvals")}
+          onClick={() => navigate("/cases")}
           className="relative grid h-9 w-9 place-items-center rounded text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180"
           aria-label={`Pending approvals: ${count}`}
-          title="Pending approvals"
+          title="View cases with pending approvals"
         >
           <Icon name="bell" size={20} />
           {count > 0 && (
@@ -93,12 +86,13 @@ export function TopBar({
 
         <button
           className="ml-0.5 flex items-center gap-2 rounded pl-1 pr-2 h-9 hover:bg-surface-hover transition-colors duration-180"
-          aria-label="Analyst profile"
+          aria-label="Caventas SOC Analyst profile"
+          title="Caventas SOC Analyst"
         >
           <span className="grid h-7 w-7 place-items-center rounded-full bg-surface-raised text-xs font-semibold text-text-secondary">
-            FA
+            CS
           </span>
-          <span className="hidden lg:block text-sm text-text-secondary">Fieqah A.</span>
+          <span className="hidden lg:block text-sm text-text-secondary">Caventas SOC Analyst</span>
           <Icon name="chevronRight" size={18} className="hidden lg:block rotate-90 text-text-muted" />
         </button>
       </div>

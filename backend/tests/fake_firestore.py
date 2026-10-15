@@ -35,6 +35,11 @@ class _Document:
     def set(self, data: dict[str, Any]) -> None:
         self.data = copy.deepcopy(data)
 
+    def create(self, data: dict[str, Any]) -> None:
+        if self.data is not None:
+            raise ValueError("document already exists")
+        self.data = copy.deepcopy(data)
+
     def update(self, data: dict[str, Any]) -> None:
         if self.data is None:
             self.data = {}

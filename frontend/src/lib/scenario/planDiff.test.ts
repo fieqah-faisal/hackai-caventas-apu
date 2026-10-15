@@ -14,6 +14,7 @@ function action(id: string, tool: string, target: string, extra: Partial<Respons
 
 const v1: PlanVM = {
   planId: "P1", version: 1, basedOnStateVersion: 1, stage: "containment", createdAt: "", missingEvidence: [],
+  planner: { kind: "deterministic", adapter: "test", model: null },
   actions: [
     action("a1", "isolate_host", "host-x"),
     action("a2", "preserve_evidence", "host-x"),
@@ -23,6 +24,7 @@ const v1: PlanVM = {
 
 const v2: PlanVM = {
   planId: "P2", version: 2, basedOnStateVersion: 2, stage: "containment", createdAt: "", missingEvidence: [],
+  planner: { kind: "deterministic", adapter: "test", model: null },
   actions: [
     action("a2", "preserve_evidence", "host-x"), // unchanged
     action("a3", "reimage_host", "host-x"), // unchanged key but host also newly re-targeted below

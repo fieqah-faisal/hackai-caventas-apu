@@ -47,6 +47,13 @@ report, not a chatbot answer.
 The loop continues until analyst-verified closure. Every version of the
 state, every decision and every outcome is kept for traceability.
 
+The analyst workspace also exposes a typed current-state chronology and an
+append-only operational Agent Decision Trace for asynchronous planning runs.
+Reports immutably snapshot that structured timeline, safe trace steps, analyst
+reviews, approval/rejection reasons, execution/validation outcomes and final
+sign-off. The trace records executed boundaries and references only; it never
+stores prompts, provider payloads or hidden model reasoning.
+
 The planner retrieves stage-relevant approved guidance (deterministic
 retrieve step between analysis and proposal; BL-037, DEC-013) and embeds two
 repo skills — verification-first grounding and untrusted-evidence marking
@@ -107,6 +114,26 @@ npm run test && npm run build
 default, or `api`); the UI never talks to Firestore directly and never
 mixes modes. Details in [`frontend/README.md`](frontend/README.md).
 
+### Docker (frontend + backend)
+
+Start the Firestore emulator on the Windows host first; the backend container
+connects to it at `host.docker.internal:8080`. Docker packages only the
+frontend and backend and uses the deterministic planner when no key is supplied.
+
+```bash
+docker compose build
+docker compose up -d
+# UI: http://localhost:8088  (nginx proxies /api to the backend container)
+docker compose ps
+docker compose down
+```
+
+Troubleshooting: confirm `localhost:8080` is listening before startup, use
+`docker compose logs backend frontend` for service errors, and use
+`docker compose down -v` only when you intentionally want to delete container
+uploads/reports. `.dockerignore` excludes `.env`, credentials, service-account
+files and local runtime data from both image build contexts.
+
 ### Demo (main scenario)
 
 The demo is the infostealer case: stolen browser sessions on Farah's laptop
@@ -139,7 +166,7 @@ schema enum, 2026-10-14). All live safety gates hold, and report coverage is
 complete: live reports carry classification, evidence-backed findings and
 ATT&CK mappings (`not_produced_yet` is empty on all five scenarios).
 
-## Status snapshot (2026-10-14)
+## Status snapshot (2026-10-15)
 
 - **Merged:** evidence ingestion and versioned incident state (Milestone 1);
   LangGraph + DeepSeek V4.1 Flash planner with evidence-sufficiency routing
@@ -162,7 +189,9 @@ ATT&CK mappings (`not_produced_yet` is empty on all five scenarios).
   (DEC-010); deterministic backend policy enforcement (BL-032/BL-018/BL-019):
   approver role, target asset type, non-empty valid evidence and
   preservation-before-reimage sequencing are checked against `guidance.json`
-  and stored records, never the planner's cited `policy_refs`.
+  and stored records, never the planner's cited `policy_refs`; typed timeline,
+  analysis-run trace and unified investigation-activity read models feed the
+  responsive workspace and immutable JSON/PDF report snapshots (DEC-019).
 - **Measured:** the live planner passed 12/12 checkpoints across 5/5
   scenarios (mean 92.7; 2026-10-14 run with the policy guard and the
   incident_type schema enum) with complete report coverage and all safety

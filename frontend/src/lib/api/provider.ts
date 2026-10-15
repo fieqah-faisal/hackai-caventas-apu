@@ -13,20 +13,25 @@ import type { ApproverRoleDTO } from "./dto";
 import type {
   AgentPlanningVM,
   AnalysisVM,
+  AnalysisRunVM,
+  AnalystReviewVM,
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
   CaseActivityVM,
   CaseFacts,
   CaseHeaderVM,
+  CaseSummary,
   DataSource,
   DecisionKind,
   EvidenceItemVM,
   ExecutionResultVM,
   HumanDecisionsVM,
+  IncidentSnapshotVM,
   PlanVM,
   RecentCaseRow,
   ReportVM,
+  StateVersionMetaVM,
   TimelineEventVM,
 } from "../types";
 
@@ -85,6 +90,7 @@ export interface DataProvider {
   getHumanDecisions(): Promise<Outcome<HumanDecisionsVM>>;
   getAttentionItems(): Promise<Outcome<AttentionItem[]>>;
   getRecentCases(): Promise<Outcome<RecentCaseRow[]>>;
+  getCases(): Promise<Outcome<CaseSummary[]>>;
 
   // Case workspace
   getCaseHeader(caseId: string): Promise<Outcome<CaseHeaderVM>>;
@@ -92,6 +98,12 @@ export interface DataProvider {
   getEvidence(caseId: string): Promise<Outcome<EvidenceItemVM[]>>;
   getTimeline(caseId: string): Promise<Outcome<TimelineEventVM[]>>;
   getAnalysis(caseId: string): Promise<Outcome<AnalysisVM>>;
+  getStateHistory(caseId: string): Promise<Outcome<StateVersionMetaVM[]>>;
+  getCurrentState(caseId: string): Promise<Outcome<IncidentSnapshotVM>>;
+  getStateVersion(caseId: string, version: number): Promise<Outcome<IncidentSnapshotVM>>;
+  createAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM>>;
+  getActiveAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM | null>>;
+  getAnalysisRun(caseId: string, runId: string): Promise<Outcome<AnalysisRunVM>>;
   /** All plan versions for a case, oldest first. */
   getPlans(caseId: string): Promise<Outcome<PlanVM[]>>;
   /** Metadata list of plan versions (always available if plans listed). */
@@ -107,6 +119,7 @@ export interface DataProvider {
    * action (generateReport).
    */
   getReport(caseId: string): Promise<Outcome<ReportVM | null>>;
+  getAnalystReviews(caseId: string): Promise<Outcome<AnalystReviewVM[]>>;
 
   // Mutations
   submitDecision(
@@ -120,6 +133,11 @@ export interface DataProvider {
   executeAction(caseId: string, actionId: string): Promise<Outcome<ExecutionResultVM>>;
   /** Generate a new report version (explicit analyst action; one request per call). */
   generateReport(caseId: string): Promise<Outcome<ReportVM>>;
+  createAnalystReview(
+    caseId: string,
+    input: Omit<AnalystReviewVM, "reviewId" | "caseId" | "createdAt">,
+  ): Promise<Outcome<AnalystReviewVM>>;
+  updateCase(caseId: string, input: { title: string; description: string }): Promise<Outcome<{ title: string; description: string }>>;
 
   /**
    * Presenter-only: advance the synthetic scenario by revealing the next
@@ -131,7 +149,7 @@ export interface DataProvider {
 
   // Create-case flow
   createCase(title: string, description: string): Promise<Outcome<{ caseId: string }>>;
-  uploadEvidence(caseId: string, file: File): Promise<Outcome<{ accepted: number }>>;
+  uploadEvidence(caseId: string, file: File): Promise<Outcome<{ accepted: number; newStateVersion?: number | null }>>;
   countEvidence(caseId: string): Promise<Outcome<{ count: number; sources: string[] }>>;
   startRun(caseId: string): Promise<Outcome<{ planId: string }>>;
 }

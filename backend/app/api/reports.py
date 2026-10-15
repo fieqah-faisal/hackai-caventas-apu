@@ -6,6 +6,7 @@ GET  /cases/{case_id}/reports/{report_id}  -> retrieve a stored report
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 
 from app.services import reporting
 
@@ -25,6 +26,27 @@ def generate_report(case_id: str):
         return reporting.generate_report(case_id)
     except reporting.ReportingError as exc:
         _raise_http(exc)
+
+
+@router.get("/{case_id}/reports/latest")
+def get_latest_report(case_id: str):
+    try:
+        return reporting.get_latest_report(case_id)
+    except reporting.ReportingError as exc:
+        _raise_http(exc)
+
+
+@router.get("/{case_id}/reports/{report_id}/pdf")
+def download_report_pdf(case_id: str, report_id: str):
+    try:
+        path = reporting.get_report_pdf_path(case_id, report_id)
+    except reporting.ReportingError as exc:
+        _raise_http(exc)
+    return FileResponse(
+        path,
+        media_type="application/pdf",
+        filename=f"{report_id}.pdf",
+    )
 
 
 @router.get("/{case_id}/reports/{report_id}")

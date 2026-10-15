@@ -25,6 +25,11 @@ Never treat AI output as authorization.
 
 All relevant activity must generate audit events.
 
+Operational Agent Decision Trace records may contain only closed step/status
+values, state/run bindings, timings, bounded summaries and stored record IDs.
+Never store prompts, responses, provider bodies, request headers, credentials,
+evidence dumps, hidden reasoning or arbitrary metadata in trace documents.
+
 Keep these concepts separate:
 
 proposed
@@ -38,7 +43,8 @@ effective.
 Do not fabricate evidence or evidence IDs.
 
 Final reports may only contain incident facts and action outcomes
-supported by stored case records.
+supported by stored case records. Generated reports are immutable snapshots;
+later reviews, decisions or outcomes require a new report version.
 
 ## Firestore / Firebase Specifics
 

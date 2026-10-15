@@ -18,6 +18,7 @@ import {
   auditSummary,
   compareIsoInstants,
   inApprovalQueue,
+  mapActionState,
   toApprovalItemVM,
   toExecutionResultVM,
   mapAuditKind,
@@ -236,23 +237,165 @@ describe("report action wording keeps proposed / approved / executed / effective
     ]);
   });
 
-  it("shows an unknown status verbatim instead of guessing a decision or outcome", () => {
+  it("shows not_applicable explicitly instead of treating it as proposed", () => {
     const odd: ReportActionRowDTO = { ...REPORT_ACTION_ROWS[2], status: "not_applicable" };
     expect(lines("decisions", [odd])).toEqual([
       "Decided by Analyst A (status not_applicable): Host shows suspicious activity in current state.",
     ]);
-    expect(lines("actions", [odd])).toEqual(["Status not_applicable: Host shows suspicious activity in current state."]);
+    expect(lines("actions", [odd])).toEqual(["Approved, simulated, not applicable: Host shows suspicious activity in current state."]);
     expect(lines("validation", [odd])).toEqual([
-      "Status not_applicable: Host shows suspicious activity in current state. → Suspicious outbound communication continued.",
+      "Validation not applicable: Host shows suspicious activity in current state. → Suspicious outbound communication continued.",
     ]);
   });
 
-  it("keeps the PDF unavailable (pdf_path is a server path)", () => {
-    expect(toReportVM(reportBody("RPT-000000000001")).pdfAvailable).toBe(false);
+  it("marks the PDF downloadable through the report API", () => {
+    expect(toReportVM(reportBody("RPT-000000000001")).pdfAvailable).toBe(true);
+  });
+
+  it("maps the complete v1.3 report contract without dropping authoritative fields", () => {
+    const dto = reportBody("RPT-000000000001", [{
+      ...REPORT_ACTION_ROWS[0],
+      plan_id: "PLAN-1",
+      based_on_state_version: 3,
+      tool_name: "isolate_host",
+      target_id: "HOST::SYNTH-LT-01",
+      evidence_ids: ["EV-1"],
+      policy_refs: ["POL-04"],
+      required_approver: "soc_analyst",
+      approver_role: "soc_analyst",
+      policy_check: { result: "pass", reasons: ["role accepted"] },
+    }]);
+    dto.exposed_credentials = [{ service: "CRM", account: "synthetic.user", exposed: "session", status: "revoked", evidence_ids: ["EV-1"] }];
+    dto.findings = [{ finding_id: "FND-01", summary: "Synthetic session reuse observed.", status: "hypothesis", confidence: 0.8, evidence_ids: ["EV-1"] }];
+    dto.root_cause = { text: "Synthetic installer execution.", finding_ids: ["FND-01"], status: "hypothesis" };
+    dto.impact = { operational: "Synthetic test disruption", personal_data_involved: "unknown" };
+    dto.evidence_preservation = [{ evidence_id: "EV-1", item: "logs", stored_at: "case store", collected_by: "analyst", collected_at: dto.created_at, sha256: "abc" }];
+    dto.notifications = [{ policy_rule_id: "POL-13", trigger: "synthetic trigger", triggered: "yes", notify: "it_manager", deadline_hours: 4, status: "pending", finding_ids: ["FND-01"] }];
+    dto.recommendations = [{ text: "Harden synthetic sessions.", finding_ids: ["FND-01"], addresses_root_cause: true }];
+    dto.policy_conformance = [{ policy_rule_id: "POL-04", requirement: "Analyst approval", result: "pass", reason: "Role accepted", related_ids: ["ACT-1"] }];
+    dto.sign_off = { analyst: "Analyst A", role: "soc_analyst", decision: "return", at: dto.created_at, comments: "Draft only" };
+
+    const vm = toReportVM(dto);
+    const section = (key: string) => vm.sections.find((item) => item.key === key);
+
+    expect(vm).toMatchObject({
+      version: 1,
+      plannerModel: "fake-planner",
+      stateVersion: 3,
+      planId: "PLAN-4e0000000003",
+      planStateVersion: 3,
+      planIsStale: false,
+    });
+    for (const key of ["exposed_credentials", "findings", "root_cause", "impact", "action_policy", "evidence_preservation", "notifications", "recommendations", "metrics", "policy_conformance", "sign_off"]) {
+      expect(section(key)?.present, key).toBe(true);
+    }
+    expect(section("action_policy")?.lines[0]).toContain("isolate_host → HOST::SYNTH-LT-01");
+    expect(section("findings")?.lines[0]).toContain("EV-1");
+    expect(vm.completeness).toEqual({ present: 6, total: 8 });
+    expect(vm.schemaVersion).toBe("legacy");
+    expect(vm.entities.every((entity) => entity.relevance === "suspected_affected")).toBe(true);
+  });
+
+  it("prefers the typed v2 analyst report over legacy flattened sections", () => {
+    const dto = reportBody("RPT-000000000002");
+    dto.template_schema_version = "2.0";
+    dto.analyst_report = {
+      overview: {
+        case_id: dto.incident_id,
+        case_status: "active",
+        incident_status: "not_an_incident",
+        severity: "low",
+        incident_type: "not_an_incident",
+        current_phase: "assessment",
+        primary_assets: [],
+        state_version: 3,
+        plan_id: dto.plan_id,
+        plan_state_version: 3,
+        plan_status: "current",
+        planner_model: "fake-planner",
+      },
+      executive_summary: "Current records support authorized backup activity, not an incident.",
+      executive_summary_source: "current_state_analysis",
+      key_findings: [{
+        id: "FND-01",
+        title: "Authorized backup activity",
+        summary: "The transfer matches an approved change record.",
+        severity: "low",
+        confidence: 0.9,
+        status: "supported",
+        affected_entity_ids: [],
+        evidence_ids: ["EV-1"],
+        attack_techniques: [],
+        source: "planner_current_state",
+      }],
+      key_timeline: [{
+        timestamp: dto.created_at,
+        category: "context",
+        event_type: "change_record",
+        summary: "Approved backup window",
+        significance: "Explains the observed transfer",
+        entity_ids: ["HOST::FS-01"],
+        evidence_ids: ["EV-1"],
+        source: "itsm",
+        material: true,
+        raw_detail: "Approved backup window",
+      }],
+      entities: [{
+        id: "HOST::FS-01",
+        type: "host",
+        display_name: "FS-01",
+        role: "Observed endpoint",
+        condition: "unknown",
+        relevance: "contextual",
+        relevance_reason: "Observed without an affected-state determination",
+        evidence_count: 1,
+        evidence_ids: ["EV-1"],
+      }],
+      response_actions: [],
+      agent_decision_trace: [{
+        step_id: "TRACE-0001", case_id: dto.incident_id, run_id: "RUN-1", sequence: 1,
+        step: "analyze", status: "completed", message: "Analysis completed.", based_on_state_version: 3,
+        started_at: dto.created_at, completed_at: dto.created_at, duration_ms: 12,
+        evidence_ids: ["EV-1"], guidance_ids: [], output_refs: [],
+        decision_summary: "One stored record was analyzed.", validation_summary: "",
+        planner_kind: "deterministic", planner_adapter: "FakePlannerAdapter", planner_model: "deterministic-rules-v1",
+      }],
+      investigation_activity: [{
+        event_id: "ACTIVITY-APPROVAL-1", timestamp: dto.created_at, actor_type: "analyst",
+        actor: "A. Analyst", role: "soc_analyst", event_type: "action_rejected", target_type: "action",
+        target_id: "ACT-1", state_version: 3, plan_id: dto.plan_id, action_id: "ACT-1",
+        summary: "Action ACT-1 was rejected.", reason: "Target ownership was not established.", outcome: "rejected",
+        references: ["ACT-1"], action_name: "isolate_host", action_target: "HOST::FS-01", replacement_plan_id: null,
+      }],
+      impact: { confirmed: [], potential: [], remaining_risk: [] },
+      next_steps: [{ priority: "Low", text: "Close after analyst review.", owner: "SOC analyst", status: "open", related_ids: ["EV-1"] }],
+      appendices: {
+        evidence_index: [{ evidence_id: "EV-1", source_file: "batch.json", source_location: "row 1", timestamp: dto.created_at, event_type: "change_record", source: "itsm", sha256: "abc", untrusted: true }],
+        raw_chronology: [],
+        technical_findings: [],
+        attack_mapping: [],
+        provenance: { state_version: 3, plan_id: dto.plan_id, plan_state_version: 3, plan_is_stale: false, action_ids: [], execution_ids: [] },
+      },
+    };
+
+    const vm = toReportVM(dto);
+    expect(vm.schemaVersion).toBe("2.0");
+    expect(vm.overview.incidentStatus).toBe("not_an_incident");
+    expect(vm.findings[0].title).toBe("Authorized backup activity");
+    expect(vm.timeline[0].category).toBe("context");
+    expect(vm.entities[0].relevance).toBe("contextual");
+    expect(vm.executiveSummary.source).toBe("current_state_analysis");
+    expect(vm.appendices.evidence[0].untrusted).toBe(true);
+    expect(vm.agentDecisionTrace[0].runId).toBe("RUN-1");
+    expect(vm.investigationActivity[0].reason).toBe("Target ownership was not established.");
   });
 });
 
 describe("approvals queue mapping (GET /cases/{id}/actions, BL-027)", () => {
+  it("never maps not_applicable or an unknown status to proposed", () => {
+    expect(mapActionState("not_applicable")).toBe("not_applicable");
+    expect(mapActionState("future_status" as never)).toBe("superseded");
+  });
   it("queues only actions awaiting a decision or approved and not yet simulated", () => {
     expect(STORED_ACTIONS.map((a) => [a.status, inApprovalQueue(a.status)])).toEqual([
       ["awaiting_approval", true],

@@ -255,8 +255,47 @@ describe("RealProvider contract (real backend bodies)", () => {
     });
   }
 
+  it("getCases maps persisted cases with stages from their latest plans", async () => {
+    const older = { ...CASE_AT_STATE_3, case_id: "CASE-OLDER", title: "Older case", updated_at: "2026-10-11T02:00:00Z" };
+    globalThis.fetch = routeFetch({
+      "GET /api/cases": { status: 200, body: [CASE_AT_STATE_3, older] },
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: PLANS_IN_DOC_ID_ORDER },
+      "GET /api/cases/CASE-OLDER/plans": { status: 200, body: [] },
+    });
+
+    const out = await new RealProvider().getCases();
+
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data.map((item) => [item.caseId, item.stage, item.stateVersion])).toEqual([
+      ["CASE-TEST0001", "eradication", 3],
+      ["CASE-OLDER", null, 3],
+    ]);
+  });
+
+  it("case activity is derived from the persisted case list", async () => {
+    const closed = { ...CASE_AT_STATE_3, case_id: "CASE-CLOSED", status: "closed" as const };
+    const fetchMock = routeFetch({
+      "GET /api/cases": { status: 200, body: [CASE_AT_STATE_3, closed] },
+    });
+    globalThis.fetch = fetchMock;
+
+    const out = await new RealProvider().getCaseActivity();
+
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data.openCases).toBe(1);
+    expect(out.value.data.attentionCases).toBe(1);
+    expect(out.value.data.buckets).toHaveLength(7);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("getPlans numbers versions by created_at, not by the backend list order", async () => {
-    globalThis.fetch = mockFetch(200, PLANS_IN_DOC_ID_ORDER);
+    globalThis.fetch = routeFetch({
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: PLANS_IN_DOC_ID_ORDER },
+      "GET /api/cases/CASE-TEST0001/actions": { status: 200, body: STORED_ACTIONS },
+      "GET /api/cases/CASE-TEST0001/state": { status: 404, body: { detail: "no incident state" } },
+    });
     const out = await new RealProvider().getPlans("CASE-TEST0001");
     expect(out.kind).toBe("ok");
     if (out.kind !== "ok") return;
@@ -267,19 +306,36 @@ describe("RealProvider contract (real backend bodies)", () => {
     ]);
   });
 
-  it("getPlans marks action detail unavailable (with the real count) and carries no re-plan copy", async () => {
+  it("getPlans resolves stored actions and marks only missing references unavailable", async () => {
     const withEmpty = [...PLANS_IN_DOC_ID_ORDER, { ...PLANS_IN_DOC_ID_ORDER[0], plan_id: "PLAN-ee0000000004", action_ids: [], created_at: "2026-10-12T02:50:00.000000+00:00" }];
-    globalThis.fetch = mockFetch(200, withEmpty);
+    globalThis.fetch = routeFetch({
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: withEmpty },
+      "GET /api/cases/CASE-TEST0001/actions": { status: 200, body: STORED_ACTIONS },
+      "GET /api/cases/CASE-TEST0001/state": { status: 404, body: { detail: "no incident state" } },
+    });
     const out = await new RealProvider().getPlans("CASE-TEST0001");
     expect(out.kind).toBe("ok");
     if (out.kind !== "ok") return;
     const [v1, , , v4] = out.value.data;
-    expect(v1.actions).toEqual([]);
-    expect(v1.actionsUnavailable).toEqual({ count: 1, reason: PLAN_ACTIONS_UNAVAILABLE });
-    // A plan with no action IDs really has no actions: nothing is "unavailable".
+    expect(v1.actions.map((action) => action.actionId)).toEqual(["ACT-000000000001"]);
+    expect(v1.actionsUnavailable).toBeUndefined();
     expect(v4.planId).toBe("PLAN-ee0000000004");
     expect(v4.actionsUnavailable).toBeUndefined();
     for (const p of out.value.data) expect(p.replanExplanation).toBeUndefined();
+  });
+
+  it("getPlans reports an unresolved stored action reference without hiding resolved actions", async () => {
+    const plans = [{ ...PLANS_IN_DOC_ID_ORDER[0], action_ids: ["ACT-000000000003", "ACT-MISSING"] }];
+    globalThis.fetch = routeFetch({
+      "GET /api/cases/CASE-TEST0001/plans": { status: 200, body: plans },
+      "GET /api/cases/CASE-TEST0001/actions": { status: 200, body: STORED_ACTIONS },
+      "GET /api/cases/CASE-TEST0001/state": { status: 404, body: { detail: "no incident state" } },
+    });
+    const out = await new RealProvider().getPlans("CASE-TEST0001");
+    expect(out.kind).toBe("ok");
+    if (out.kind !== "ok") return;
+    expect(out.value.data[0].actions.map((action) => action.actionId)).toEqual(["ACT-000000000003"]);
+    expect(out.value.data[0].actionsUnavailable).toEqual({ count: 1, reason: PLAN_ACTIONS_UNAVAILABLE });
   });
 
   it("getEvidence returns upload order with event_type titles, whatever the backend list order", async () => {
@@ -433,16 +489,20 @@ describe("RealProvider contract (real backend bodies)", () => {
 
   // ---- Report: POST /reports only on an explicit generate ----
 
-  it("getReport never calls the backend and is null before any generation", async () => {
-    const fetchMock = mockFetch(200, reportBody("RPT-000000000001"));
+  it("getReport reads the persisted latest report and treats 404 as empty", async () => {
+    const fetchMock = mockFetch(404, { detail: "no reports found" });
     globalThis.fetch = fetchMock;
     const out = await new RealProvider().getReport("CASE-TEST0001");
     expect(out).toEqual({ kind: "ok", value: { data: null, source: "real" } });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith("/api/cases/CASE-TEST0001/reports/latest", expect.anything());
   });
 
-  it("generateReport POSTs once; getReport then returns that report from memory", async () => {
-    const fetchMock = mockFetch(200, reportBody("RPT-000000000001"));
+  it("generateReport POSTs once; getReport then reads the persisted report", async () => {
+    const fetchMock = routeFetch({
+      "POST /api/cases/CASE-TEST0001/reports": { status: 200, body: reportBody("RPT-000000000001") },
+      "GET /api/cases/CASE-TEST0001/reports/latest": { status: 200, body: reportBody("RPT-000000000001") },
+      "GET /api/cases/CASE-OTHER/reports/latest": { status: 404, body: { detail: "no reports found" } },
+    });
     globalThis.fetch = fetchMock;
     const provider = new RealProvider();
 
@@ -453,7 +513,7 @@ describe("RealProvider contract (real backend bodies)", () => {
     expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("POST");
 
     const again = await provider.getReport("CASE-TEST0001");
-    expect(fetchMock).toHaveBeenCalledTimes(1); // no second POST
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(again.kind).toBe("ok");
     if (again.kind === "ok") expect(again.value.data?.reportId).toBe("RPT-000000000001");
     // Cached per case only.
@@ -461,8 +521,11 @@ describe("RealProvider contract (real backend bodies)", () => {
     if (other.kind === "ok") expect(other.value.data).toBeNull();
   });
 
-  it("a failed generation is reported as an error and nothing is cached", async () => {
-    globalThis.fetch = mockFetch(500, { detail: "Internal Server Error" });
+  it("a failed generation is reported as an error and the persisted read stays empty", async () => {
+    globalThis.fetch = routeFetch({
+      "POST /api/cases/CASE-TEST0001/reports": { status: 500, body: { detail: "Internal Server Error" } },
+      "GET /api/cases/CASE-TEST0001/reports/latest": { status: 404, body: { detail: "no reports found" } },
+    });
     const provider = new RealProvider();
     const gen = await provider.generateReport("CASE-TEST0001");
     expect(gen).toEqual({ kind: "http_error", status: 500, detail: "Internal Server Error" });
@@ -477,5 +540,81 @@ describe("RealProvider contract (real backend bodies)", () => {
     await provider.generateReport("CASE-TEST0001");
     await provider.getReport("CASE-TEST0001");
     expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it("reads immutable state/history endpoints without fixture fallback", async () => {
+    const fetchMock = routeFetch({
+      "GET /api/cases/CASE-TEST0001/states": { status: 200, body: [{ version: 1, parent_version: null, created_from: "evidence_upload", change_reason: null, created_at: null, entity_count: 1, relationship_count: 0, timeline_count: 1 }] },
+      "GET /api/cases/CASE-TEST0001/states/1": { status: 404, body: { detail: "version not found" } },
+    });
+    globalThis.fetch = fetchMock;
+    const provider = new RealProvider();
+    const history = await provider.getStateHistory("CASE-TEST0001");
+    expect(history.kind).toBe("ok");
+    if (history.kind === "ok") expect(history.value.data[0].entityCount).toBe(1);
+    expect(await provider.getStateVersion("CASE-TEST0001", 1)).toEqual({ kind: "http_error", status: 404, detail: "version not found" });
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual(["/api/cases/CASE-TEST0001/states", "/api/cases/CASE-TEST0001/states/1"]);
+  });
+
+  it("reads the typed timeline endpoint without fixture fallback", async () => {
+    const fetchMock = mockFetch(200, {
+      case_id: "CASE-TEST0001",
+      state_version: 3,
+      events: [{
+        event_id: "TL-000000000001",
+        occurred_at: "2026-10-04T21:38:00+08:00",
+        event_type: "dns_query",
+        source: "dns_log",
+        actor: "HOST::SYNTH-LT-01",
+        subject: "DOMAIN::suspicious.example",
+        action: "queried",
+        result: "resolved",
+        summary: "Synthetic host queried a synthetic domain.",
+        details: { query: "suspicious.example" },
+        evidence_ids: ["EV-7b000000000c"],
+        entity_ids: ["HOST::SYNTH-LT-01", "DOMAIN::suspicious.example"],
+        relationship_status: "observed",
+        relevance: "attack",
+        severity: "medium",
+        raw_description: "dns_query host=SYNTH-LT-01 query=suspicious.example",
+      }],
+    });
+    globalThis.fetch = fetchMock;
+
+    const result = await new RealProvider().getTimeline("CASE-TEST0001");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith("/api/cases/CASE-TEST0001/timeline", expect.anything());
+    expect(result.kind).toBe("ok");
+    if (result.kind !== "ok") return;
+    expect(result.value).toMatchObject({
+      source: "real",
+      data: [{
+        id: "TL-000000000001",
+        eventType: "dns_query",
+        source: "dns_log",
+        relationshipStatus: "observed",
+        evidenceIds: ["EV-7b000000000c"],
+        relevance: "attack",
+      }],
+    });
+  });
+
+  it("recovers the persisted active run after a duplicate create conflict", async () => {
+    const run = { run_id: "RUN-EXISTING", case_id: "CASE-TEST0001", status: "running", stage: "running_planner",
+      message: "Planner is processing the incident state.", based_on_state_version: 2, plan_id: null,
+      created_at: "2026-10-14T00:00:00Z", updated_at: "2026-10-14T00:00:01Z", completed_at: null, error: null };
+    const fetchMock = routeFetch({
+      "POST /api/cases/CASE-TEST0001/analysis-runs": { status: 409, body: { detail: { message: "analysis already in progress", run_id: run.run_id } } },
+      "GET /api/cases/CASE-TEST0001/analysis-runs/active": { status: 200, body: run },
+    });
+    globalThis.fetch = fetchMock;
+    const result = await new RealProvider().createAnalysisRun("CASE-TEST0001");
+    expect(result.kind).toBe("ok");
+    if (result.kind === "ok") expect(result.value.data.runId).toBe("RUN-EXISTING");
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      "/api/cases/CASE-TEST0001/analysis-runs",
+      "/api/cases/CASE-TEST0001/analysis-runs/active",
+    ]);
   });
 });

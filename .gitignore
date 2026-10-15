@@ -6,6 +6,7 @@ secrets/
 *serviceAccount*.json
 *service-account*.json
 *firebase-adminsdk*.json
+gitleaks-report*.json
 
 # --- Local runtime data ---
 backend/uploads/

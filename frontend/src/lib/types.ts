@@ -44,6 +44,7 @@ export const STAGE_ORDER: Stage[] = [
 export type EntityType =
   | "host"
   | "account"
+  | "session"
   | "process"
   | "file"
   | "ip"
@@ -74,6 +75,7 @@ export type PlanActionState =
   | "simulated"
   | "validated_effective"
   | "validated_ineffective"
+  | "not_applicable"
   | "superseded";
 
 /**
@@ -111,6 +113,7 @@ export interface CaseSummary {
 export interface CaseHeaderVM {
   caseId: string;
   title: string;
+  description: string;
   status: CaseStatus;
   severity: Severity | null;
   stage: Stage | null;
@@ -177,17 +180,139 @@ export interface TimelineEventVM {
   kind: TimelineKind;
   relationshipStatus: RelationshipStatus;
   evidenceId: string | null;
+  eventType?: string;
+  source?: string | null;
+  actor?: string | null;
+  subject?: string | null;
+  action?: string | null;
+  result?: string | null;
+  details?: Record<string, string>;
+  evidenceIds?: string[];
+  entityIds?: string[];
+  relevance?: "attack" | "defensive" | "context" | "observed" | "unknown";
+  severity?: Severity | null;
+  rawDescription?: string;
 }
 
 // ---- Analysis view models -------------------------------------------------
 
+export interface PlannerIdentityVM {
+  kind: "live_ai" | "deterministic" | "unknown";
+  adapter: string;
+  model: string | null;
+}
+
+export interface AnalystReviewVM {
+  reviewId: string;
+  caseId: string;
+  targetType: "case" | "plan" | "finding" | "action" | "report";
+  targetId: string | null;
+  reviewType: "note" | "confirm" | "dispute" | "request_more_evidence" | "sign_off";
+  analyst: string;
+  analystRole: string;
+  comment: string;
+  stateVersion: number;
+  planVersion: number | null;
+  createdAt: string;
+}
+
 export interface AnalysisVM {
   classification: string | null;
+  summary: string | null;
   confidence: { value: number | null; basis: string; advisory: true };
+  planner: PlannerIdentityVM;
   affectedEntities: { id: string; type: EntityType; name: string }[];
   attackTechniques: string[];
   missingEvidence: string[];
   hypotheses: string[];
+  severity?: Severity | null;
+  scope?: string | null;
+  findings?: { summary: string; evidenceIds: string[]; confidence: number | null }[];
+  unavailableReason?: string | null;
+}
+
+export interface StateVersionMetaVM {
+  version: number;
+  parentVersion: number | null;
+  createdFrom: string | null;
+  changeReason: string | null;
+  createdAt: string | null;
+  entityCount: number;
+  relationshipCount: number;
+  timelineCount: number;
+}
+
+export interface IncidentEntityVM {
+  id: string;
+  type: EntityType;
+  name: string;
+  attributes: Record<string, unknown>;
+  evidenceIds: string[];
+  firstSeen: string | null;
+  lastSeen: string | null;
+  condition: string | null;
+}
+
+export interface IncidentRelationshipVM {
+  id: string;
+  source: string;
+  relation: string;
+  target: string;
+  evidenceIds: string[];
+  status: RelationshipStatus;
+  category: "context" | "attack" | "response";
+  firstSeen: string | null;
+  lastSeen: string | null;
+  attributes: Record<string, unknown>;
+  actionId: string | null;
+  executionId: string | null;
+}
+
+export interface IncidentSnapshotVM {
+  caseId: string;
+  version: number;
+  parentVersion: number | null;
+  changeReason: string | null;
+  createdFrom: string | null;
+  createdAt: string;
+  entities: IncidentEntityVM[];
+  relationships: IncidentRelationshipVM[];
+  timeline: { timestamp: string | null; description: string; evidenceIds: string[] }[];
+  findings: { summary: string; evidenceIds: string[] }[];
+  attackMapping: string[];
+  hypotheses: string[];
+  missingEvidence: string[];
+  actions: string[];
+  actionResults: string[];
+  recoveryStatus: RecoveryStatus;
+  observedResponseStatus: string | null;
+  recommendedResponseFocus: string | null;
+  responseObjective: string | null;
+  responsePrerequisites: string[];
+  routingRationale: string | null;
+  routingEvidenceIds: string[];
+  routingConfidence: number | null;
+  routingTransition: string | null;
+  reportSectionsComplete: string[];
+  reportSectionsPending: string[];
+  reportSectionsInvalidated: string[];
+  latestReportId: string | null;
+  latestReportVersion: string | null;
+  reportStatus: string | null;
+}
+
+export interface AnalysisRunVM {
+  runId: string;
+  caseId: string;
+  status: "queued" | "running" | "completed" | "failed";
+  stage: string;
+  message: string;
+  basedOnStateVersion: number;
+  planId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  error: string | null;
 }
 
 // ---- Response plan view models --------------------------------------------
@@ -218,10 +343,10 @@ export interface PlanVM {
   stage: Stage;
   createdAt: string;
   missingEvidence: string[];
+  planner: PlannerIdentityVM;
   actions: ResponsePlanActionVM[];
   /**
-   * Set when the plan HAS actions the provider cannot load (API mode: GET
-   * /plans returns action IDs only; getPlans does not join GET /actions).
+   * Set when a plan references actions the provider could not resolve.
    * `actions` is then [] and must never be shown as "no actions".
    */
   actionsUnavailable?: { count: number; reason: string };
@@ -299,6 +424,157 @@ export interface ReportSectionVM {
   lines: string[];
 }
 
+export type ReportTimelineCategory = "attack" | "defensive" | "analyst" | "context" | "observed";
+export type ReportEntityRelevance = "confirmed_affected" | "suspected_affected" | "malicious_indicator" | "contextual";
+
+export interface ReportOverviewVM {
+  caseStatus: string;
+  incidentStatus: string;
+  severity: string;
+  incidentType: string;
+  phase: string;
+  primaryAssets: string[];
+  planStatus: "current" | "stale" | "not_available";
+}
+
+export interface ReportFindingVM {
+  id: string;
+  title: string;
+  summary: string;
+  severity: string;
+  confidence: number | null;
+  status: string;
+  affectedEntityIds: string[];
+  evidenceIds: string[];
+}
+
+export interface ReportTimelineEventVM {
+  id: string;
+  timestamp: string | null;
+  category: ReportTimelineCategory;
+  eventType: string;
+  summary: string;
+  significance: string;
+  entityIds: string[];
+  evidenceIds: string[];
+  source: string;
+  rawDetail: string;
+  actor: string | null;
+  subject: string | null;
+  action: string | null;
+  result: string | null;
+  details: Record<string, string>;
+  relationshipStatus: RelationshipStatus;
+  relevance: "attack" | "defensive" | "context" | "observed" | "unknown";
+  severity: Severity | null;
+}
+
+export interface AgentDecisionTraceVM {
+  stepId: string;
+  runId: string;
+  sequence: number;
+  step: string;
+  status: "completed" | "failed";
+  message: string;
+  stateVersion: number;
+  startedAt: string;
+  completedAt: string;
+  durationMs: number;
+  evidenceIds: string[];
+  guidanceIds: string[];
+  outputRefs: string[];
+  decisionSummary: string;
+  validationSummary: string;
+  plannerKind: "live_ai" | "deterministic" | "unknown";
+  plannerAdapter: string | null;
+  plannerModel: string | null;
+}
+
+export interface InvestigationActivityVM {
+  eventId: string;
+  timestamp: string | null;
+  actorType: "analyst" | "agent" | "system";
+  actor: string | null;
+  role: string | null;
+  eventType: string;
+  targetType: string;
+  targetId: string | null;
+  stateVersion: number | null;
+  planId: string | null;
+  actionId: string | null;
+  summary: string;
+  reason: string | null;
+  outcome: string | null;
+  references: string[];
+  actionName: string | null;
+  actionTarget: string | null;
+  replacementPlanId: string | null;
+}
+
+export interface ReportEntityVM {
+  id: string;
+  type: string;
+  displayName: string;
+  role: string;
+  condition: string;
+  relevance: ReportEntityRelevance;
+  relevanceReason: string;
+  evidenceCount: number;
+  evidenceIds: string[];
+}
+
+export interface ReportActionVM {
+  id: string;
+  type: string;
+  target: string;
+  recommendation: string;
+  proposedStatus: string;
+  approvalStatus: string;
+  executionStatus: string;
+  validationStatus: string;
+  effectiveness: string;
+  outcome: string;
+  stateVersion: number | null;
+  timestamp: string | null;
+  planId: string | null;
+  phase: string;
+  decidedBy: string | null;
+  approverRole: string | null;
+  resultSource: string | null;
+  evidenceIds: string[];
+}
+
+export interface ReportNextStepVM {
+  priority: "High" | "Medium" | "Low";
+  text: string;
+  owner: string;
+  status: string;
+  relatedIds: string[];
+}
+
+export interface ReportEvidenceReferenceVM {
+  evidenceId: string;
+  sourceFile: string;
+  sourceLocation: string;
+  timestamp: string | null;
+  eventType: string;
+  source: string;
+  sha256: string;
+  untrusted: boolean;
+}
+
+export interface ReportReviewVM {
+  reviewId: string;
+  analyst: string;
+  analystRole: string;
+  targetType: string;
+  targetId: string | null;
+  reviewType: string;
+  comment: string;
+  stateVersion: number | null;
+  createdAt: string;
+}
+
 export interface ReportVM {
   reportId: string;
   caseId: string;
@@ -306,10 +582,41 @@ export interface ReportVM {
   organisation: string;
   status: string;
   generatedAt: string;
+  version: number;
+  plannerModel: string | null;
+  plannerKind: "live_ai" | "deterministic" | "unknown";
+  evidenceCount: number;
+  analysisSummary: string;
+  confirmedByAnalyst: boolean;
+  signOff: { analyst: string; role: string; at: string; comments: string } | null;
+  reviews: ReportReviewVM[];
+  agentDecisionTrace: AgentDecisionTraceVM[];
+  investigationActivity: InvestigationActivityVM[];
+  stateVersion: number | null;
+  recoveryStatus: string | null;
+  planId: string | null;
+  planStateVersion: number | null;
+  planIsStale: boolean;
+  schemaVersion: string;
+  overview: ReportOverviewVM;
+  executiveSummary: { text: string; source: "current_state_analysis" | "record_derived" };
+  findings: ReportFindingVM[];
+  timeline: ReportTimelineEventVM[];
+  entities: ReportEntityVM[];
+  actions: ReportActionVM[];
+  impact: { confirmed: string[]; potential: string[]; remainingRisk: string[] };
+  nextSteps: ReportNextStepVM[];
+  appendices: {
+    evidence: ReportEvidenceReferenceVM[];
+    chronology: ReportTimelineEventVM[];
+    findings: ReportFindingVM[];
+    attackMapping: string[];
+    provenance: string[];
+  };
   sections: ReportSectionVM[];
   completeness: { present: number; total: number };
-  /** PDF is produced server-side at a local path and is NOT downloadable. */
-  pdfAvailable: false;
+  /** True when the backend exposes the generated PDF through its download API. */
+  pdfAvailable: boolean;
 }
 
 // ---- Audit / activity view models -----------------------------------------
@@ -352,9 +659,10 @@ export interface CaseActivityVM {
 }
 
 export interface AgentPlanningVM {
-  activeRuns: number;
+  /** Null when the provider has no persisted run-status contract. */
+  activeRuns: number | null;
   blockedRuns: number;
-  /** Run counts are synthetic until a run-status endpoint exists. */
+  /** Provenance of the available planning counts. */
   runCountsSource: DataSource;
   stageDistribution: { stage: Stage; count: number }[];
 }
@@ -372,6 +680,7 @@ export type TabId =
   | "overview"
   | "evidence"
   | "timeline"
+  | "graph"
   | "analysis"
   | "plan"
   | "approvals"
@@ -380,6 +689,7 @@ export type TabId =
 export interface CaseFacts {
   evidenceUploaded: boolean;
   timelineReconstructed: boolean;
+  stateVersion?: number;
   planningRunStarted: boolean;
   proposalExists: boolean;
   actionAwaitingDecision: boolean;

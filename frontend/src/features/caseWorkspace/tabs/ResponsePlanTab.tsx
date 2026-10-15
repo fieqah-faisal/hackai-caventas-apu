@@ -111,16 +111,16 @@ function PlanView({ plans }: { plans: PlanVM[] }) {
 
       {/* Actions for the selected stage */}
       <div className="rounded-md border border-border-subtle bg-surface overflow-hidden">
-        {plan.actionsUnavailable ? (
-          // The plan has actions we cannot load; never present that as "no actions".
+        {plan.actionsUnavailable && (
           <p className="px-4 py-6 text-center text-meta text-text-muted">
-            Plan v{plan.version} proposed {plan.actionsUnavailable.count} action{plan.actionsUnavailable.count === 1 ? "" : "s"} ({stageLabel[plan.stage]} stage).{" "}
+            Plan v{plan.version} has {plan.actionsUnavailable.count} unresolved action reference{plan.actionsUnavailable.count === 1 ? "" : "s"}.{" "}
             {plan.actionsUnavailable.reason}
           </p>
-        ) : stageActions.length === 0 ? (
+        )}
+        {stageActions.length === 0 && !plan.actionsUnavailable ? (
           <p className="px-4 py-6 text-center text-meta text-text-muted">No actions in the {stageLabel[effectiveStage]} stage.</p>
         ) : (
-          <ul>
+          stageActions.length > 0 && <ul>
             {stageActions.map((a) => {
               const diffCat = diff?.entries.find((e) => e.action.actionId === a.actionId)?.category;
               return (

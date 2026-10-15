@@ -4,31 +4,42 @@ import { useOutcome } from "@/lib/useOutcome";
 import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 import { Icon } from "@/components/icons/Icon";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { FindingsTable } from "@/components/ui/FindingsTable";
 import { Mono } from "@/components/ui/Mono";
+import { modelReportedConfidence, plannerLabel, readableValue } from "@/lib/format";
 import { cx } from "@/lib/types";
 import type { AnalysisVM } from "@/lib/types";
 import { useWorkspace } from "../context";
+import { AgentRunPanel } from "../AgentRunPanel";
 
 const p = getProvider();
 
 export function AnalysisTab() {
-  const { caseId } = useWorkspace();
-  const analysis = useOutcome<AnalysisVM>(() => p.getAnalysis(caseId), [caseId]);
+  const { caseId, reloadKey } = useWorkspace();
+  const analysis = useOutcome<AnalysisVM>(() => p.getAnalysis(caseId), [caseId, reloadKey]);
 
   return (
+    <div className="space-y-4"><AgentRunPanel />
     <AsyncBoundary outcome={analysis}>
       {(a) => (
         <div className="space-y-4">
           <Section title="Current classification">
-            <p className="text-base text-text-primary">{a.classification ?? "Not yet classified."}</p>
+            <p className="text-base text-text-primary">{a.unavailableReason ?? readableValue(a.classification)}</p>
+            <p>Severity: {readableValue(a.severity)}</p>
+            <p>Scope: {a.scope || "Not established"}</p>
+            <p>Planner: {plannerLabel(a.planner.kind)}{a.planner.model ? ` · ${a.planner.model}` : ""}</p>
           </Section>
 
-          <Section title="Confidence">
+          <Section title="Analysis summary">
+            <p className="text-base leading-6 text-text-secondary">{a.summary || "Analysis has not produced a summary yet."}</p>
+          </Section>
+
+          <Section title="Planner confidence (unvalidated)">
             <div className="flex items-center gap-3">
               <span className="tnum text-xl font-bold text-text-primary">
-                {a.confidence.value != null ? `${Math.round(a.confidence.value * 100)}%` : "—"}
+                {modelReportedConfidence(a.confidence.value)}
               </span>
-              <StatusBadge tone="info"><Icon name="info" size={18} className="mr-1" />Advisory</StatusBadge>
+              <StatusBadge tone="info"><Icon name="info" size={18} className="mr-1" />Unvalidated</StatusBadge>
             </div>
             <p className="mt-1 text-meta text-text-muted">{a.confidence.basis}</p>
           </Section>
@@ -43,6 +54,15 @@ export function AnalysisTab() {
                 ))}
               </ul>
             )}
+          </Section>
+
+          <Section title="Findings">
+            <FindingsTable rows={(a.findings ?? []).map((finding, index) => ({
+              key: `analysis-${index}`,
+              summary: finding.summary,
+              evidenceIds: finding.evidenceIds,
+              confidence: finding.confidence,
+            }))} />
           </Section>
 
           <Section title="ATT&CK techniques">
@@ -60,6 +80,7 @@ export function AnalysisTab() {
         </div>
       )}
     </AsyncBoundary>
+    </div>
   );
 }
 

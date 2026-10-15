@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useParams, useLocation } from "react-router-dom";
 import { getProvider } from "@/lib/api";
 import { useOutcome } from "@/lib/useOutcome";
@@ -15,6 +15,8 @@ import { SkeletonRows } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/Region";
 import { outcomeMessage } from "@/lib/useOutcome";
 import { WorkspaceContext } from "./context";
+import { useAnalysisRuns } from "@/features/analysisRuns/AnalysisRunContext";
+import { AnalystReviewsPanel } from "./AnalystReviewsPanel";
 
 const p = getProvider();
 
@@ -23,7 +25,22 @@ export function CaseWorkspace() {
   const navigate = useNavigate();
   const location = useLocation();
   const [reloadKey, setReloadKey] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const { getEntry } = useAnalysisRuns();
+  const completedRun = getEntry(caseId).run;
+  const refreshedRun = useRef<string | null>(null);
   const refresh = useCallback(() => setReloadKey((k) => k + 1), []);
+
+  useEffect(() => {
+    if (completedRun?.status !== "completed" || !completedRun.planId || refreshedRun.current === completedRun.runId) return;
+    refreshedRun.current = completedRun.runId;
+    refresh();
+  }, [completedRun?.status, completedRun?.planId, completedRun?.runId, refresh]);
 
   // Presenter-only reveal control (fixture mode, Infostealer scenario).
   const canReveal = typeof p.revealNextEvidenceBatch === "function";
@@ -61,8 +78,22 @@ export function CaseWorkspace() {
   };
   const statuses = tabAvailability(f);
 
+  async function saveCaseDetails() {
+    if (!editTitle.trim() || !editDescription.trim()) return;
+    setEditBusy(true);
+    setEditError(null);
+    const result = await p.updateCase(caseId, { title: editTitle.trim(), description: editDescription.trim() });
+    setEditBusy(false);
+    if (result.kind !== "ok") {
+      setEditError(outcomeMessage(result));
+      return;
+    }
+    setEditing(false);
+    refresh();
+  }
+
   return (
-    <WorkspaceContext.Provider value={{ caseId, header: h, facts: f, synthetic: p.synthetic, refresh }}>
+    <WorkspaceContext.Provider value={{ caseId, header: h, facts: f, synthetic: p.synthetic, refresh, reloadKey }}>
       <div className="space-y-5">
         {/* Persistent header */}
         <header className="rounded-md border border-border-subtle bg-surface p-5">
@@ -71,7 +102,20 @@ export function CaseWorkspace() {
               <button onClick={() => navigate("/cases")} className="mb-1 inline-flex items-center gap-1 text-meta text-text-muted hover:text-text-secondary">
                 <Icon name="chevronRight" size={18} className="rotate-180" /> Cases
               </button>
-              <h1 className="text-xl font-bold text-text-primary">{h.title}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold text-text-primary">{h.title}</h1>
+                <Button size="sm" variant="secondary" onClick={() => { setEditTitle(h.title); setEditDescription(h.description); setEditError(null); setEditing(true); }}>Edit details</Button>
+              </div>
+              {h.description && <p className="mt-1 max-w-3xl text-meta text-text-secondary">{h.description}</p>}
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-meta text-text-secondary">
+                <span className="mono">Case ID: {h.caseId}</span>
+                <button className="rounded border border-border-subtle px-2 py-0.5 hover:text-text-primary" aria-label="Copy case ID"
+                  onClick={async () => { try { await navigator.clipboard.writeText(h.caseId); setCopied(true); } catch { setCopied(false); } }}>
+                  Copy ID
+                </button>
+                {copied && <span role="status">Case ID copied</span>}
+                <span>State v{f.stateVersion ?? "—"}</span>
+              </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <StatusBadge>{caseStatusLabel[h.status]}</StatusBadge>
                 {h.severity && <StatusBadge tone={h.severity === "high" || h.severity === "critical" ? "danger" : "warning"}>{h.severity} severity</StatusBadge>}
@@ -90,7 +134,7 @@ export function CaseWorkspace() {
                   onClick={onReveal}
                   disabled={revealBusy}
                   leadingIcon={<Icon name="reload" size={18} />}
-                  title="Presenter control: reveal the next batch of synthetic evidence to trigger the re-plan"
+                  title="Presenter control: reveal synthetic evidence; re-analysis remains an explicit analyst action"
                 >
                   {revealBusy ? "Revealing…" : "Reveal next evidence (demo)"}
                 </Button>
@@ -98,6 +142,27 @@ export function CaseWorkspace() {
             </div>
           </div>
         </header>
+
+        {editing && (
+          <section aria-label="Edit case details" className="rounded-md border border-border-strong bg-surface p-5">
+            <h2 className="text-base font-semibold text-text-primary">Edit case details</h2>
+            <div className="mt-3 grid gap-3">
+              <label className="text-meta text-text-secondary">Title
+                <input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} maxLength={200} className="mt-1 w-full rounded border border-border-strong bg-surface-raised px-3 py-2 text-sm text-text-primary" />
+              </label>
+              <label className="text-meta text-text-secondary">Description
+                <textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} maxLength={5000} rows={4} className="mt-1 w-full rounded border border-border-strong bg-surface-raised px-3 py-2 text-sm text-text-primary" />
+              </label>
+            </div>
+            {editError && <p role="alert" className="mt-2 text-meta text-status-danger">{editError}</p>}
+            <div className="mt-3 flex justify-end gap-2">
+              <Button size="sm" variant="secondary" onClick={() => setEditing(false)} disabled={editBusy}>Cancel</Button>
+              <Button size="sm" onClick={saveCaseDetails} disabled={editBusy || !editTitle.trim() || !editDescription.trim()}>{editBusy ? "Saving…" : "Save details"}</Button>
+            </div>
+          </section>
+        )}
+
+        <AnalystReviewsPanel caseId={caseId} stateVersion={f.stateVersion ?? 0} />
 
         {/* Underline tabs */}
         <div className="border-b border-border-subtle">

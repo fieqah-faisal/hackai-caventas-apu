@@ -35,6 +35,7 @@ export type StageDTO =
 export type EntityTypeDTO =
   | "host"
   | "account"
+  | "session"
   | "process"
   | "file"
   | "ip"
@@ -47,7 +48,7 @@ export type EvidenceKindDTO = "csv" | "json" | "txt";
  * Real backend action lifecycle string (StoredAction.status). This is NOT the
  * intended six-state product model — the mapping layer reconciles it.
  * Observed values: awaiting_approval (default), recommended, approved,
- * rejected, verified, failed.
+ * rejected, verified, failed, not_applicable.
  */
 export type ActionStatusDTO =
   | "awaiting_approval"
@@ -55,7 +56,8 @@ export type ActionStatusDTO =
   | "approved"
   | "rejected"
   | "verified"
-  | "failed";
+  | "failed"
+  | "not_applicable";
 
 /** Backend decision enum — approve/reject ONLY (no request_more_investigation). */
 export type DecisionDTO = "approve" | "reject";
@@ -108,20 +110,87 @@ export interface EntityDTO {
   type: EntityTypeDTO;
   name: string;
   attributes: Record<string, unknown>;
+  evidence_ids?: string[];
+  first_seen?: string | null;
+  last_seen?: string | null;
+  condition?: string | null;
+}
+
+export type ReviewTargetTypeDTO = "case" | "plan" | "finding" | "action" | "report";
+export type ReviewTypeDTO = "note" | "confirm" | "dispute" | "request_more_evidence" | "sign_off";
+
+export interface AnalystReviewCreateDTO {
+  target_type: ReviewTargetTypeDTO;
+  target_id?: string | null;
+  review_type: ReviewTypeDTO;
+  analyst: string;
+  analyst_role: string;
+  comment: string;
+  state_version: number;
+  plan_version?: number | null;
+}
+
+export interface AnalystReviewDTO extends AnalystReviewCreateDTO {
+  review_id: string;
+  case_id: string;
+  created_at: string;
 }
 
 export interface RelationshipDTO {
+  id?: string | null;
   source: string;
   relation: string;
   target: string;
   evidence_ids: string[];
   status: "observed" | "inferred";
+  category?: "context" | "attack" | "response";
+  first_seen?: string | null;
+  last_seen?: string | null;
+  attributes?: Record<string, unknown>;
+  action_id?: string | null;
+  execution_id?: string | null;
+}
+
+export interface StateVersionMetaDTO {
+  version: number;
+  parent_version: number | null;
+  created_from: string | null;
+  change_reason: string | null;
+  created_at: string | null;
+  entity_count: number;
+  relationship_count: number;
+  timeline_count: number;
 }
 
 export interface TimelineEventDTO {
   timestamp?: string | null;
   description: string;
   evidence_ids: string[];
+}
+
+export interface StructuredTimelineEventDTO {
+  event_id: string;
+  occurred_at?: string | null;
+  event_type: string;
+  source?: string | null;
+  actor?: string | null;
+  subject?: string | null;
+  action?: string | null;
+  result?: string | null;
+  summary: string;
+  details: Record<string, string>;
+  evidence_ids: string[];
+  entity_ids: string[];
+  relationship_status: "observed" | "inferred";
+  relevance: "attack" | "defensive" | "context" | "observed" | "unknown";
+  severity?: "low" | "medium" | "high" | "critical" | null;
+  raw_description: string;
+}
+
+export interface TimelineResponseDTO {
+  case_id: string;
+  state_version: number;
+  events: StructuredTimelineEventDTO[];
 }
 
 export interface FindingDTO {
@@ -132,6 +201,9 @@ export interface FindingDTO {
 export interface IncidentStateDTO {
   case_id: string;
   version: number;
+  parent_version?: number | null;
+  change_reason?: string | null;
+  created_from?: string | null;
   entities: EntityDTO[];
   relationships: RelationshipDTO[];
   timeline: TimelineEventDTO[];
@@ -143,6 +215,34 @@ export interface IncidentStateDTO {
   action_results: string[];
   recovery_status: RecoveryStatusDTO;
   created_at: string;
+  observed_response_status?: string | null;
+  recommended_response_focus?: string | null;
+  response_objective?: string | null;
+  response_prerequisites?: string[];
+  routing_rationale?: string | null;
+  routing_evidence_ids?: string[];
+  routing_confidence?: number | null;
+  routing_transition?: string | null;
+  report_sections_complete?: string[];
+  report_sections_pending?: string[];
+  report_sections_invalidated?: string[];
+  latest_report_id?: string | null;
+  latest_report_version?: string | null;
+  report_status?: string | null;
+}
+
+export interface AnalysisRunDTO {
+  run_id: string;
+  case_id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  stage: "queued" | "loading_state" | "loading_guidance" | "running_planner" | "persisting_plan" | "completed" | "failed";
+  message: string;
+  based_on_state_version: number;
+  plan_id: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  error: string | null;
 }
 
 // ---- Plans & actions ------------------------------------------------------
@@ -183,6 +283,20 @@ export interface PlanDocDTO {
   missing_evidence: string[];
   action_ids: string[];
   created_at: string;
+  planner?: {
+    kind: "live_ai" | "deterministic" | "unknown";
+    adapter: string;
+    model?: string | null;
+  } | null;
+  analysis?: {
+    incident_type: string;
+    summary?: string;
+    scope: string;
+    severity: string;
+    confidence: number;
+    findings: { summary: string; evidence_ids: string[]; confidence: number }[];
+    attack_techniques: string[];
+  } | null;
 }
 
 /** POST /cases/{id}/runs response — plan doc plus full action docs. */
@@ -266,12 +380,13 @@ export interface AuditEventDTO {
   timestamp: string;
 }
 
-// ---- Report (v1.2 structured report) --------------------------------------
+// ---- Report (v1.3 structured report) --------------------------------------
 
 export interface ReportClassificationDTO {
   incident_type: string;
   status: string;
   closure_reason?: string | null;
+  closure_evidence_ids?: string[];
   severity: string;
   severity_reason: string;
   confidence: number;
@@ -302,17 +417,89 @@ export interface ReportTimelineRowDTO {
 
 export interface ReportActionRowDTO {
   action_id: string;
+  plan_id?: string | null;
+  based_on_state_version?: number | null;
   playbook_step_id: string;
   phase: string;
+  tool_name?: string;
+  target_id?: string;
   recommendation: string;
+  evidence_ids?: string[];
+  policy_refs?: string[];
+  required_approver?: string | null;
+  approver_role?: string | null;
+  policy_check?: { result: "pass" | "blocked" | string; reasons: string[] };
   status: string;
   replaces_action_id?: string | null;
   decided_by?: string | null;
   decided_at?: string | null;
   reason?: string | null;
   executed_by?: string | null;
+  execution_id?: string | null;
+  execution_status?: string | null;
+  validation_status?: string | null;
   result?: string | null;
   result_source?: string | null;
+}
+
+export interface ReportFindingDTO {
+  finding_id: string;
+  summary: string;
+  status?: "hypothesis" | "confirmed" | string;
+  confidence: number;
+  evidence_ids: string[];
+}
+
+export interface ReportCredentialDTO {
+  service: string;
+  account: string;
+  exposed: string;
+  status: string;
+  evidence_ids: string[];
+}
+
+export interface ReportPreservationDTO {
+  evidence_id: string;
+  item: string;
+  stored_at: string;
+  collected_by: string;
+  collected_at: string;
+  sha256: string;
+}
+
+export interface ReportNotificationDTO {
+  policy_rule_id: string;
+  trigger: string;
+  triggered: string;
+  notify: string;
+  deadline_hours: number;
+  due_by?: string | null;
+  status: string;
+  done_at?: string | null;
+  finding_ids: string[];
+}
+
+export interface ReportRecommendationDTO {
+  text: string;
+  finding_ids: string[];
+  addresses_root_cause: boolean;
+}
+
+export interface ReportPolicyConformanceDTO {
+  policy_rule_id: string;
+  requirement: string;
+  result: string;
+  reason: string;
+  related_ids: string[];
+  override_reason?: string | null;
+}
+
+export interface ReportSignOffDTO {
+  analyst: string;
+  role: string;
+  decision: string;
+  at: string;
+  comments: string;
 }
 
 export interface ReportOpenQuestionDTO {
@@ -331,7 +518,202 @@ export interface ReportEvidenceIndexRowDTO {
   untrusted: boolean;
 }
 
+export type AnalystTimelineCategoryDTO = "attack" | "defensive" | "analyst" | "context" | "observed";
+export type AnalystEntityRelevanceDTO = "confirmed_affected" | "suspected_affected" | "malicious_indicator" | "contextual";
+
+export interface AnalystReportOverviewDTO {
+  case_id: string;
+  case_status: string;
+  incident_status: string;
+  severity: string;
+  incident_type: string;
+  current_phase: string;
+  primary_assets: string[];
+  state_version?: number | null;
+  plan_id?: string | null;
+  plan_state_version?: number | null;
+  plan_status: "current" | "stale" | "not_available";
+  planner_model?: string | null;
+  planner_kind?: "live_ai" | "deterministic" | "unknown";
+  evidence_count?: number;
+}
+
+export interface AnalystReportFindingDTO {
+  id: string;
+  title: string;
+  summary: string;
+  severity: string;
+  confidence?: number | null;
+  status: string;
+  affected_entity_ids: string[];
+  evidence_ids: string[];
+  attack_techniques: string[];
+  first_seen?: string | null;
+  last_seen?: string | null;
+  source: string;
+  plan_id?: string | null;
+  state_version?: number | null;
+}
+
+export interface AnalystReportTimelineEventDTO {
+  event_id?: string;
+  timestamp?: string | null;
+  category: AnalystTimelineCategoryDTO;
+  event_type: string;
+  summary: string;
+  significance: string;
+  entity_ids: string[];
+  evidence_ids: string[];
+  source: string;
+  material: boolean;
+  raw_detail: string;
+  actor?: string | null;
+  subject?: string | null;
+  action?: string | null;
+  result?: string | null;
+  details?: Record<string, string>;
+  relationship_status?: "observed" | "inferred";
+  relevance?: "attack" | "defensive" | "context" | "observed" | "unknown";
+  severity?: "low" | "medium" | "high" | "critical" | null;
+  raw_description?: string;
+}
+
+export interface AgentDecisionTraceStepDTO {
+  step_id: string;
+  case_id: string;
+  run_id: string;
+  sequence: number;
+  step: string;
+  status: "completed" | "failed";
+  message: string;
+  based_on_state_version: number;
+  started_at: string;
+  completed_at: string;
+  duration_ms: number;
+  evidence_ids: string[];
+  guidance_ids: string[];
+  output_refs: string[];
+  decision_summary: string;
+  validation_summary: string;
+  planner_kind: "live_ai" | "deterministic" | "unknown";
+  planner_adapter?: string | null;
+  planner_model?: string | null;
+}
+
+export interface InvestigationActivityDTO {
+  event_id: string;
+  timestamp?: string | null;
+  actor_type: "analyst" | "agent" | "system";
+  actor?: string | null;
+  role?: string | null;
+  event_type: string;
+  target_type: string;
+  target_id?: string | null;
+  state_version?: number | null;
+  plan_id?: string | null;
+  action_id?: string | null;
+  summary: string;
+  reason?: string | null;
+  outcome?: string | null;
+  references: string[];
+  action_name?: string | null;
+  action_target?: string | null;
+  replacement_plan_id?: string | null;
+}
+
+export interface AnalystReportEntityDTO {
+  id: string;
+  type: string;
+  display_name: string;
+  role: string;
+  condition: string;
+  relevance: AnalystEntityRelevanceDTO;
+  relevance_reason: string;
+  first_seen?: string | null;
+  last_seen?: string | null;
+  evidence_count: number;
+  evidence_ids: string[];
+}
+
+export interface AnalystReportActionDTO {
+  action_id: string;
+  action_type: string;
+  target: string;
+  recommendation: string;
+  proposed_status: string;
+  approval_status: string;
+  execution_status: string;
+  validation_status: string;
+  effectiveness: string;
+  outcome: string;
+  state_version?: number | null;
+  timestamp?: string | null;
+  plan_id?: string | null;
+  phase: string;
+  approval_id?: string | null;
+  decided_by?: string | null;
+  approver_role?: string | null;
+  decision_reason?: string | null;
+  execution_id?: string | null;
+  result_source?: string | null;
+  evidence_ids: string[];
+  policy_refs: string[];
+}
+
+export interface AnalystReportNextStepDTO {
+  priority: "High" | "Medium" | "Low";
+  text: string;
+  owner: string;
+  status: string;
+  related_ids: string[];
+}
+
+export interface AnalystEvidenceReferenceDTO {
+  evidence_id: string;
+  source_file: string;
+  source_location: string;
+  timestamp?: string | null;
+  event_type: string;
+  source: string;
+  sha256: string;
+  untrusted: boolean;
+}
+
+export interface AnalystReportDTO {
+  overview: AnalystReportOverviewDTO;
+  analysis_summary?: string;
+  executive_summary: string;
+  executive_summary_source: "current_state_analysis" | "record_derived";
+  analyst_reviews?: AnalystReviewDTO[];
+  agent_decision_trace?: AgentDecisionTraceStepDTO[];
+  investigation_activity?: InvestigationActivityDTO[];
+  key_findings: AnalystReportFindingDTO[];
+  key_timeline: AnalystReportTimelineEventDTO[];
+  entities: AnalystReportEntityDTO[];
+  response_actions: AnalystReportActionDTO[];
+  impact: { confirmed: string[]; potential: string[]; remaining_risk: string[] };
+  next_steps: AnalystReportNextStepDTO[];
+  appendices: {
+    evidence_index: AnalystEvidenceReferenceDTO[];
+    raw_chronology: AnalystReportTimelineEventDTO[];
+    technical_findings: AnalystReportFindingDTO[];
+    attack_mapping: string[];
+    provenance: {
+      state_version?: number | null;
+      state_parent_version?: number | null;
+      state_created_from?: string | null;
+      state_change_reason?: string | null;
+      plan_id?: string | null;
+      plan_state_version?: number | null;
+      plan_is_stale: boolean;
+      action_ids: string[];
+      execution_ids: string[];
+    };
+  };
+}
+
 export interface StructuredReportDTO {
+  template_schema_version?: string;
   report_id: string;
   incident_id: string;
   version: number;
@@ -340,25 +722,32 @@ export interface StructuredReportDTO {
   organisation: string;
   playbook: { id: string; version: string };
   policy_pack_version: string;
+  planner_model?: string;
+  current_state_version?: number | null;
+  recovery_status?: string | null;
+  plan_id?: string | null;
+  plan_based_on_state_version?: number | null;
+  plan_is_stale?: boolean;
   created_at: string;
   updated_at: string;
   executive_summary: { text: string; finding_ids: string[] };
   classification: ReportClassificationDTO;
   affected: ReportAffectedDTO[];
-  exposed_credentials: unknown[];
+  exposed_credentials: ReportCredentialDTO[];
   timeline: ReportTimelineRowDTO[];
-  findings: unknown[];
+  findings: ReportFindingDTO[];
   root_cause: { text: string; finding_ids: string[]; status: string };
   impact: Record<string, unknown>;
   actions: ReportActionRowDTO[];
-  evidence_preservation: unknown[];
-  notifications: unknown[];
-  recommendations: unknown[];
+  evidence_preservation: ReportPreservationDTO[];
+  notifications: ReportNotificationDTO[];
+  recommendations: Array<ReportRecommendationDTO | string>;
   open_questions: ReportOpenQuestionDTO[];
   metrics: Record<string, unknown>;
-  policy_conformance: unknown[];
-  sign_off: unknown | null;
+  policy_conformance: ReportPolicyConformanceDTO[];
+  sign_off: ReportSignOffDTO | null;
   evidence_index: ReportEvidenceIndexRowDTO[];
+  analyst_report?: AnalystReportDTO;
   /** Server-local filesystem path. NOT a downloadable URL — never expose as a link. */
   pdf_path?: string;
 }

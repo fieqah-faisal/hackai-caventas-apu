@@ -14,6 +14,7 @@ const ctx: WorkspaceCtx = {
   header: {
     caseId: "CASE-TEST0001",
     title: "Synthetic login anomaly",
+    description: "Synthetic test case",
     status: "investigating",
     severity: null,
     stage: "containment",
@@ -42,7 +43,7 @@ function renderWith(plans: PlanVM[]) {
   );
 }
 
-const UNAVAILABLE = "Action detail is unavailable in API mode: no stored-action read endpoint.";
+const UNAVAILABLE = "One stored action reference could not be resolved.";
 
 /** What RealProvider.getPlans returns for the S2 case: 3 plans, 1 action each, no detail. */
 function apiPlan(version: number): PlanVM {
@@ -53,6 +54,7 @@ function apiPlan(version: number): PlanVM {
     stage: "containment",
     createdAt: `2026-10-12T02:45:5${version}.000000+00:00`,
     missingEvidence: [],
+    planner: { kind: "unknown", adapter: "Not recorded", model: null },
     actions: [],
     actionsUnavailable: { count: 1, reason: UNAVAILABLE },
   };
@@ -70,11 +72,17 @@ function action(id: string, tool: string): ResponsePlanActionVM {
 describe("ResponsePlanTab honesty", () => {
   beforeEach(() => provider.getPlans.mockReset());
 
-  it("API mode: says the plan has actions it cannot load, never 'No actions'", async () => {
+  it("API mode: says the plan has an unresolved action, never 'No actions'", async () => {
     renderWith([apiPlan(1), apiPlan(2), apiPlan(3)]);
-    expect(await screen.findByText(/Plan v3 proposed 1 action \(Containment stage\)\./)).toBeInTheDocument();
+    expect(await screen.findByText(/Plan v3 has 1 unresolved action reference\./)).toBeInTheDocument();
     expect(screen.getByText(new RegExp(UNAVAILABLE.replace(/[.()]/g, "\\$&")))).toBeInTheDocument();
     expect(screen.queryByText(/No actions in the/)).not.toBeInTheDocument();
+  });
+
+  it("keeps resolved actions visible when another reference is unresolved", async () => {
+    renderWith([{ ...apiPlan(1), actions: [action("a1", "isolate_host")] }]);
+    expect(await screen.findByText("isolate_host")).toBeInTheDocument();
+    expect(screen.getByText(/1 unresolved action reference/)).toBeInTheDocument();
   });
 
   it("API mode: shows no fixture re-plan copy, diff or 'New evidence received' badge", async () => {

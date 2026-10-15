@@ -1,4 +1,4 @@
-# IR Planner — Incident Report Schema (v1.3)
+# IR Planner — Incident Report Schema (v1.3 + analyst view v2)
 
 Aida (IR Knowledge and Governance Lead) · 9 Oct 2026, checked against `main` on 14 Oct 2026
 
@@ -7,6 +7,34 @@ Aida (IR Knowledge and Governance Lead) · 9 Oct 2026, checked against `main` on
 **Version 1.2 (3 Oct 2026).** Action statuses now match Stage 7 of the proposal: recommended, awaiting approval, approved, rejected, manually executed, verified, failed and not applicable. An edited recommendation becomes a new recommendation linked to the one it replaces.
 
 **Version 1.3 (9 Oct 2026). Final for the prototype.** Fits policy pack v1.0 and the report code already in the repo (`backend/app/services/reporting.py`). Every change adds a field; nothing was renamed or removed, so the existing code keeps working. Response actions now show the tool, the target, the rules cited, the approver the policy pack requires and the policy check result. Notifications, evidence preservation, recommendations, policy conformance and sign-off now line up with specific rules. The header records the planner model, as promised in proposal section 10.0. From now on, changes go through a pull request.
+
+**Analyst view 2.0 (15 Oct 2026).** The stored v1.3 fields remain unchanged. New reports add `template_schema_version: "2.0"` and a presentation-neutral `analyst_report` object consumed by both the Report tab and PDF renderer. Its decision-oriented sections are overview, executive summary, prioritized current-state findings, material timeline, relevance-grouped entities, response actions, confirmed/potential impact, next steps and technical appendices. Older reports are mapped conservatively in the frontend without rewriting persisted data.
+
+The v2 view is deterministic and case-agnostic. It classifies records from current plan/state binding, evidence-backed findings, graph relationship category, event source/type, entity condition and authoritative action/approval/result records. Unknown records remain `observed`; stale-plan findings move to the appendix; false-alarm analysis cannot create attack timeline rows or affected entities. Raw record summaries are bounded for safe PDF layout while the evidence index retains source and hash references.
+
+```json
+{
+  "template_schema_version": "2.0",
+  "analyst_report": {
+    "overview": { "plan_status": "current | stale | not_available" },
+    "executive_summary": "string",
+    "executive_summary_source": "current_state_analysis | record_derived",
+    "key_findings": [],
+    "key_timeline": [],
+    "entities": [],
+    "response_actions": [],
+    "impact": { "confirmed": [], "potential": [], "remaining_risk": [] },
+    "next_steps": [],
+    "appendices": {
+      "evidence_index": [],
+      "raw_chronology": [],
+      "technical_findings": [],
+      "attack_mapping": [],
+      "provenance": {}
+    }
+  }
+}
+```
 
 **Checked against the repo on 14 Oct 2026**, after GAS-lite (DEC-010), the policy guard (`policy_service.py`) and planner analysis in reports (DEC-015). Three small fixes, no new sections:
 
@@ -123,6 +151,11 @@ This is the shape the report generator outputs. Every field new in v1.3 is an ad
   "playbook": { "id": "string", "version": "string" },
   "policy_pack_version": "string",
   "planner_model": "string (e.g. deepseek-v4.1-flash)",
+  "current_state_version": "integer | null",
+  "recovery_status": "investigating | containing | eradicating | recovering | resolved | null",
+  "plan_id": "PLAN-<12 hex> | null",
+  "plan_based_on_state_version": "integer | null",
+  "plan_is_stale": "boolean",
   "created_at": "ISO 8601",
   "updated_at": "ISO 8601",
 
@@ -174,8 +207,10 @@ This is the shape the report generator outputs. Every field new in v1.3 is an ad
   },
 
   "actions": [
-    { "action_id": "ACT-<12 hex>", "playbook_step_id": "PB-03", "phase": "containment",
+    { "action_id": "ACT-<12 hex>", "plan_id": "PLAN-<12 hex>", "based_on_state_version": "integer",
+      "playbook_step_id": "PB-03", "phase": "containment",
       "tool_name": "string", "target_id": "string", "recommendation": "string",
+      "evidence_ids": ["EV-<12 hex>"],
       "policy_refs": ["POL-04"],
       "required_approver": "soc_analyst | it_manager",
       "approver_role": "soc_analyst | it_manager | null",
@@ -183,7 +218,9 @@ This is the shape the report generator outputs. Every field new in v1.3 is an ad
       "status": "recommended | awaiting_approval | approved | rejected | manually_executed | verified | failed | not_applicable",
       "replaces_action_id": "string | null",
       "decided_by": "string | null", "decided_at": "ISO 8601 | null", "reason": "string | null",
-      "executed_by": "string | null", "result": "string | null", "result_source": "team | simulator | null" }
+      "executed_by": "string | null", "execution_id": "EXEC-<12 hex> | null",
+      "execution_status": "string | null", "validation_status": "string | null",
+      "result": "string | null", "result_source": "team | simulator | null" }
   ],
 
   "evidence_preservation": [
@@ -218,20 +255,20 @@ The example technique ID T1555.003 is ATT&CK's "Credentials from Web Browsers". 
 
 ## What the code fills today (14 Oct)
 
-Checked against `backend/app/services/reporting.py` on `main`. "Filled" means the report has real values from stored records; "Partly" means some fields are still placeholders; "Empty" means the code writes an empty list, `null` or a placeholder.
+Checked against `backend/app/services/reporting.py` after final integration. "Filled" means the report has real values from stored records; "Partly" means some fields are still placeholders; "Empty" means the code writes an empty list, `null` or a placeholder.
 
 | # | Section | Today | What's missing, and who |
 | --- | --- | --- | --- |
-| 1 | Header | Partly | `planner_model` is not written yet; the value is in `config.py` (`opencode_go_model`). Raaj |
+| 1 | Header | Filled | Includes planner model, monotonically increasing report version, current incident-state version, recovery status, latest plan ID/state binding and an explicit stale-plan flag. |
 | 2 | Executive summary | Partly | A one-line count of entities, evidence, actions and questions. The LLM summary is future work |
 | 3 | Classification | Partly | Type, severity, confidence and ATT&CK come from the planner (DEC-015); the type is limited to the four schema values (BL-041, 14 Oct). Status is always `suspected`; closure fields are empty. |
-| 4 | Affected assets | Partly | One row per entity. Owner, criticality and data classification are empty, type is the entity type, and `evidence_ids` is empty although GAS-lite entities now carry their evidence IDs. Needs the asset list (BL-033, Raaj) and the missing hosts added to it (BL-035, Aida + Aidan) |
+| 4 | Affected assets | Partly | One row per entity with GAS-lite evidence IDs. Known inventory assets receive policy-pack type, criticality and data classification; owner/how-affected and unknown-asset metadata remain empty (BL-033/BL-035). |
 | 5 | Exposed credentials | Empty | Future work |
 | 6 | Timeline | Partly | Rows and evidence IDs are filled; `source` is always `analyst_note` and `attack_technique` is `null` |
-| 7 | Findings | Filled | From the planner; only findings that cite stored evidence are kept. `status` is not written yet (should default to `hypothesis`) |
+| 7 | Findings | Filled | From the latest plan; only findings that cite stored evidence are kept and status defaults to `hypothesis`. The plan/state binding and any staleness are explicit. |
 | 8 | Root cause | Empty | Future work (LLM draft, analyst confirms) |
 | 9 | Impact | Empty | Placeholders (`unknown`, `not assessed`) |
-| 10 | Response actions | Partly | ID, phase, recommendation, status, decision and result are filled. The six v1.3 fields are not written yet, although the data is already stored: `tool_name`, `target_id` and `policy_refs` on the action's proposal, `required_approver` from the action's `required_role`, `approver_role` from `decided_by_role`, and `policy_check` from `policy_service` plus `action_blocked` audit events. Raaj |
+| 10 | Response actions | Partly | Each historical action keeps its own plan ID, state binding and phase. Tool, target, evidence, cited rules, required/actual approver, deterministic policy result, decision, execution and validation fields are filled. Playbook-step, replacement and team executor fields remain empty. |
 | 11 | Evidence preservation | Empty | Could come from effective `preserve_evidence` results plus the evidence hashes |
 | 12 | Notifications | Empty | BL-033, Raaj |
 | 13 | Recommendations | Empty | Future work |
@@ -241,13 +278,13 @@ Checked against `backend/app/services/reporting.py` on `main`. "Filled" means th
 | 17 | Sign-off | Empty | No sign-off endpoint yet, so reports stay `draft` |
 | A | Evidence index | Filled | Source file, line, time, hash and the untrusted flag |
 
-Three notes. The generator also adds `pdf_path`, a file path on the server; it is not report content and the UI must never show it as a link. The stored action uses `required_role` and `decided_by_role`, which the report shows as `required_approver` and `approver_role` (the policy pack's and the approval record's names). And report `status` stays `draft` while there is no sign-off endpoint; the evaluation harness checks this (`report_not_final_without_sign_off`); the incident state's report-status block calls the same step `finalized`.
+Four notes. The generator also adds `pdf_path`, a file path on the server; it is not report content and the UI never shows it as a link. The stored action uses `required_role` and `decided_by_role`, which the report shows as `required_approver` and `approver_role` (the policy pack's and the approval record's names). A plan may become stale when an action result creates a newer state; its historical analysis remains visible only with the exact plan/state binding and stale flag, while every action retains its own provenance. Report `status` stays `draft` while there is no sign-off endpoint; the evaluation harness checks this (`report_not_final_without_sign_off`); the incident state's report-status block calls the same step `finalized`.
 
 ## Open questions for the team
 
 - [ ] **Confidence threshold.** Is 0.6 the right cut-off for sending a finding to Open questions? (Airil)
 - [ ] **Severity scale.** Four levels with a reason, as proposed, or a 1-to-10 score like Alkhudari's? Four levels are easier to defend.
-- [x] **Schema fit.** Checked on 14 Oct: every key `reporting.py` writes is in the schema, apart from `pdf_path` (see the notes under the table). The data for the v1.3 action fields is already stored; see [What the code fills today](#what-the-code-fills-today-14-oct).
+- [x] **Schema fit.** Checked on 14 Oct: every report-content key `reporting.py` writes is documented, including state/plan and per-action provenance; `pdf_path` remains transport metadata rather than report content. See [What the code fills today](#what-the-code-fills-today-14-oct).
 - [x] **Incident type values.** Done (BL-041, 14 Oct): the planner is limited to the four schema values.
 - [x] **Who signs off.** Resolved by policy pack v1.0: a SOC analyst (POL-15).
 - [ ] **Trigger facts.** Which log events mark personal data exposed, a stolen session cookie and a compromised mailbox, so POL-03, POL-11 and POL-12 can fire? (Aidan, Raaj)

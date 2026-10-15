@@ -4,8 +4,13 @@ import { Sidebar, SidebarDrawer } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { ConnectionBanner } from "./ConnectionBanner";
 import { getProvider } from "@/lib/api";
+import { AnalysisRunProvider } from "@/features/analysisRuns/AnalysisRunContext";
 
 export function AppShell() {
+  return <AnalysisRunProvider><AppShellContent /></AnalysisRunProvider>;
+}
+
+function AppShellContent() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pendingApprovals, setPendingApprovals] = useState<number | null>(null);
   const location = useLocation();

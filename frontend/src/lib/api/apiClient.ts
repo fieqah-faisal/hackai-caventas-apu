@@ -93,3 +93,18 @@ export async function apiPostForm<T>(
     return { kind: "network_error", detail: e instanceof Error ? e.message : String(e) };
   }
 }
+
+export async function apiPatch<T>(path: string, body: unknown): Promise<ApiResult<T>> {
+  const off = offlineGuard<T>();
+  if (off) return off;
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+    });
+    return await toResult<T>(res);
+  } catch (e) {
+    return { kind: "network_error", detail: e instanceof Error ? e.message : String(e) };
+  }
+}

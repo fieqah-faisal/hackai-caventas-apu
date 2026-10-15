@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from app.api import approvals, cases, evidence, execution, planning, reports, state
+from app.api import approvals, cases, evidence, execution, investigation_activity, planning, reports, reviews, state
 
 app = FastAPI(
     title="IR Planner Backend",
@@ -33,6 +33,8 @@ app.include_router(state.router)
 # and reports (BL-003).
 app.include_router(planning.router)
 app.include_router(approvals.router)
+app.include_router(reviews.router)
+app.include_router(investigation_activity.router)
 app.include_router(execution.router)
 app.include_router(reports.router)
 

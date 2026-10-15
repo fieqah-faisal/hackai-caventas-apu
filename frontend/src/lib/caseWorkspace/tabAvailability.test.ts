@@ -20,12 +20,14 @@ describe("tab availability state machine", () => {
     const s = tabAvailability(base);
     expect(s.evidence.available).toBe(false);
     expect(s.analysis.available).toBe(false);
+    expect(s.graph.available).toBe(false);
     expect(s.plan.available).toBe(false);
     expect(s.approvals.available).toBe(false);
     expect(s.report.available).toBe(false);
     const full = tabAvailability({
       evidenceUploaded: true,
       timelineReconstructed: true,
+      stateVersion: 1,
       planningRunStarted: true,
       proposalExists: true,
       actionAwaitingDecision: true,

@@ -5,6 +5,7 @@
  * into stable view models before leaving this layer.
  *
  * Backend contract honoured here (merged BL-003):
+ *   GET  /cases                              -> CaseDTO[]
  *   GET  /cases/{id}                         -> CaseDTO
  *   GET  /cases/{id}/evidence                -> EvidenceItemDTO[]
  *   GET  /cases/{id}/state                   -> IncidentStateDTO
@@ -16,11 +17,18 @@
  *   POST /cases/{id}/actions/{aid}/decision  -> DecisionResponseDTO (approve/reject)
  *   POST /cases/{id}/actions/{aid}/execute   -> ExecuteResponseDTO
  *   POST /cases/{id}/reports                 -> StructuredReportDTO (explicit action only)
- *   GET  /cases/{id}/reports/{rid}           -> StructuredReportDTO
- * NOT available: global cases list, dashboard aggregates, plan-detail,
- *   run-status, request_more_investigation decision, /validate, report list.
+ *   GET  /cases/{id}/reports/latest          -> StructuredReportDTO
+ *   GET  /cases/{id}/reports/{rid}/pdf       -> application/pdf
+ * NOT available: run-status, request_more_investigation decision, /validate.
  */
-import { apiGet, apiPost, apiPostForm, type ApiResult } from "./apiClient";
+import { apiGet, apiPatch, apiPost, apiPostForm, type ApiResult } from "./apiClient";
+import {
+  analysisFromRecords,
+  toAnalysisRun,
+  toSnapshot,
+  toStateMeta,
+  isStale,
+} from "../mapping/incidentState";
 import {
   ok,
   type DataProvider,
@@ -31,6 +39,7 @@ import {
   inApprovalQueue,
   mapActionState,
   mapRisk,
+  mapSeverity,
   recoveryFromState,
   sortEvidenceInUploadOrder,
   sortPlansOldestFirst,
@@ -44,6 +53,9 @@ import {
 } from "../mapping";
 import type {
   ActionResultDTO,
+  AnalysisRunDTO,
+  AnalystReviewCreateDTO,
+  AnalystReviewDTO,
   ApproverRoleDTO,
   AuditEventDTO,
   CaseDTO,
@@ -55,25 +67,32 @@ import type {
   IncidentStateDTO,
   PlanDocDTO,
   RunResponseDTO,
+  StateVersionMetaDTO,
+  TimelineResponseDTO,
   StoredActionDTO,
   StructuredReportDTO,
 } from "./dto";
 import type {
   AgentPlanningVM,
+  AnalysisRunVM,
   AnalysisVM,
+  AnalystReviewVM,
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
   CaseActivityVM,
   CaseFacts,
   CaseHeaderVM,
+  CaseSummary,
   DecisionKind,
   EvidenceItemVM,
   ExecutionResultVM,
   HumanDecisionsVM,
+  IncidentSnapshotVM,
   PlanVM,
   RecentCaseRow,
   ReportVM,
+  StateVersionMetaVM,
   TimelineEventVM,
 } from "../types";
 
@@ -93,34 +112,159 @@ function fromApi<T>(r: ApiResult<T>, source: "real"): Outcome<T> {
   }
 }
 
-const UNSUPPORTED_DASHBOARD =
-  "No global dashboard endpoint exists in the backend. Switch to fixture mode for the demo dashboard.";
-
 export const PLAN_ACTIONS_UNAVAILABLE =
-  "Action detail is not loaded for stored plans in API mode: GET /plans lists only action IDs. Actions awaiting a decision or simulation are listed under Approvals.";
+  "One or more stored action references could not be resolved by GET /actions.";
 
 export class RealProvider implements DataProvider {
   readonly mode = "api" as const;
   readonly synthetic = false;
 
-  // ---- Dashboard: no global endpoints exist in API mode -------------------
+  private casesRead: Promise<ApiResult<CaseDTO[]>> | null = null;
+  private readonly planReads = new Map<string, Promise<ApiResult<PlanDocDTO[]>>>();
+  private readonly actionReads = new Map<string, Promise<ApiResult<StoredActionDTO[]>>>();
+
+  private loadCases(): Promise<ApiResult<CaseDTO[]>> {
+    if (!this.casesRead) {
+      const read = apiGet<CaseDTO[]>("/cases");
+      this.casesRead = read;
+      void read.then((result) => {
+        if (result.kind !== "ok" && this.casesRead === read) this.casesRead = null;
+      });
+    }
+    return this.casesRead;
+  }
+
+  private readPlans(caseId: string): Promise<ApiResult<PlanDocDTO[]>> {
+    let read = this.planReads.get(caseId);
+    if (!read) {
+      read = apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
+      this.planReads.set(caseId, read);
+      void read.then((result) => {
+        if (result.kind !== "ok" && this.planReads.get(caseId) === read) this.planReads.delete(caseId);
+      });
+    }
+    return read;
+  }
+
+  private readActions(caseId: string): Promise<ApiResult<StoredActionDTO[]>> {
+    let read = this.actionReads.get(caseId);
+    if (!read) {
+      read = apiGet<StoredActionDTO[]>(`/cases/${caseId}/actions`);
+      this.actionReads.set(caseId, read);
+      void read.then((result) => {
+        if (result.kind !== "ok" && this.actionReads.get(caseId) === read) this.actionReads.delete(caseId);
+      });
+    }
+    return read;
+  }
+
+  private async plansByCase(cases: CaseDTO[]): Promise<Outcome<Map<string, PlanDocDTO[]>>> {
+    const reads = await Promise.all(cases.map((item) => this.readPlans(item.case_id)));
+    const failed = reads.find((read) => read.kind !== "ok");
+    if (failed) return fromApi<Map<string, PlanDocDTO[]>>(failed as ApiResult<never>, "real");
+    return ok(new Map(cases.map((item, index) => [item.case_id, sortPlansOldestFirst((reads[index] as { kind: "ok"; data: PlanDocDTO[] }).data)])), "real");
+  }
+
+  private async actionsByCase(cases: CaseDTO[]): Promise<Outcome<Map<string, StoredActionDTO[]>>> {
+    const reads = await Promise.all(cases.map((item) => this.readActions(item.case_id)));
+    const failed = reads.find((read) => read.kind !== "ok");
+    if (failed) return fromApi<Map<string, StoredActionDTO[]>>(failed as ApiResult<never>, "real");
+    return ok(new Map(cases.map((item, index) => [item.case_id, (reads[index] as { kind: "ok"; data: StoredActionDTO[] }).data])), "real");
+  }
+
+  // ---- Dashboard: derived from persisted case records ---------------------
   async getCaseActivity(): Promise<Outcome<CaseActivityVM>> {
-    return { kind: "unsupported", reason: UNSUPPORTED_DASHBOARD };
+    const result = await this.loadCases();
+    if (result.kind !== "ok") return fromApi<CaseActivityVM>(result as ApiResult<never>, "real");
+    const open = result.data.filter((item) => ["open", "investigating", "contained"].includes(item.status));
+    const dates = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setUTCHours(0, 0, 0, 0);
+      date.setUTCDate(date.getUTCDate() - (6 - index));
+      return date.toISOString().slice(0, 10);
+    });
+    return ok({
+      openCases: open.length,
+      attentionCases: open.filter((item) => item.status === "investigating").length,
+      buckets: dates.map((date) => ({ date, count: result.data.filter((item) => item.updated_at.slice(0, 10) === date).length })),
+    }, "real");
   }
   async getAgentPlanning(): Promise<Outcome<AgentPlanningVM>> {
-    return { kind: "unsupported", reason: UNSUPPORTED_DASHBOARD };
+    const result = await this.loadCases();
+    if (result.kind !== "ok") return fromApi<AgentPlanningVM>(result as ApiResult<never>, "real");
+    const plans = await this.plansByCase(result.data);
+    if (plans.kind !== "ok") return plans;
+    const latest = [...plans.value.data.values()].flatMap((items) => items.length ? [items[items.length - 1]] : []);
+    return ok({
+      activeRuns: null,
+      blockedRuns: latest.filter((item) => item.missing_evidence.length > 0).length,
+      runCountsSource: "real",
+      stageDistribution: (["assessment", "preservation", "containment", "eradication", "hardening", "restoration"] as const)
+        .map((stage) => ({ stage, count: latest.filter((item) => item.stage === stage).length })),
+    }, "real");
   }
   async getHumanDecisions(): Promise<Outcome<HumanDecisionsVM>> {
-    return { kind: "unsupported", reason: UNSUPPORTED_DASHBOARD };
+    const result = await this.loadCases();
+    if (result.kind !== "ok") return fromApi<HumanDecisionsVM>(result as ApiResult<never>, "real");
+    const actions = await this.actionsByCase(result.data);
+    if (actions.kind !== "ok") return actions;
+    const queued = [...actions.value.data.values()].flat().filter((item) => inApprovalQueue(item.status));
+    const oldest = queued.map((item) => Date.parse(item.created_at)).filter(Number.isFinite).sort((a, b) => a - b)[0];
+    const ageMs = oldest == null ? 0 : Math.max(0, Date.now() - oldest);
+    const oldestWaiting = oldest == null ? null : ageMs >= 86_400_000 ? `${Math.floor(ageMs / 86_400_000)}d` : ageMs >= 3_600_000 ? `${Math.floor(ageMs / 3_600_000)}h` : `${Math.floor(ageMs / 60_000)}m`;
+    const risks = queued.map((item) => mapRisk(item.proposal.risk));
+    return ok({
+      awaitingApproval: queued.length,
+      highImpactEscalations: risks.filter((risk) => risk === "high").length,
+      oldestWaiting,
+      riskDistribution: (["high", "moderate", "low"] as const).map((risk) => ({ risk, count: risks.filter((item) => item === risk).length })),
+    }, "real");
   }
   async getAttentionItems(): Promise<Outcome<AttentionItem[]>> {
-    return { kind: "unsupported", reason: UNSUPPORTED_DASHBOARD };
+    const result = await this.loadCases();
+    if (result.kind !== "ok") return fromApi<AttentionItem[]>(result as ApiResult<never>, "real");
+    const [plans, actions] = await Promise.all([this.plansByCase(result.data), this.actionsByCase(result.data)]);
+    if (plans.kind !== "ok") return plans;
+    if (actions.kind !== "ok") return actions;
+    const items = result.data.flatMap((item): AttentionItem[] => {
+      const casePlans = plans.value.data.get(item.case_id) ?? [];
+      const latest = casePlans[casePlans.length - 1];
+      const waiting = (actions.value.data.get(item.case_id) ?? []).some((action) => inApprovalQueue(action.status));
+      if (waiting) return [{ caseId: item.case_id, title: item.title, reason: "awaiting_decision", statusLabel: "Awaiting decision", updatedAt: item.updated_at }];
+      if (latest?.missing_evidence.length) return [{ caseId: item.case_id, title: item.title, reason: "missing_evidence", statusLabel: "Evidence requested", updatedAt: item.updated_at }];
+      if (!latest && !["closed", "recovered"].includes(item.status)) return [{ caseId: item.case_id, title: item.title, reason: "newly_ingested", statusLabel: "Planning not started", updatedAt: item.updated_at }];
+      return [];
+    });
+    return ok(items.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), "real");
   }
   async getRecentCases(): Promise<Outcome<RecentCaseRow[]>> {
-    return {
-      kind: "unsupported",
-      reason: "No global GET /cases endpoint exists; recent cases are unavailable in API mode.",
-    };
+    const result = await this.getCases();
+    if (result.kind !== "ok") return result;
+    return ok(result.value.data.slice(0, 5).map((item) => ({
+      caseId: item.caseId,
+      title: item.title,
+      classification: item.classification,
+      stage: item.stage,
+      status: item.status,
+      updatedAt: item.updatedAt,
+    })), "real");
+  }
+
+  async getCases(): Promise<Outcome<CaseSummary[]>> {
+    const result = await this.loadCases();
+    if (result.kind !== "ok") return fromApi<CaseSummary[]>(result as ApiResult<never>, "real");
+    const plans = await this.plansByCase(result.data);
+    if (plans.kind !== "ok") return plans;
+    return ok(result.data.map((item) => ({
+      caseId: item.case_id,
+      title: item.title,
+      status: item.status,
+      stage: stageFromPlans(plans.value.data.get(item.case_id) ?? []),
+      classification: null,
+      severity: null,
+      stateVersion: item.current_state_version,
+      updatedAt: item.updated_at,
+    })), "real");
   }
 
   // ---- Case workspace -----------------------------------------------------
@@ -128,25 +272,64 @@ export class RealProvider implements DataProvider {
     const r = await apiGet<IncidentStateDTO>(`/cases/${caseId}/state`);
     return r.kind === "ok" ? r.data : null;
   }
-  private async loadPlans(caseId: string): Promise<PlanDocDTO[]> {
-    const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
-    return r.kind === "ok" ? sortPlansOldestFirst(r.data) : [];
+  async getStateHistory(caseId: string): Promise<Outcome<StateVersionMetaVM[]>> {
+    const r = await apiGet<StateVersionMetaDTO[]>(`/cases/${caseId}/states`);
+    return r.kind === "ok" ? ok(r.data.map(toStateMeta), "real") : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async getCurrentState(caseId: string): Promise<Outcome<IncidentSnapshotVM>> {
+    const r = await apiGet<IncidentStateDTO>(`/cases/${caseId}/state`);
+    return r.kind === "ok" ? ok(toSnapshot(r.data), "real") : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async getStateVersion(caseId: string, version: number): Promise<Outcome<IncidentSnapshotVM>> {
+    const r = await apiGet<IncidentStateDTO>(`/cases/${caseId}/states/${version}`);
+    return r.kind === "ok" ? ok(toSnapshot(r.data), "real") : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async createAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM>> {
+    const r = await apiPost<AnalysisRunDTO>(`/cases/${caseId}/analysis-runs`);
+    if (r.kind === "http_error" && r.status === 409) {
+      const active = await this.getActiveAnalysisRun(caseId);
+      if (active.kind === "ok" && active.value.data) return ok(active.value.data, "real");
+    }
+    return r.kind === "ok" ? ok(toAnalysisRun(r.data), "real") : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async getActiveAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM | null>> {
+    const r = await apiGet<AnalysisRunDTO | null>(`/cases/${caseId}/analysis-runs/active`);
+    return r.kind === "ok"
+      ? ok(r.data ? toAnalysisRun(r.data) : null, "real")
+      : fromApi(r as ApiResult<never>, "real");
+  }
+
+  async getAnalysisRun(caseId: string, runId: string): Promise<Outcome<AnalysisRunVM>> {
+    const r = await apiGet<AnalysisRunDTO>(`/cases/${caseId}/analysis-runs/${runId}`);
+    if (r.kind === "ok" && r.data.status === "completed") {
+      this.planReads.delete(caseId);
+      this.actionReads.delete(caseId);
+    }
+    return r.kind === "ok" ? ok(toAnalysisRun(r.data), "real") : fromApi(r as ApiResult<never>, "real");
   }
 
   async getCaseHeader(caseId: string): Promise<Outcome<CaseHeaderVM>> {
     const caseR = await apiGet<CaseDTO>(`/cases/${caseId}`);
     if (caseR.kind !== "ok") return fromApi<CaseHeaderVM>(caseR as ApiResult<never>, "real");
+    const plansR = await this.readPlans(caseId);
+    if (plansR.kind !== "ok") return fromApi<CaseHeaderVM>(plansR as ApiResult<never>, "real");
     const state = await this.loadState(caseId);
-    const plans = await this.loadPlans(caseId);
+    const plans = sortPlansOldestFirst(plansR.data);
     const vm: CaseHeaderVM = {
       caseId: caseR.data.case_id,
       title: caseR.data.title,
+      description: caseR.data.description,
       status: caseR.data.status,
-      severity: null,
+      severity: plans.length ? mapSeverity(plans[plans.length - 1].analysis?.severity) : null,
       stage: stageFromPlans(plans),
       recoveryStatus: recoveryFromState(state),
       updatedAt: caseR.data.updated_at,
-      agentState: plans.length > 0 ? `Plan v${plans.length} ready` : null,
+      agentState: plans.length > 0 ? isStale(plans[plans.length - 1].based_on_state_version, caseR.data.current_state_version)
+        ? `Plan v${plans.length} needs review` : `Plan v${plans.length} ready` : null,
     };
     return ok(vm, "real");
   }
@@ -155,7 +338,10 @@ export class RealProvider implements DataProvider {
     const caseR = await apiGet<CaseDTO>(`/cases/${caseId}`);
     if (caseR.kind !== "ok") return fromApi<CaseFacts>(caseR as ApiResult<never>, "real");
     const evR = await apiGet<EvidenceItemDTO[]>(`/cases/${caseId}/evidence`);
-    const plans = await this.loadPlans(caseId);
+    if (evR.kind !== "ok") return fromApi<CaseFacts>(evR as ApiResult<never>, "real");
+    const plansR = await this.readPlans(caseId);
+    if (plansR.kind !== "ok") return fromApi<CaseFacts>(plansR as ApiResult<never>, "real");
+    const plans = plansR.data;
     const state = await this.loadState(caseId);
     const hasEvidence = evR.kind === "ok" && evR.data.length > 0;
     const hasPlan = plans.length > 0;
@@ -163,6 +349,7 @@ export class RealProvider implements DataProvider {
     const facts: CaseFacts = {
       evidenceUploaded: hasEvidence,
       timelineReconstructed: !!state && state.timeline.length > 0,
+      stateVersion: caseR.data.current_state_version,
       planningRunStarted: hasPlan,
       proposalExists: hasPlan,
       actionAwaitingDecision: actionAwaiting,
@@ -178,15 +365,27 @@ export class RealProvider implements DataProvider {
   }
 
   async getTimeline(caseId: string): Promise<Outcome<TimelineEventVM[]>> {
-    const state = await apiGet<IncidentStateDTO>(`/cases/${caseId}/state`);
-    if (state.kind !== "ok") return fromApi<TimelineEventVM[]>(state as ApiResult<never>, "real");
-    const events: TimelineEventVM[] = state.data.timeline.map((t, i) => ({
-      id: `TL-${i}`,
-      time: t.timestamp ?? null,
-      label: t.description,
-      kind: "relevant",
-      relationshipStatus: "observed",
-      evidenceId: t.evidence_ids[0] ?? null,
+    const timeline = await apiGet<TimelineResponseDTO>(`/cases/${caseId}/timeline`);
+    if (timeline.kind !== "ok") return fromApi<TimelineEventVM[]>(timeline as ApiResult<never>, "real");
+    const events: TimelineEventVM[] = timeline.data.events.map((event) => ({
+      id: event.event_id,
+      time: event.occurred_at ?? null,
+      label: event.summary,
+      kind: event.relevance === "context" ? "benign_decoy" : event.source === "analyst_note" ? "analyst_added" : "relevant",
+      relationshipStatus: event.relationship_status,
+      evidenceId: event.evidence_ids[0] ?? null,
+      eventType: event.event_type,
+      source: event.source ?? null,
+      actor: event.actor ?? null,
+      subject: event.subject ?? null,
+      action: event.action ?? null,
+      result: event.result ?? null,
+      details: event.details,
+      evidenceIds: event.evidence_ids,
+      entityIds: event.entity_ids,
+      relevance: event.relevance,
+      severity: event.severity ?? null,
+      rawDescription: event.raw_description,
     }));
     return ok(events, "real");
   }
@@ -194,38 +393,42 @@ export class RealProvider implements DataProvider {
   async getAnalysis(caseId: string): Promise<Outcome<AnalysisVM>> {
     const state = await apiGet<IncidentStateDTO>(`/cases/${caseId}/state`);
     if (state.kind !== "ok") return fromApi<AnalysisVM>(state as ApiResult<never>, "real");
-    const s = state.data;
-    const vm: AnalysisVM = {
-      classification: s.findings[0]?.summary ?? null,
-      confidence: { value: null, basis: `${s.findings.length} findings on record`, advisory: true },
-      affectedEntities: s.entities.map((e) => ({ id: e.id, type: e.type, name: e.name })),
-      attackTechniques: s.attack_mapping,
-      missingEvidence: s.missing_evidence,
-      hypotheses: s.hypotheses,
-    };
-    return ok(vm, "real");
+    const plans = await this.readPlans(caseId);
+    if (plans.kind !== "ok") return fromApi<AnalysisVM>(plans as ApiResult<never>, "real");
+    return ok(analysisFromRecords(state.data, plans.data), "real");
   }
 
   async getPlans(caseId: string): Promise<Outcome<PlanVM[]>> {
-    // GET /plans returns action_ids only; the just-run plan (POST /runs) is the
-    // only source of full actions. Historical full plans need a plan-detail
-    // endpoint that does not exist, so plan ACTIONS are unavailable here.
     const r = await apiGet<PlanDocDTO[]>(`/cases/${caseId}/plans`);
     if (r.kind !== "ok") return fromApi<PlanVM[]>(r as ApiResult<never>, "real");
+    const actionsR = await apiGet<StoredActionDTO[]>(`/cases/${caseId}/actions`);
+    if (actionsR.kind !== "ok") return fromApi<PlanVM[]>(actionsR as ApiResult<never>, "real");
+    const state = await this.loadState(caseId);
+    const actionsById = new Map(actionsR.data.map((action) => [action.action_id, action]));
     // Version numbers are ordinals by created_at (the backend list is unordered).
     // No replanExplanation: the backend records no reason for a re-plan.
-    const vms: PlanVM[] = sortPlansOldestFirst(r.data).map((p, idx) => ({
-      planId: p.plan_id,
-      version: idx + 1,
-      basedOnStateVersion: p.based_on_state_version,
-      stage: p.stage,
-      createdAt: p.created_at,
-      missingEvidence: p.missing_evidence,
-      actions: [], // historical action detail is not retrievable (no endpoint)
-      ...(p.action_ids.length > 0
-        ? { actionsUnavailable: { count: p.action_ids.length, reason: PLAN_ACTIONS_UNAVAILABLE } }
-        : {}),
-    }));
+    const vms: PlanVM[] = sortPlansOldestFirst(r.data).map((p, idx) => {
+      const actions = p.action_ids.flatMap((id) => {
+        const action = actionsById.get(id);
+        return action ? [toResponsePlanActionVM(action, p.stage, state)] : [];
+      });
+      const unresolved = p.action_ids.length - actions.length;
+      return {
+        planId: p.plan_id,
+        version: idx + 1,
+        basedOnStateVersion: p.based_on_state_version,
+        stage: p.stage,
+        createdAt: p.created_at,
+        missingEvidence: p.missing_evidence,
+        planner: p.planner
+          ? { kind: p.planner.kind, adapter: p.planner.adapter, model: p.planner.model ?? null }
+          : { kind: "unknown", adapter: "Not recorded", model: null },
+        actions,
+        ...(unresolved > 0
+          ? { actionsUnavailable: { count: unresolved, reason: PLAN_ACTIONS_UNAVAILABLE } }
+          : {}),
+      };
+    });
     return ok(vms, "real");
   }
 
@@ -238,11 +441,13 @@ export class RealProvider implements DataProvider {
     );
   }
 
-  async getPlanDetail(_caseId: string, _planId: string): Promise<Outcome<PlanVM>> {
-    return {
-      kind: "unsupported",
-      reason: "The backend has no plan-detail endpoint; historical action detail cannot be reloaded in API mode.",
-    };
+  async getPlanDetail(caseId: string, planId: string): Promise<Outcome<PlanVM>> {
+    const plans = await this.getPlans(caseId);
+    if (plans.kind !== "ok") return plans;
+    const plan = plans.value.data.find((item) => item.planId === planId);
+    return plan
+      ? ok(plan, "real")
+      : { kind: "http_error", status: 404, detail: `plan not found: ${planId}` };
   }
 
   async getApprovals(caseId: string): Promise<Outcome<ApprovalItemVM[]>> {
@@ -289,25 +494,73 @@ export class RealProvider implements DataProvider {
     return ok(r.data.map((e) => toAuditEventVM(e, caseId)), "real");
   }
 
-  /**
-   * Reports generated in THIS page session, newest per case. Memory only
-   * (never localStorage). The backend has no "list/latest report" endpoint,
-   * so reports generated before a reload cannot be shown again.
-   */
-  private readonly sessionReports = new Map<string, ReportVM>();
-
   async getReport(caseId: string): Promise<Outcome<ReportVM | null>> {
-    // Never POSTs: each POST /reports stores a new report version, renders a
-    // PDF and writes a report_generated audit event.
-    return ok(this.sessionReports.get(caseId) ?? null, "real");
+    const r = await apiGet<StructuredReportDTO>(`/cases/${caseId}/reports/latest`);
+    if (r.kind === "http_error" && r.status === 404) return ok(null, "real");
+    if (r.kind !== "ok") return fromApi<ReportVM | null>(r as ApiResult<never>, "real");
+    return ok(toReportVM(r.data), "real");
+  }
+
+  async getAnalystReviews(caseId: string): Promise<Outcome<AnalystReviewVM[]>> {
+    const r = await apiGet<AnalystReviewDTO[]>(`/cases/${caseId}/reviews`);
+    if (r.kind !== "ok") return fromApi<AnalystReviewVM[]>(r as ApiResult<never>, "real");
+    return ok(r.data.map((review) => ({
+      reviewId: review.review_id,
+      caseId: review.case_id,
+      targetType: review.target_type,
+      targetId: review.target_id ?? null,
+      reviewType: review.review_type,
+      analyst: review.analyst,
+      analystRole: review.analyst_role,
+      comment: review.comment,
+      stateVersion: review.state_version,
+      planVersion: review.plan_version ?? null,
+      createdAt: review.created_at,
+    })), "real");
   }
 
   async generateReport(caseId: string): Promise<Outcome<ReportVM>> {
     const r = await apiPost<StructuredReportDTO>(`/cases/${caseId}/reports`);
     if (r.kind !== "ok") return fromApi<ReportVM>(r as ApiResult<never>, "real");
-    const vm = toReportVM(r.data);
-    this.sessionReports.set(caseId, vm); // cached only after backend confirmation
-    return ok(vm, "real");
+    return ok(toReportVM(r.data), "real");
+  }
+
+  async createAnalystReview(
+    caseId: string,
+    input: Omit<AnalystReviewVM, "reviewId" | "caseId" | "createdAt">,
+  ): Promise<Outcome<AnalystReviewVM>> {
+    const body: AnalystReviewCreateDTO = {
+      target_type: input.targetType,
+      target_id: input.targetId,
+      review_type: input.reviewType,
+      analyst: input.analyst,
+      analyst_role: input.analystRole,
+      comment: input.comment,
+      state_version: input.stateVersion,
+      plan_version: input.planVersion,
+    };
+    const r = await apiPost<AnalystReviewDTO>(`/cases/${caseId}/reviews`, body);
+    if (r.kind !== "ok") return fromApi<AnalystReviewVM>(r as ApiResult<never>, "real");
+    return ok({
+      reviewId: r.data.review_id,
+      caseId: r.data.case_id,
+      targetType: r.data.target_type,
+      targetId: r.data.target_id ?? null,
+      reviewType: r.data.review_type,
+      analyst: r.data.analyst,
+      analystRole: r.data.analyst_role,
+      comment: r.data.comment,
+      stateVersion: r.data.state_version,
+      planVersion: r.data.plan_version ?? null,
+      createdAt: r.data.created_at,
+    }, "real");
+  }
+
+  async updateCase(caseId: string, input: { title: string; description: string }): Promise<Outcome<{ title: string; description: string }>> {
+    const r = await apiPatch<CaseDTO>(`/cases/${caseId}`, input);
+    if (r.kind !== "ok") return fromApi<{ title: string; description: string }>(r as ApiResult<never>, "real");
+    this.casesRead = null;
+    return ok({ title: r.data.title, description: r.data.description }, "real");
   }
 
   // ---- Mutations ----------------------------------------------------------
@@ -333,12 +586,14 @@ export class RealProvider implements DataProvider {
       body,
     );
     if (r.kind !== "ok") return fromApi<{ state: string }>(r as ApiResult<never>, "real");
+    this.actionReads.delete(caseId);
     return ok({ state: mapActionState(r.data.action.status) }, "real");
   }
 
   async executeAction(caseId: string, actionId: string): Promise<Outcome<ExecutionResultVM>> {
     const r = await apiPost<ExecuteResponseDTO>(`/cases/${caseId}/actions/${actionId}/execute`);
     if (r.kind !== "ok") return fromApi<ExecutionResultVM>(r as ApiResult<never>, "real");
+    this.actionReads.delete(caseId);
     return ok(toExecutionResultVM(r.data.result), "real");
   }
 
@@ -346,15 +601,17 @@ export class RealProvider implements DataProvider {
   async createCase(title: string, description: string): Promise<Outcome<{ caseId: string }>> {
     const r = await apiPost<CaseDTO>("/cases", { title, description });
     if (r.kind !== "ok") return fromApi<{ caseId: string }>(r as ApiResult<never>, "real");
+    this.casesRead = null;
     return ok({ caseId: r.data.case_id }, "real");
   }
 
-  async uploadEvidence(caseId: string, file: File): Promise<Outcome<{ accepted: number }>> {
+  async uploadEvidence(caseId: string, file: File): Promise<Outcome<{ accepted: number; newStateVersion?: number | null }>> {
     const form = new FormData();
     form.append("file", file);
     const r = await apiPostForm<EvidenceUploadResultDTO>(`/cases/${caseId}/evidence`, form);
     if (r.kind !== "ok") return fromApi<{ accepted: number }>(r as ApiResult<never>, "real");
-    return ok({ accepted: r.data.item_count }, "real");
+    this.casesRead = null;
+    return ok({ accepted: r.data.item_count, newStateVersion: r.data.new_state_version }, "real");
   }
 
   async countEvidence(caseId: string): Promise<Outcome<{ count: number; sources: string[] }>> {
@@ -367,6 +624,8 @@ export class RealProvider implements DataProvider {
   async startRun(caseId: string): Promise<Outcome<{ planId: string }>> {
     const r = await apiPost<RunResponseDTO>(`/cases/${caseId}/runs`);
     if (r.kind !== "ok") return fromApi<{ planId: string }>(r as ApiResult<never>, "real");
+    this.planReads.delete(caseId);
+    this.actionReads.delete(caseId);
     return ok({ planId: r.data.plan_id }, "real");
   }
 }
@@ -384,6 +643,9 @@ export function planFromRunResponse(
     stage: run.stage,
     createdAt: run.created_at,
     missingEvidence: run.missing_evidence,
+    planner: run.planner
+      ? { kind: run.planner.kind, adapter: run.planner.adapter, model: run.planner.model ?? null }
+      : { kind: "unknown", adapter: "Not recorded", model: null },
     actions: run.actions.map((a) => toResponsePlanActionVM(a, run.stage, state)),
   };
 }

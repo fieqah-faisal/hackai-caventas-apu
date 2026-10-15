@@ -18,22 +18,54 @@ const p = getProvider();
 export function ApprovalsTab() {
   const { caseId, refresh } = useWorkspace();
   const approvals = useOutcome<ApprovalItemVM[]>(() => p.getApprovals(caseId), [caseId]);
+  const results = useOutcome<ExecutionResultVM[]>(() => p.getExecutionResults(caseId), [caseId]);
+  const reload = () => {
+    approvals.retry();
+    results.retry();
+    refresh();
+  };
 
   return (
-    <AsyncBoundary
-      outcome={approvals}
-      emptyWhen={(d) => d.length === 0}
-      emptyTitle="No recommendations awaiting approval"
-      emptyHint="Approved actions move on to simulation; the AI never acts without an analyst decision."
-    >
-      {(items) => (
-        <ul className="space-y-3">
-          {items.map((a) => (
-            <ApprovalCard key={`${a.actionId}-${a.actionVersion}`} item={a} caseId={caseId} onChanged={refresh} />
-          ))}
-        </ul>
-      )}
-    </AsyncBoundary>
+    <div className="space-y-5">
+      <AsyncBoundary
+        outcome={approvals}
+        emptyWhen={(d) => d.length === 0}
+        emptyTitle="No recommendations awaiting approval"
+        emptyHint="Approved actions move on to simulation; the AI never acts without an analyst decision."
+      >
+        {(items) => (
+          <ul className="space-y-3">
+            {items.map((a) => (
+              <ApprovalCard key={`${a.actionId}-${a.actionVersion}`} item={a} caseId={caseId} onChanged={reload} />
+            ))}
+          </ul>
+        )}
+      </AsyncBoundary>
+      <section aria-labelledby="execution-history-title">
+        <h2 id="execution-history-title" className="mb-2 text-sm font-semibold text-text-primary">Execution history</h2>
+        <AsyncBoundary
+          outcome={results}
+          emptyWhen={(d) => d.length === 0}
+          emptyTitle="No bounded simulations recorded"
+          emptyHint="Execution and validation results remain here after the approval queue refreshes."
+        >
+          {(items) => (
+            <ul className="space-y-2">
+              {items.map((result) => (
+                <li key={result.executionId} className="rounded border border-border-subtle bg-surface p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Mono>{result.tool}</Mono><span className="text-text-muted">on</span><Mono>{result.target}</Mono>
+                    <StatusBadge tone={result.executionStatus === "completed" ? "info" : "danger"}>Execution: {result.executionStatus}</StatusBadge>
+                    <StatusBadge tone={result.validationStatus === "effective" ? "accent" : result.validationStatus === "not_applicable" ? "neutral" : "danger"}>Validation: {result.validationStatus}</StatusBadge>
+                  </div>
+                  <p className="mt-1.5 text-meta text-text-secondary">{result.observedEffect}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </AsyncBoundary>
+      </section>
+    </div>
   );
 }
 
@@ -57,7 +89,7 @@ function ApprovalCard({ item, caseId, onChanged }: { item: ApprovalItemVM; caseI
       return;
     }
     setBusy(true);
-    const out = await p.submitDecision(caseId, item.actionId, decision, "Fieqah A.", comment.trim(), actingRole);
+    const out = await p.submitDecision(caseId, item.actionId, decision, "Caventas SOC Analyst", comment.trim(), actingRole);
     setBusy(false);
     if (out.kind === "ok") {
       setLocalState(out.value.data.state as typeof item.state);
@@ -104,7 +136,7 @@ function ApprovalCard({ item, caseId, onChanged }: { item: ApprovalItemVM; caseI
           </div>
           {item.supportingEvidence.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {item.supportingEvidence.map((e) => <Mono key={e} className="rounded border border-border-subtle px-1.5">{e}</Mono>)}
+              {[...new Set(item.supportingEvidence)].map((e) => <Mono key={e} className="rounded border border-border-subtle px-1.5">{e}</Mono>)}
             </div>
           )}
         </div>
@@ -180,7 +212,7 @@ function ApprovalCard({ item, caseId, onChanged }: { item: ApprovalItemVM; caseI
               <p className="text-meta text-text-muted">Simulation (bounded simulator — not real infrastructure)</p>
               <div className="mt-1.5 flex flex-wrap gap-2">
                 <StatusBadge tone={result.executionStatus === "completed" ? "info" : "danger"}>Execution: {result.executionStatus}</StatusBadge>
-                <StatusBadge tone={result.validationStatus === "effective" ? "accent" : "danger"}>Validation: {result.validationStatus}</StatusBadge>
+                <StatusBadge tone={result.validationStatus === "effective" ? "accent" : result.validationStatus === "not_applicable" ? "neutral" : "danger"}>Validation: {result.validationStatus}</StatusBadge>
               </div>
               <p className="mt-1.5 text-meta text-text-secondary">{result.observedEffect}</p>
             </div>

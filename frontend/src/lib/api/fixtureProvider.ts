@@ -30,22 +30,27 @@ import { STAGE_ORDER } from "../types";
 import type {
   AgentPlanningVM,
   AnalysisVM,
+  AnalysisRunVM,
+  AnalystReviewVM,
   ApprovalItemVM,
   AttentionItem,
   AuditEventVM,
   CaseActivityVM,
   CaseFacts,
   CaseHeaderVM,
+  CaseSummary,
   DecisionKind,
   EvidenceItemVM,
   ExecutionResultVM,
   HumanDecisionsVM,
+  IncidentSnapshotVM,
   PlanActionState,
   PlanVM,
   RecentCaseRow,
   ReportVM,
   ResponsePlanActionVM,
   Risk,
+  StateVersionMetaVM,
   TimelineEventVM,
 } from "../types";
 import {
@@ -57,6 +62,7 @@ import {
 } from "./provider";
 
 const minsAgo = (m: number) => new Date(NOW.getTime() - m * 60_000).toISOString();
+const caseEdits = new Map<string, { title: string; description: string }>();
 
 /**
  * Mutable demo state for the Infostealer case so the workflow advances:
@@ -64,21 +70,29 @@ const minsAgo = (m: number) => new Date(NOW.getTime() - m * 60_000).toISOString(
  */
 interface DemoState {
   revealedBatch: 1 | 2;
+  reanalysisDone: boolean;
+  stateEvents: { kind: "evidence" | "result"; result?: ExecutionResultVM }[];
   actionState: Record<string, PlanActionState>;
   decisionNote: Record<string, { decision: DecisionKind; reason: string }>;
   results: ExecutionResultVM[];
+  runs: Record<string, AnalysisRunVM>;
   audit: AuditEventVM[];
+  reviews: AnalystReviewVM[];
 }
 
 const demo: DemoState = {
   revealedBatch: 1, // starts at batch 1 so the presenter can reveal batch 2 (v1 -> v2) live
+  reanalysisDone: false,
+  stateEvents: [{ kind: "evidence" }],
   actionState: {},
   decisionNote: {},
   results: [],
+  runs: {},
+  reviews: [],
   audit: [
     { eventId: "EV-A1", kind: "case_created", caseId: INFOSTEALER_CASE_ID, summary: "Case opened — Infostealer to session hijack", at: minsAgo(220) },
     { eventId: "EV-A2", kind: "evidence_ingested", caseId: INFOSTEALER_CASE_ID, summary: "4 endpoint/network records ingested (batch 1)", at: minsAgo(200) },
-    { eventId: "EV-A3", kind: "plan_created", caseId: INFOSTEALER_CASE_ID, summary: "Plan v1 created (4 actions)", at: minsAgo(198) },
+    { eventId: "EV-A3", kind: "plan_created", caseId: INFOSTEALER_CASE_ID, summary: "Plan v1 created (5 actions)", at: minsAgo(198) },
   ],
 };
 
@@ -109,8 +123,7 @@ function fxActionToVM(a: FxAction): ResponsePlanActionVM {
 }
 
 function activeActions(): FxAction[] {
-  // v2 supersedes v1 for the demo once batch 2 is revealed.
-  return demo.revealedBatch === 2 ? infostealerPlanV2Actions : infostealerPlanV1Actions;
+  return demo.reanalysisDone ? infostealerPlanV2Actions : infostealerPlanV1Actions;
 }
 
 function findAction(actionId: string): FxAction | undefined {
@@ -122,6 +135,101 @@ function findAction(actionId: string): FxAction | undefined {
 export class FixtureProvider implements DataProvider {
   readonly mode = "fixture" as const;
   readonly synthetic = true;
+
+  private currentVersion(): number { return demo.stateEvents.length; }
+
+  private snapshot(version: number): IncidentSnapshotVM {
+    const first = infostealerEvidenceBatch1;
+    const events = demo.stateEvents.slice(0, version);
+    const batch2 = events.filter((e) => e.kind === "evidence").length > 1;
+    const results = events.flatMap((e) => e.result ? [e.result] : []);
+    const items = batch2 ? [...first, ...infostealerEvidenceBatch2] : first;
+    const trigger = events[version - 1];
+    const entity = (id: string, type: "host" | "account" | "ip", evidenceIds: string[], condition: string | null = null) => ({
+      id, type, name: id.split("::").slice(1).join("::"), attributes: {}, evidenceIds,
+      firstSeen: items[0].eventTime, lastSeen: items[items.length - 1].eventTime, condition,
+    });
+    const entities = [
+      entity("HOST::SALES-LT-07", "host", [first[0].evidenceId, first[1].evidenceId],
+        results.some((r) => r.tool === "isolate_host" && r.target === "HOST::SALES-LT-07" && r.validationStatus === "effective") ? "isolated" : null),
+      entity("ACCOUNT::farah", "account", [first[2].evidenceId]),
+      entity("IP::203.0.113.45", "ip", [first[3].evidenceId]),
+      ...(batch2 ? [entity("IP::198.51.100.23", "ip", [infostealerEvidenceBatch2[0].evidenceId])] : []),
+    ];
+    const relationship = (id: string, source: string, relation: string, target: string, evidenceIds: string[],
+      category: "context" | "attack" | "response", status: "observed" | "inferred" = "observed") => ({
+      id, source, relation, target, evidenceIds, category, status, firstSeen: items[0].eventTime,
+      lastSeen: items[items.length - 1].eventTime, attributes: {}, actionId: null, executionId: null,
+    });
+    const relationships: IncidentSnapshotVM["relationships"] = [
+      relationship("REL::login", "ACCOUNT::farah", "logged_into", "HOST::SALES-LT-07", [first[2].evidenceId], "context"),
+      relationship("REL::upload", "HOST::SALES-LT-07", "connected_to", "IP::203.0.113.45", [first[3].evidenceId], "attack"),
+      ...(batch2 ? [relationship("REL::session", "ACCOUNT::farah", "authenticated_from", "IP::198.51.100.23", [infostealerEvidenceBatch2[0].evidenceId], "attack", "inferred")] : []),
+      ...results.map((r) => ({ ...relationship(`REL::${r.executionId}`, r.actionId, "action_attempted_on", r.target,
+        [], "response"), actionId: r.actionId, executionId: r.executionId, attributes: { validation_status: r.validationStatus } })),
+    ];
+    return { caseId: INFOSTEALER_CASE_ID, version, parentVersion: version > 1 ? version - 1 : null,
+      changeReason: trigger?.kind === "result" ? "synthetic bounded simulation" : batch2 ? "synthetic evidence batch 2" : "synthetic evidence batch 1",
+      createdFrom: trigger?.kind === "result" ? "action_result" : "evidence_upload",
+      createdAt: trigger?.result?.createdAt ?? minsAgo(batch2 ? 78 : 200),
+      entities, relationships, timeline: items.map((e) => ({ timestamp: e.eventTime, description: e.title, evidenceIds: [e.evidenceId] })),
+      findings: [], attackMapping: batch2 ? infostealerAnalysisBatch2.attackTechniques : infostealerAnalysisBatch1.attackTechniques,
+      hypotheses: [], missingEvidence: [], actions: [], actionResults: results.map((r) => r.executionId),
+      recoveryStatus: "investigating", observedResponseStatus: null, recommendedResponseFocus: null,
+      responseObjective: null, responsePrerequisites: [], routingRationale: null,
+      routingEvidenceIds: [], routingConfidence: null, routingTransition: null,
+      reportSectionsComplete: [], reportSectionsPending: [], reportSectionsInvalidated: [],
+      latestReportId: null, latestReportVersion: null, reportStatus: null };
+  }
+
+  async getStateHistory(caseId: string): Promise<Outcome<StateVersionMetaVM[]>> {
+    if (caseId !== INFOSTEALER_CASE_ID) return ok([], "synthetic");
+    const versions = Array.from({ length: this.currentVersion() }, (_, i) => i + 1);
+    return ok(versions.map((v) => { const s = this.snapshot(v); return {
+      version: v, parentVersion: s.parentVersion, createdFrom: s.createdFrom, changeReason: s.changeReason,
+      createdAt: s.createdAt, entityCount: s.entities.length, relationshipCount: s.relationships.length,
+      timelineCount: s.timeline.length,
+    }; }), "synthetic");
+  }
+
+  async getCurrentState(caseId: string): Promise<Outcome<IncidentSnapshotVM>> {
+    return this.getStateVersion(caseId, this.currentVersion());
+  }
+
+  async getStateVersion(caseId: string, version: number): Promise<Outcome<IncidentSnapshotVM>> {
+    if (caseId !== INFOSTEALER_CASE_ID || version < 1 || version > this.currentVersion())
+      return { kind: "http_error", status: 404, detail: "Synthetic state version unavailable" };
+    return ok(this.snapshot(version), "synthetic");
+  }
+
+  async createAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM>> {
+    if (caseId !== INFOSTEALER_CASE_ID) return { kind: "unsupported", reason: "No fixture run for this case" };
+    if (this.currentVersion() !== demo.revealedBatch) return { kind: "unsupported", reason: "No synthetic plan is authored for this post-simulation state." };
+    const version = demo.revealedBatch;
+    if (version === 2 && !demo.reanalysisDone) {
+      demo.reanalysisDone = true;
+      demo.audit.unshift({ eventId: "EV-A5", kind: "plan_created", caseId,
+        summary: "Synthetic Plan v2 created after analyst-requested re-analysis", at: new Date().toISOString() });
+    }
+    const run: AnalysisRunVM = { runId: `RUN-FIXTURE-${version}`, caseId, status: "completed", stage: "completed",
+      message: "Synthetic stored plan is ready.", basedOnStateVersion: version,
+      planId: version === 1 ? infostealerPlanV1.planId : infostealerPlanV2.planId,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(), error: null };
+    demo.runs[run.runId] = run;
+    return ok(run, "synthetic");
+  }
+
+  async getAnalysisRun(caseId: string, runId: string): Promise<Outcome<AnalysisRunVM>> {
+    const run = demo.runs[runId];
+    return run?.caseId === caseId ? ok(run, "synthetic") : { kind: "http_error", status: 404, detail: "Run not found" };
+  }
+
+  async getActiveAnalysisRun(caseId: string): Promise<Outcome<AnalysisRunVM | null>> {
+    const run = Object.values(demo.runs).find((item) =>
+      item.caseId === caseId && (item.status === "queued" || item.status === "running"));
+    return ok(run ?? null, "synthetic");
+  }
 
   async getCaseActivity(): Promise<Outcome<CaseActivityVM>> {
     const open = fxCases.filter((c) => ["open", "investigating", "contained"].includes(c.status)).length;
@@ -183,6 +291,24 @@ export class FixtureProvider implements DataProvider {
     return ok(rows, "synthetic");
   }
 
+  async getCases(): Promise<Outcome<CaseSummary[]>> {
+    return ok(
+      [...fxCases]
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .map((c) => ({
+          caseId: c.caseId,
+          title: c.title,
+          status: c.status,
+          stage: c.stage,
+          classification: c.classification,
+          severity: c.severity,
+          stateVersion: c.caseId === INFOSTEALER_CASE_ID ? this.currentVersion() : c.stateVersion,
+          updatedAt: c.updatedAt,
+        })),
+      "synthetic",
+    );
+  }
+
   private caseById(caseId: string) {
     return fxCases.find((c) => c.caseId === caseId);
   }
@@ -190,13 +316,15 @@ export class FixtureProvider implements DataProvider {
   async getCaseHeader(caseId: string): Promise<Outcome<CaseHeaderVM>> {
     const c = this.caseById(caseId);
     if (!c) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
+    const edit = caseEdits.get(caseId);
     const agentState = caseId === INFOSTEALER_CASE_ID
-      ? demo.revealedBatch === 2 ? "Plan v2 ready" : "Plan v1 ready"
+      ? this.currentVersion() > demo.revealedBatch ? `Plan v${demo.reanalysisDone ? 2 : 1} needs review` : demo.reanalysisDone ? "Plan v2 ready" : demo.revealedBatch === 2 ? "Plan v1 needs review" : "Plan v1 ready"
       : null;
     return ok(
       {
         caseId: c.caseId,
-        title: c.title,
+        title: edit?.title ?? c.title,
+        description: edit?.description ?? c.description ?? "",
         status: c.status,
         severity: c.severity,
         stage: c.stage,
@@ -216,7 +344,7 @@ export class FixtureProvider implements DataProvider {
       );
     }
     return ok(
-      { evidenceUploaded: true, timelineReconstructed: true, planningRunStarted: true, proposalExists: true, actionAwaitingDecision: true, reportEligible: true },
+      { evidenceUploaded: true, timelineReconstructed: true, stateVersion: this.currentVersion(), planningRunStarted: true, proposalExists: true, actionAwaitingDecision: true, reportEligible: true },
       "synthetic",
     );
   }
@@ -240,21 +368,21 @@ export class FixtureProvider implements DataProvider {
   async getAnalysis(caseId: string): Promise<Outcome<AnalysisVM>> {
     if (caseId !== INFOSTEALER_CASE_ID) {
       return ok(
-        { classification: null, confidence: { value: null, basis: "No analysis yet", advisory: true }, affectedEntities: [], attackTechniques: [], missingEvidence: [], hypotheses: [] },
+        { classification: null, summary: null, confidence: { value: null, basis: "No model-reported confidence is stored.", advisory: true }, planner: { kind: "deterministic", adapter: "FixtureProvider", model: "deterministic-fixture-v1" }, affectedEntities: [], attackTechniques: [], missingEvidence: [], hypotheses: [] },
         "synthetic",
       );
     }
-    return ok(demo.revealedBatch === 2 ? infostealerAnalysisBatch2 : infostealerAnalysisBatch1, "synthetic");
+    return ok(demo.reanalysisDone ? infostealerAnalysisBatch2 : infostealerAnalysisBatch1, "synthetic");
   }
 
   async getPlans(caseId: string): Promise<Outcome<PlanVM[]>> {
     if (caseId !== INFOSTEALER_CASE_ID) return ok([], "synthetic");
     const plans: PlanVM[] = [
-      { planId: infostealerPlanV1.planId, version: 1, basedOnStateVersion: 1, stage: infostealerPlanV1.stage, createdAt: infostealerPlanV1.createdAt, missingEvidence: infostealerPlanV1.missingEvidence, actions: infostealerPlanV1Actions.map(fxActionToVM) },
+      { planId: infostealerPlanV1.planId, version: 1, basedOnStateVersion: 1, stage: infostealerPlanV1.stage, createdAt: infostealerPlanV1.createdAt, missingEvidence: infostealerPlanV1.missingEvidence, planner: { kind: "deterministic", adapter: "FixtureProvider", model: "deterministic-fixture-v1" }, actions: infostealerPlanV1Actions.map(fxActionToVM) },
     ];
-    if (demo.revealedBatch === 2) {
+    if (demo.reanalysisDone) {
       // v2 is the scenario's scripted re-plan after evidence batch 2.
-      plans.push({ planId: infostealerPlanV2.planId, version: 2, basedOnStateVersion: 2, stage: infostealerPlanV2.stage, createdAt: infostealerPlanV2.createdAt, missingEvidence: infostealerPlanV2.missingEvidence, actions: infostealerPlanV2Actions.map(fxActionToVM), replanExplanation: INFOSTEALER_REPLAN_EXPLANATION });
+      plans.push({ planId: infostealerPlanV2.planId, version: 2, basedOnStateVersion: 2, stage: infostealerPlanV2.stage, createdAt: infostealerPlanV2.createdAt, missingEvidence: infostealerPlanV2.missingEvidence, planner: { kind: "deterministic", adapter: "FixtureProvider", model: "deterministic-fixture-v1" }, actions: infostealerPlanV2Actions.map(fxActionToVM), replanExplanation: INFOSTEALER_REPLAN_EXPLANATION });
     }
     return ok(plans, "synthetic");
   }
@@ -280,7 +408,10 @@ export class FixtureProvider implements DataProvider {
     if (caseId !== INFOSTEALER_CASE_ID) return ok([], "synthetic");
     const c = this.caseById(caseId);
     const items: ApprovalItemVM[] = activeActions()
-      .filter((a) => (demo.actionState[a.actionId] ?? a.state) === "proposed")
+      .filter((a) => {
+        const state = demo.actionState[a.actionId] ?? a.state;
+        return state === "proposed" || state === "approved";
+      })
       .map((a) => ({
         actionId: a.actionId,
         actionVersion: a.version,
@@ -298,7 +429,7 @@ export class FixtureProvider implements DataProvider {
         expectedEffect: a.expectedEffect,
         supportingEvidence: a.evidenceIds,
         state: demo.actionState[a.actionId] ?? a.state,
-        stalePrewarn: false,
+        stalePrewarn: a.basedOnStateVersion < this.currentVersion(),
       }));
     return ok(items, "synthetic");
   }
@@ -321,19 +452,95 @@ export class FixtureProvider implements DataProvider {
     return this.buildReport(caseId);
   }
 
+  async getAnalystReviews(caseId: string): Promise<Outcome<AnalystReviewVM[]>> {
+    if (!this.caseById(caseId)) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
+    return ok(demo.reviews.filter((review) => review.caseId === caseId), "synthetic");
+  }
+
+  async createAnalystReview(
+    caseId: string,
+    input: Omit<AnalystReviewVM, "reviewId" | "caseId" | "createdAt">,
+  ): Promise<Outcome<AnalystReviewVM>> {
+    if (!this.caseById(caseId)) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
+    if (input.targetType !== "case" && input.targetType !== "plan") {
+      return { kind: "http_error", status: 422, detail: `review target type is not supported yet: ${input.targetType}` };
+    }
+    const review: AnalystReviewVM = {
+      ...input,
+      reviewId: `REVIEW-DEMO-${demo.reviews.length + 1}`,
+      caseId,
+      createdAt: new Date(NOW.getTime() + demo.reviews.length * 1000).toISOString(),
+    };
+    demo.reviews.push(review);
+    return ok(review, "synthetic");
+  }
+
+  async updateCase(caseId: string, input: { title: string; description: string }): Promise<Outcome<{ title: string; description: string }>> {
+    if (!this.caseById(caseId)) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
+    const updated = { title: input.title.trim(), description: input.description.trim() };
+    caseEdits.set(caseId, updated);
+    return ok(updated, "synthetic");
+  }
+
   private buildReport(caseId: string): Outcome<ReportVM> {
     const c = this.caseById(caseId);
     if (!c) return { kind: "http_error", status: 404, detail: `case not found: ${caseId}` };
     const actions = activeActions();
     const executed = demo.results;
     const decided = Object.entries(demo.decisionNote);
+    const reportEvidence = [...infostealerEvidenceBatch1, ...infostealerEvidenceBatch2];
+    const reportTimeline = [...infostealerTimelineBatch1, ...infostealerTimelineBatch2].map((event) => ({
+      id: event.id,
+      timestamp: event.time,
+      category: event.kind === "analyst_added" ? "analyst" as const : event.kind === "relevant" ? "attack" as const : "observed" as const,
+      eventType: event.kind,
+      summary: event.label,
+      significance: event.kind === "relevant" ? "Included in the current synthetic analysis" : "Retained for chronology",
+      entityIds: [],
+      evidenceIds: event.evidenceId ? [event.evidenceId] : [],
+      source: "synthetic_fixture",
+      rawDetail: event.label,
+      actor: event.actor ?? null,
+      subject: event.subject ?? null,
+      action: event.action ?? null,
+      result: event.result ?? null,
+      details: event.details ?? {},
+      relationshipStatus: event.relationshipStatus,
+      relevance: event.relevance ?? (event.kind === "relevant" ? "attack" as const : "context" as const),
+      severity: event.severity ?? null,
+    }));
+    const reportActions = actions.map((action) => {
+      const result = executed.find((item) => item.actionId === action.actionId);
+      const decision = demo.decisionNote[action.actionId];
+      const actionState = demo.actionState[action.actionId] ?? action.state;
+      return {
+        id: action.actionId,
+        type: action.tool,
+        target: action.target,
+        recommendation: action.rationale,
+        proposedStatus: actionState,
+        approvalStatus: decision?.decision ?? "not_recorded",
+        executionStatus: result?.executionStatus ?? "not_executed",
+        validationStatus: result?.validationStatus ?? "not_validated",
+        effectiveness: result?.validationStatus ?? "not_assessed",
+        outcome: result?.observedEffect ?? "No outcome recorded",
+        stateVersion: action.basedOnStateVersion,
+        timestamp: result?.createdAt ?? null,
+        planId: "PLAN-FIXTURE-02",
+        phase: action.stage,
+        decidedBy: decision ? "Synthetic analyst" : null,
+        approverRole: action.requiredApprover,
+        resultSource: result?.resultSource ?? null,
+        evidenceIds: action.evidenceIds,
+      };
+    });
     const sections = [
       { key: "executive_summary", title: "Executive summary", present: true, lines: ["Infostealer compromise escalated to session hijack and CRM data export; containment and eradication actions proposed across two plan versions."] },
       { key: "classification", title: "Incident classification", present: true, lines: ["Type: credential theft / session hijack", "Severity: high", "Phase: containment"] },
       { key: "timeline", title: "Timeline", present: true, lines: [...infostealerTimelineBatch1, ...infostealerTimelineBatch2].map((t) => t.label) },
-      { key: "affected", title: "Affected assets and identities", present: true, lines: ["LAP-FARAH (host)", "farah@demo.example (account)", "CRM (application)"] },
+      { key: "affected", title: "Affected assets and identities", present: true, lines: ["SALES-LT-07 (host)", "farah (account)", "CRM (data store)"] },
       { key: "evidence_index", title: "Evidence", present: true, lines: [...infostealerEvidenceBatch1, ...infostealerEvidenceBatch2].map((e) => `${e.evidenceId} — ${e.sourceFile}`) },
-      { key: "attack", title: "ATT&CK mappings", present: true, lines: ["T1566.002", "T1204.002", "T1555.003", "T1041", "T1550.004", "T1213"] },
+      { key: "attack", title: "ATT&CK mappings", present: true, lines: ["T1204.002", "T1555.003", "T1041", "T1550.004", "T1213"] },
       { key: "decisions", title: "Decisions and approvals", present: decided.length > 0, lines: decided.map(([id, d]) => `${id}: ${d.decision}${d.reason ? ` — ${d.reason}` : ""}`) },
       { key: "actions", title: "Recommended / simulated actions", present: true, lines: actions.map((a) => `${demo.actionState[a.actionId] ?? a.state}: ${a.tool} on ${a.target}`) },
       { key: "validation", title: "Validation results", present: executed.length > 0, lines: executed.map((r) => `${r.tool} → ${r.executionStatus}/${r.validationStatus}`) },
@@ -348,8 +555,88 @@ export class FixtureProvider implements DataProvider {
         organisation: DEMO_ORGANISATION,
         status: "draft",
         generatedAt: minsAgo(1),
+        version: 1,
+        plannerModel: "fixture-planner",
+        plannerKind: "deterministic",
+        evidenceCount: [...infostealerEvidenceBatch1, ...infostealerEvidenceBatch2].length,
+        analysisSummary: "Synthetic analysis: credential theft escalated to session hijack and CRM export (fixture data).",
+        confirmedByAnalyst: false,
+        signOff: null,
+        reviews: [],
+        agentDecisionTrace: [],
+        investigationActivity: [],
+        stateVersion: 2,
+        recoveryStatus: "containing",
+        planId: "PLAN-FIXTURE-02",
+        planStateVersion: 2,
+        planIsStale: false,
+        schemaVersion: "2.0-fixture",
+        overview: {
+          caseStatus: "active",
+          incidentStatus: "confirmed",
+          severity: "high",
+          incidentType: infostealerAnalysisBatch2.classification ?? "unknown",
+          phase: "containment",
+          primaryAssets: infostealerAnalysisBatch2.affectedEntities.map((entity) => entity.id),
+          planStatus: "current",
+        },
+        executiveSummary: {
+          text: "Synthetic evidence supports credential theft, session replay, and a CRM data export. Response actions remain separated by approval, execution, and validation state.",
+          source: "current_state_analysis",
+        },
+        findings: [{
+          id: "FINDING-FIXTURE-01",
+          title: "Credential theft followed by session replay",
+          summary: "Synthetic endpoint and identity evidence supports credential access followed by reuse of the affected account session.",
+          severity: "high",
+          confidence: infostealerAnalysisBatch2.confidence.value,
+          status: "supported",
+          affectedEntityIds: infostealerAnalysisBatch2.affectedEntities.map((entity) => entity.id),
+          evidenceIds: ["EV-IS-003", "EV-IS-010"],
+        }],
+        timeline: reportTimeline,
+        entities: infostealerAnalysisBatch2.affectedEntities.map((entity) => ({
+          id: entity.id,
+          type: entity.type,
+          displayName: entity.name,
+          role: "affected entity",
+          condition: "compromised",
+          relevance: "confirmed_affected" as const,
+          relevanceReason: "Included in the current synthetic analysis",
+          evidenceCount: reportEvidence.filter((item) => item.relatedEntities.includes(entity.id)).length,
+          evidenceIds: reportEvidence.filter((item) => item.relatedEntities.includes(entity.id)).map((item) => item.evidenceId),
+        })),
+        actions: reportActions,
+        impact: {
+          confirmed: ["Synthetic CRM export activity was observed for the affected account."],
+          potential: ["Data-protection notification obligations require assessment."],
+          remainingRisk: ["Confirm that session revocation and credential rotation are effective."],
+        },
+        nextSteps: [{
+          priority: "High",
+          text: "Validate that active sessions are revoked and the old password is rejected.",
+          owner: "Incident response team",
+          status: "open",
+          relatedIds: ["ACCOUNT::farah"],
+        }],
+        appendices: {
+          evidence: reportEvidence.map((item) => ({
+            evidenceId: item.evidenceId,
+            sourceFile: item.sourceFile,
+            sourceLocation: item.sourceLocation,
+            timestamp: item.eventTime,
+            eventType: item.category,
+            source: "synthetic_fixture",
+            sha256: item.sha256,
+            untrusted: true,
+          })),
+          chronology: reportTimeline,
+          findings: [],
+          attackMapping: infostealerAnalysisBatch2.attackTechniques,
+          provenance: ["Synthetic fixture", "State version: 2", "Plan: PLAN-FIXTURE-02"],
+        },
         sections,
-        completeness: { present: sections.filter((s) => s.present).length, total: sections.length },
+        completeness: { present: 8, total: 8 },
         pdfAvailable: false,
       },
       "synthetic",
@@ -379,12 +666,15 @@ export class FixtureProvider implements DataProvider {
   async executeAction(caseId: string, actionId: string): Promise<Outcome<ExecutionResultVM>> {
     const a = findAction(actionId);
     if (!a) return { kind: "http_error", status: 404, detail: `action not found: ${actionId}` };
+    if (a.basedOnStateVersion !== this.currentVersion()) {
+      return { kind: "http_error", status: 409, detail: "Action is bound to an older incident state; re-analysis is required." };
+    }
     if ((demo.actionState[actionId] ?? a.state) !== "approved") {
       return { kind: "http_error", status: 409, detail: "action is not approved" };
     }
-    // Deterministic demo outcome: containment actions validate effective,
-    // the lone re-image action on its own validates ineffective (needs session revoke).
-    const effective = a.tool !== "reimage_host";
+    // The first CRM revocation attempt hits the explicit demo fault; its
+    // replacement on Plan v2 succeeds after the analyst re-plans.
+    const effective = actionId !== "ACT-IS-1E";
     const result: ExecutionResultVM = {
       executionId: `EXE-${actionId}`,
       actionId,
@@ -392,11 +682,12 @@ export class FixtureProvider implements DataProvider {
       target: a.target,
       executionStatus: "completed",
       validationStatus: effective ? "effective" : "ineffective",
-      observedEffect: effective ? "Expected effect observed in the simulator." : "Re-image did not invalidate the active stolen session.",
+      observedEffect: effective ? "Expected effect observed in the simulator." : "CRM session revocation did not complete; the stolen session remained valid.",
       resultSource: "simulator",
       createdAt: new Date().toISOString(),
     };
     demo.results = [result, ...demo.results.filter((r) => r.actionId !== actionId)];
+    demo.stateEvents.push({ kind: "result", result });
     demo.actionState[actionId] = "simulated";
     demo.audit.unshift({ eventId: `EV-X-${actionId}`, kind: "action_executed", caseId, summary: `Simulated ${a.tool} on ${a.target}`, at: new Date().toISOString() });
     // Validation is a distinct step in fixture mode: resolve to effective/ineffective.
@@ -415,10 +706,10 @@ export class FixtureProvider implements DataProvider {
       return ok({ revealed: demo.revealedBatch, hasMore: false }, "synthetic");
     }
     demo.revealedBatch = 2;
-    // Batch 2 arrival triggers the re-plan: new evidence, then Plan v2.
+    demo.stateEvents.push({ kind: "evidence" });
+    // New evidence changes the graph; a new plan requires an explicit run.
     demo.audit.unshift(
       { eventId: "EV-A4", kind: "evidence_ingested", caseId, summary: "2 identity/application records ingested (batch 2)", at: new Date(NOW.getTime() - 78 * 60_000).toISOString() },
-      { eventId: "EV-A5", kind: "plan_created", caseId, summary: "Plan v2 created (7 actions) after re-plan", at: new Date().toISOString() },
     );
     // Seed any v2 action states not already present.
     for (const a of infostealerPlanV2Actions) {

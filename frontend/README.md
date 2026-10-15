@@ -2,7 +2,7 @@
 
 React + Vite + TypeScript + Tailwind analyst workspace for the Caventas IR
 Planner. Progressive-disclosure UI: a Dashboard, a Create Case flow, and a
-Case Workspace with seven tabs (Overview, Evidence, Timeline, Analysis,
+Case Workspace with eight tabs (Overview, Evidence, Timeline, Incident Graph, Analysis,
 Response Plan, Approvals, Report).
 
 The UI talks to the FastAPI backend over HTTP only, never Firestore directly.
@@ -43,8 +43,12 @@ contract**, so the full workflow is demonstrable without a running backend:
 - Separate simulation and validation steps.
 - A structured, section-complete report (PDF marked unavailable).
 - The Infostealer scenario with a presenter control
-  ("Reveal next evidence (demo)") that reveals evidence batch 2 live and
-  drives the v1 to v2 re-plan.
+  ("Reveal next evidence (demo)") that reveals evidence batch 2 live;
+  Plan v1 stays stale until the analyst explicitly requests the synthetic v2 re-plan.
+- Immutable synthetic GAS-lite snapshots v1/v2, provenance, observed/inferred
+  and attack/response relationships, and a parent-version comparison. A
+  bounded synthetic simulation appends another snapshot; earlier versions stay
+  unchanged. No synthetic plan is invented for an unauthored later state.
 
 Every surface backed by this provider is visibly flagged **"Synthetic demo
 data"**. It never claims to have come from the real backend or to have
@@ -64,25 +68,48 @@ Known backend gaps are surfaced explicitly rather than faked:
   endpoint).
 - `/execute` renders `execution_status` and `validation_status` separately;
   the UI never calls a non-existent `/validate` endpoint.
-- `GET /plans` returns plan metadata with action IDs but no action detail, so
-  plans are ordered by `created_at` and their actions render as an honest
-  "N actions unavailable" count. Historical plan detail is unavailable in API
-  mode because the backend has no plan-detail endpoint.
-  The Approvals queue reads `GET /actions` (BL-027, DEC-011): actions
+- `GET /plans` returns action IDs; API mode orders plans by `created_at` and
+  resolves those IDs through `GET /actions`. Missing references are shown as
+  unavailable rather than hidden. The Approvals queue uses the same action read:
+  actions
   awaiting a decision, plus approved actions not yet simulated, with a
   stale pre-warning when the action's state version is older than the
-  case's. `getExecutionResults` reads `GET /action-results`.
+  case's. Stored execution and validation history remains visible through
+  `GET /action-results` after the approval queue refreshes.
 - Audit events map the backend shape (`audit_id`, `event_type`,
   `timestamp`, `details`); evidence lists in upload order.
-- The Report uses the actual backend report DTO; PDF download is disabled
-  because `pdf_path` is not downloadable over the API.
+- Timeline reads the typed `GET /timeline` projection. Its responsive table and
+  mobile cards support stored-time ordering, explicit filters, evidence links
+  and collapsed technical/raw detail without parsing backend descriptions.
+- The Report uses the actual backend report DTO. `GET /reports/latest` restores
+  the newest persisted report after refresh, and the PDF is downloaded through
+  the report API rather than exposing the server-local `pdf_path`.
 - Opening the Report tab only reads. A report is generated only when the
   analyst clicks Generate / Regenerate. Each `POST /reports` stores a new
-  report version, PDF and audit event. The latest report generated in this
-  page session is kept in memory (never `localStorage`). The backend has no
-  report-list endpoint, so earlier reports are not shown after a reload.
-- Global dashboard aggregates that have no backend endpoint are shown only in
-  fixture mode, never fabricated in API mode.
+  report version, PDF and audit event. The stored snapshot renders the same
+  structured timeline, operational Agent Decision Trace, analyst activity,
+  approval/rejection reasons and sign-off in web and PDF views; old reports
+  receive honest empty compatibility defaults.
+- Persisted `GET /cases` backs the Cases page and API-mode dashboard. Planning
+  and decision summaries are derived from stored plans/actions. Case-scoped
+  `POST /analysis-runs`, `GET /analysis-runs/active` and
+  `GET /analysis-runs/{run_id}` provide persisted agent progress. Shell-level
+  case-keyed polling and backend discovery keep the minimisable agent indicator
+  active across routes and full refreshes; only watched case IDs are retained
+  in session storage, never run status. The dashboard aggregate still has no
+  list-runs endpoint.
+- Analyst Reviews is an accessible disclosure that stays collapsed by default.
+  Stale plans remain visible but cannot receive a new review; current plans and
+  the case remain valid targets, including case-level evidence requests.
+- Incident Graph reads immutable GAS-lite state history; `@xyflow/react` is a
+  read-only renderer with deterministic left-to-right dependency ranks,
+  explicit directional handles/arrowheads, semantic edge styles,
+  neighbourhood emphasis, a keyboard/mobile list, node/edge provenance and a
+  pure parent diff. GAS-lite remains the only deterministic graph builder.
+- Evidence can be uploaded again from a case (CSV/JSON/TXT; 10 MiB/file). The
+  analyst explicitly starts re-analysis when a stored plan's state binding is
+  stale. Overview and Analysis prefer the newest plan's persisted analysis;
+  old plans without it are labelled unavailable instead of guessed.
 
 Point API mode at a backend by running the FastAPI app on `:8000`; the Vite
 dev server proxies `/api` to it (see `vite.config.ts`). The two modes are a
@@ -90,10 +117,11 @@ hard boundary: fixture and API data are never combined within one case.
 
 ## Structure
 
-- `src/app` — router (`App`), About/credits, 404, placeholder pages
+- `src/app` — router (`App`), About/credits and 404; retired global routes
+  redirect to the persisted Cases surface instead of rendering placeholders
 - `src/components/shell` — TopBar, Sidebar (+ mobile drawer), AppShell, ConnectionBanner
 - `src/components/icons` — CoreUI icon registry + inline `Icon` renderer
-- `src/components/ui` — Button, StatusBadge, Region/states, Skeleton, Mono, Toast, SyntheticBadge, AsyncBoundary
+- `src/components/ui` — shared controls plus the responsive `TimelineTable`
 - `src/features/dashboard` — DashboardPage
 - `src/features/createCase` — CreateCasePage (stepper)
 - `src/features/caseWorkspace` — CaseWorkspace shell, DetailPanel, context, and the seven `tabs/`

@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (README refresh; verification rerun; report schema v1.3).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-15 (investigation timeline and auditable decision trace).
 
 ## Project
 
@@ -38,7 +38,8 @@ Firestore; no credentials needed).
   outcome→state rebuild + v1.2 report JSON/PDF. The simulator defaults to
   `clean` and uses the approved 9-tool catalogue; `demo` is explicit.
   Read-only actions/results and newest-plan report selection merged in PR
-  #11 (`5e53c66`). Missing reads: BL-013, BL-025.
+  #11 (`5e53c66`). Persisted case/dashboard and latest-report reads were added
+  on `chore/final-integration-fieqah`.
 - Live planner smoke passed against OpenCode Go (BL-007): containment plan
   with 4 evidence-grounded actions + 7 gaps; planner client hardened for
   reasoning models (see `SessionLog.md`).
@@ -74,8 +75,31 @@ Firestore; no credentials needed).
   descriptions and catalogue target-type validation (BL-020, DEC-016); the
   full live run is 12/12 with all gates holding.
 - Report schema v1.3 (Aida, DEC-017) in `docs/report-schema/`: the contract
-  for the report JSON. Code fill-ins: BL-033, BL-040, BL-042; BL-041
-  (incident_type enum) done on `feat/bl-041-incident-type-enum`.
+  for the report JSON. BL-041's constrained `incident_type` enum is merged.
+  BL-040/BL-042 are complete: reports persist current-state/latest-plan
+  provenance and staleness, increment report versions, keep every historical
+  action's own plan/state/phase, expose deterministic action-policy fields,
+  and carry planner model, finding status and affected-entity evidence IDs.
+  The typed frontend renders every v1.3 section and does not count unknown or
+  not-assessed placeholders as populated. Remaining fill-ins are BL-033.
+- The additive analyst-report view is implemented as template schema 2.0 while
+  preserving every v1.3 top-level field. Backend assembly derives overview,
+  prioritized current-state findings, material chronology, entity relevance,
+  action lifecycle, risk and appendices from authoritative stored records. A
+  shared typed contract drives the responsive Report tab and professional A4
+  ReportLab renderer; old stored reports receive conservative frontend defaults.
+  Full infostealer and false-alarm tests enforce generic reuse and prevent false
+  compromise claims. Oversized untrusted fields are bounded in report summaries
+  and PDF cells so malformed evidence cannot break document generation.
+- Investigation audit views are additive to GAS-lite and existing lifecycle
+  stores (DEC-019). `GET /timeline` exposes a pure allowlisted current-state
+  chronology; asynchronous analysis runs own append-only, state-bound safe
+  trace steps; `GET /investigation-activity` joins reviews, approvals,
+  rejections, results and selected audits without replacing or mutating them.
+  Reports immutably copy the structured timeline, operational trace, activity,
+  rejection reasons and sign-off for shared web/PDF rendering. The responsive
+  timeline supports sorting/filtering/evidence links, and stale plans remain
+  visible but disabled as review targets.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).
@@ -87,20 +111,42 @@ Firestore; no credentials needed).
 - Frontend (BL-009): analyst workspace under `frontend/` (React + Vite +
   Tailwind, DEC-005), merged in PR #8 (`3a6a323`): dashboard, create-case
   flow, 7-tab case workspace, fixture|api data providers (`VITE_DATA_MODE`);
-  `npm run build` + `npm run test` (23 passed) green. API-mode wiring gaps
-  vs the live backend: BL-013. On `link` (merged via PR #11 `5e53c66`),
+  `npm run build` + `npm run test` (23 passed) green. On `link` (merged via
+  PR #11 `5e53c66`),
   the audit shape, list order, report generation and plan/report honesty
   are reconciled with the live backend (DEC-008, DEC-009), and the
   Approvals queue reads the read-only `GET /actions` / `GET /action-results`
   (BL-027, DEC-011); follow-ups are BL-025, BL-026 and BL-027 (a)–(c).
-  Fresh local verification on this branch: backend **215**, frontend **75**;
-  production build green. Product record + palette in root `PRODUCT.md`.
-- Frontend↔backend link (`link`, merged via PR #11 `5e53c66`): API mode verified
-  end to end on the Firestore emulator (2026-10-09 S6). All 7 case tabs
-  load real data; approve/reject/execute/report run from the UI with
-  execution and validation shown apart; audit maps the real shape (no UI
-  surface yet). Dashboard is honestly "unsupported" (BL-013). Open:
-  BL-013, BL-025..BL-029.
+  Main's pre-integration verification was backend **212**, frontend **75**,
+  with a green production build. Product record + palette are in root
+   `PRODUCT.md`.
+- Frontend branding uses the supplied complete Caventas lockup in header,
+  sidebar organization branding and About page; organization/profile display
+  defaults are Caventas SOC / Caventas SOC Analyst. The supplied asset has no
+  separate compact icon variant, so the favicon remains unchanged.
+- Frontend↔backend integration: API mode loads all 7 case tabs; stored actions
+  populate Response Plan and Approvals, and stored execution/validation results
+  remain visible after execution. `not_applicable` is explicit, the analyst-note
+  label is honest, and the infostealer fixture matches policy/scenario ids,
+  roles, assets and approved tools. Persisted `GET /cases` now backs the real
+  Dashboard and Cases page; latest reports survive reload and exact generated
+  PDFs download through the API. Direct case/evidence refresh, all workspace
+  tabs, long-running planning status/duplicate prevention and responsive review
+  actions passed real browser acceptance. Other UI follow-ups remain in
+  BL-026/028/029. The final GAS-lite analyst integration adds a read-only
+  Incident Graph with state history/diff and provenance, persisted case-ID and
+  plan-analysis overview, repeat evidence uploads with stale-plan warning,
+  explicit re-analysis and backend-persisted agent progress. Active-run
+  discovery and structured duplicate recovery feed shell-level case-keyed
+  polling, a persistent indicator and an accessible minimisable robot dialog
+  across route changes and refresh. The Incident Graph now uses deterministic
+  left-to-right dependency ranks, explicit source/target handles, closed
+  semantic arrowheads, neighbourhood emphasis and a direction legend while
+  preserving immutable stored relationships. The additive analysis-run API
+  keeps `/runs` compatible; process-interruption recovery is tracked in BL-044.
+  Synthetic deterministic browser acceptance covers two
+  bound plans, three immutable states, an approved bounded simulation, a
+  response edge and a reloadable report/PDF; live planner BL-043 remains open.
 - GAS-lite incident-state (BL-030, **Core complete**): STAIR-inspired
   (not a STAIR reproduction) enrichment of the versioned incident state.
   All Core Tasks 1-8 implemented on `feat/gas-lite-state-fieqah`; merged with
@@ -124,6 +170,55 @@ Firestore; no credentials needed).
   planner-populated routing/assessment, report-section invalidation,
   non-material version suppression, frontend graph visualisation.
 - Deterministic policy enforcement (BL-032/018/019, merged into `feat/gas-lite-state-fieqah`): `app/services/policy_service.py` derives the required approver role, target asset type, evidence validity and POL-01 preserve-before-reimage from `guidance.json` + stored records — never the planner's `policy_refs`. `approver_role` (soc_analyst|it_manager|dpo) is on the decision request, approval record and audit; approval returns 403 on an insufficient role, execution re-checks role/evidence/sequencing (409 + audit, no result), unknown assets fail closed. Declared-role prototype (no auth yet). Backend 205 passed, frontend 75 passed, build green.
+- Planner prompts explicitly delimit incident-state/evidence content as
+  untrusted data and reject embedded instructions; backend enforcement remains
+  the authorization boundary. Final-integration focused checks: backend 42,
+  frontend 79 plus clean typecheck (2026-10-14).
+- Production packaging is a two-container Compose stack: non-root FastAPI
+  backend plus nginx-served API-mode frontend (`:8088`), with `/api` proxying,
+  health checks and Windows-host emulator access through
+  `host.docker.internal:8080`. Build contexts exclude credentials and `.env`.
+- Final verification (2026-10-14): backend **206 passed**; frontend strict
+  typecheck, **80 tests** and production build passed; Compose config, both
+  image builds/health checks, full and abbreviated emulator-backed API-mode
+  workflows through nginx, diff check and changed-file secret scan passed.
+- Post-repair verification (2026-10-14): backend **211 passed**; frontend
+  strict typecheck, **83 tests**, production build, Compose config and both
+  Docker image builds passed. Real API-mode acceptance produced a persisted,
+  reloadable report and valid PDF. The one permitted post-acceptance live
+  planner request returned HTTP 502 without persisting a plan (BL-043); the UI
+  kept the request singular and surfaced failure without false navigation.
+- Synchronization verification (2026-10-14): `origin/main` at `f6f002e` is
+  merged locally without rebasing. Main's BL-020 skill, full state evidence
+  descriptions and target-type guard coexist with integration packaging and
+  browser repairs. Backend **218 passed**; frontend strict typecheck, **83
+  tests** and production build passed; Compose config and diff checks passed.
+- Post-merge API-mode acceptance (2026-10-14): the complete assertion-backed
+  browser workflow passed without a live-provider retry. Primary navigation,
+  dashboard actions and the approval bell no longer expose unsupported
+  placeholder pages; retired direct URLs redirect to persisted Cases. Case
+  creation/evidence, refresh, every workspace tab, report reload/PDF download,
+  responsive review controls and single-request planning pending state passed.
+- Investigation-audit verification (2026-10-15): backend **257 passed**;
+  frontend strict typecheck, **109 tests in 20 files**, production build,
+  Compose config and both image builds passed. Deterministic nginx-routed
+  acceptance confirmed the typed timeline, 8 append-only run steps, unified
+  rejection/sign-off activity, immutable report snapshot and 24,913-byte PDF.
+  No live-provider request was made.
+- Corrective integration gate (2026-10-14): backend **223 passed**; frontend
+  strict typecheck, **95 tests in 17 files**, production build, Compose config
+  and diff checks passed. Isolated deterministic browser acceptance verified
+  active-run duplicate recovery, navigation persistence, refresh recovery,
+  minimisation/reopening and directed graph arrows without a live-provider call.
+- Final `origin/main` integration gate (2026-10-14): the no-commit merge of
+  BL-041 was resolved with no application-code conflicts, then structured
+  reporting BL-040/BL-042 was completed. Backend **227 passed**; frontend
+  strict typecheck, **97 tests in 17 files**, production build, Compose config,
+  both image builds and recreated container health checks passed. Deterministic
+  API-mode browser acceptance used `FakePlannerAdapter` and verified states
+  1/2/3, plans bound to 1/2, response edge, persisted state-v3/plan-v2 stale
+  report disclosure, per-action provenance, refresh recovery and a valid
+  13,405-byte PDF. No live planner request was made; BL-043 remains open.
 - Timeline: internal feature freeze 8/10; submission 15/10 (root README).
 
 ## Architecture

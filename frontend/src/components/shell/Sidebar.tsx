@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { Icon, type IconName } from "@/components/icons/Icon";
 import { cx } from "@/lib/types";
+import caventasLogo from "@/assets/Caventas-logo.png";
 
 interface NavItem {
   to: string;
@@ -11,11 +12,6 @@ interface NavItem {
 const primaryNav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
   { to: "/cases", label: "Cases", icon: "cases" },
-  { to: "/approvals", label: "Approvals", icon: "approvals" },
-  { to: "/guidance", label: "Guidance Library", icon: "guidance" },
-  { to: "/reports", label: "Reports", icon: "reports" },
-  { to: "/activity", label: "Activity Log", icon: "activity" },
-  { to: "/settings", label: "Settings", icon: "settings" },
 ];
 
 function Item({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
@@ -68,8 +64,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="mt-auto border-t border-border-subtle p-3 space-y-1">
         <button className="flex w-full items-center gap-3 h-9 px-2 rounded text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-180">
-          <Icon name="shield" size={20} className="text-text-muted" />
-          <span className="flex-1 text-left truncate">Caventas Demo Org</span>
+          <img src={caventasLogo} alt="Caventas logo" className="h-7 w-7 shrink-0 object-contain" />
+          <span className="flex-1 text-left truncate">Caventas SOC</span>
         </button>
         <NavLink
           to="/about"

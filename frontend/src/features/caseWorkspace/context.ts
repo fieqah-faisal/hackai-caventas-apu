@@ -7,6 +7,7 @@ export interface WorkspaceCtx {
   facts: CaseFacts;
   synthetic: boolean;
   refresh: () => void;
+  reloadKey?: number;
 }
 
 export const WorkspaceContext = createContext<WorkspaceCtx | null>(null);

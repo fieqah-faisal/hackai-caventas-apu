@@ -158,7 +158,7 @@ function ActivityBody({ data }: { data: CaseActivityVM }) {
 
 function AgentPlanningCard({ outcome }: { outcome: ReturnType<typeof useOutcome<AgentPlanningVM>> }) {
   return (
-    <Card title="Agent planning" icon="analysis" to="/activity" cta="View activity">
+    <Card title="Agent planning" icon="analysis" to="/cases" cta="View cases">
       {outcome.state === "loading" ? (
         <CardSkeleton />
       ) : outcome.state === "error" || !outcome.value ? (
@@ -177,12 +177,12 @@ function PlanningBody({ data }: { data: AgentPlanningVM }) {
       <div className="flex items-end gap-6">
         <div>
           <div className="flex items-baseline gap-1.5">
-            <span className="tnum text-metric font-bold leading-none text-text-primary">{data.activeRuns}</span>
+            <span className="tnum text-metric font-bold leading-none text-text-primary">{data.activeRuns ?? "—"}</span>
             {data.runCountsSource === "synthetic" && (
               <span className="rounded border border-border-subtle px-1 text-2xs text-text-muted">synthetic</span>
             )}
           </div>
-          <div className="mt-1 text-meta text-text-muted">Active runs</div>
+          <div className="mt-1 text-meta text-text-muted">{data.activeRuns == null ? "Active runs unavailable" : "Active runs"}</div>
         </div>
         <Metric value={data.blockedRuns} label="Blocked" tone={data.blockedRuns > 0 ? "warning" : "default"} />
       </div>
@@ -204,7 +204,7 @@ function PlanningBody({ data }: { data: AgentPlanningVM }) {
 
 function HumanDecisionsCard({ outcome }: { outcome: ReturnType<typeof useOutcome<HumanDecisionsVM>> }) {
   return (
-    <Card title="Human decisions" icon="humanDecision" to="/approvals" cta="Review approvals">
+    <Card title="Human decisions" icon="humanDecision" to="/cases" cta="Review cases">
       {outcome.state === "loading" ? (
         <CardSkeleton />
       ) : outcome.state === "error" || !outcome.value ? (
