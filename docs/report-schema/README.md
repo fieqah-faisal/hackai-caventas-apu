@@ -1,4 +1,4 @@
-# IR Planner — Incident Report Schema (v1.3)
+# IR Planner — Incident Report Schema (v1.3 + analyst view v2)
 
 Aida (IR Knowledge and Governance Lead) · 9 Oct 2026, checked against `main` on 14 Oct 2026
 
@@ -7,6 +7,34 @@ Aida (IR Knowledge and Governance Lead) · 9 Oct 2026, checked against `main` on
 **Version 1.2 (3 Oct 2026).** Action statuses now match Stage 7 of the proposal: recommended, awaiting approval, approved, rejected, manually executed, verified, failed and not applicable. An edited recommendation becomes a new recommendation linked to the one it replaces.
 
 **Version 1.3 (9 Oct 2026). Final for the prototype.** Fits policy pack v1.0 and the report code already in the repo (`backend/app/services/reporting.py`). Every change adds a field; nothing was renamed or removed, so the existing code keeps working. Response actions now show the tool, the target, the rules cited, the approver the policy pack requires and the policy check result. Notifications, evidence preservation, recommendations, policy conformance and sign-off now line up with specific rules. The header records the planner model, as promised in proposal section 10.0. From now on, changes go through a pull request.
+
+**Analyst view 2.0 (15 Oct 2026).** The stored v1.3 fields remain unchanged. New reports add `template_schema_version: "2.0"` and a presentation-neutral `analyst_report` object consumed by both the Report tab and PDF renderer. Its decision-oriented sections are overview, executive summary, prioritized current-state findings, material timeline, relevance-grouped entities, response actions, confirmed/potential impact, next steps and technical appendices. Older reports are mapped conservatively in the frontend without rewriting persisted data.
+
+The v2 view is deterministic and case-agnostic. It classifies records from current plan/state binding, evidence-backed findings, graph relationship category, event source/type, entity condition and authoritative action/approval/result records. Unknown records remain `observed`; stale-plan findings move to the appendix; false-alarm analysis cannot create attack timeline rows or affected entities. Raw record summaries are bounded for safe PDF layout while the evidence index retains source and hash references.
+
+```json
+{
+  "template_schema_version": "2.0",
+  "analyst_report": {
+    "overview": { "plan_status": "current | stale | not_available" },
+    "executive_summary": "string",
+    "executive_summary_source": "current_state_analysis | record_derived",
+    "key_findings": [],
+    "key_timeline": [],
+    "entities": [],
+    "response_actions": [],
+    "impact": { "confirmed": [], "potential": [], "remaining_risk": [] },
+    "next_steps": [],
+    "appendices": {
+      "evidence_index": [],
+      "raw_chronology": [],
+      "technical_findings": [],
+      "attack_mapping": [],
+      "provenance": {}
+    }
+  }
+}
+```
 
 **Checked against the repo on 14 Oct 2026**, after GAS-lite (DEC-010), the policy guard (`policy_service.py`) and planner analysis in reports (DEC-015). Three small fixes, no new sections:
 

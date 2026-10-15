@@ -3,6 +3,13 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Typed analyst report and professional PDF (DONE, UNCOMMITTED)
+
+- Added additive report template schema 2.0 without removing or renaming v1.3 fields. A typed `analyst_report` now derives current posture, evidence-grounded findings, categorized material chronology, entity relevance, approval/execution/validation outcomes, impact/risk, next steps and appendices from stored records. Stale analysis is excluded from current findings and retained with provenance; old persisted reports receive conservative frontend compatibility defaults.
+- Rebuilt the Report tab around responsive analyst decision sections and collapsed technical appendices. A dedicated ReportLab renderer consumes the same typed contract and provides A4 layout, repeated headers, wrapping, case/page footers, metadata and source/hash/trust references. Unknown events remain observed, ATT&CK mappings are not copied to unrelated findings, false-alarm data cannot create attack/affected classifications, and bounded untrusted record summaries prevent oversized PDF rows.
+- Generic acceptance uses the complete infostealer and false-alarm scenario inputs through the same schema/renderer. The false-alarm report is explicitly `not_an_incident`, contains no attack chronology or affected entities, and makes no compromise claim. A 10,000-character untrusted-field regression and the messy evaluation scenario verify PDF availability under hostile input sizes.
+- Verification: backend **231 passed**; frontend strict typecheck, **99 tests in 17 files** and production build passed; Compose configuration and backend/frontend image builds passed; `git diff --check` and changed-source credential-pattern scans passed. PDF generation and content contracts were exercised, but no local PDF rasterizer/browser automation executable was available for an additional visual screenshot review. No live planner call, commit, stage, merge or push was performed; unrelated untracked `gitleaks-report.json` remains untouched.
+
 ### 2026-10-14 Final main merge and authoritative structured reporting (DONE)
 
 - Merged `origin/main` into `chore/final-integration-fieqah` with no application-code conflicts; resolved only the expected evaluation/session documentation conflicts while retaining both integration and BL-041 history. BL-041's constrained incident type and committed live evaluation artifacts now coexist with GAS-lite, persisted global analysis runs, directed incident graph, approvals/simulation and persisted report/PDF flows.

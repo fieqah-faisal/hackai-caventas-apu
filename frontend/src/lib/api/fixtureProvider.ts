@@ -452,6 +452,43 @@ export class FixtureProvider implements DataProvider {
     const actions = activeActions();
     const executed = demo.results;
     const decided = Object.entries(demo.decisionNote);
+    const reportEvidence = [...infostealerEvidenceBatch1, ...infostealerEvidenceBatch2];
+    const reportTimeline = [...infostealerTimelineBatch1, ...infostealerTimelineBatch2].map((event) => ({
+      timestamp: event.time,
+      category: event.kind === "analyst_added" ? "analyst" as const : event.kind === "relevant" ? "attack" as const : "observed" as const,
+      eventType: event.kind,
+      summary: event.label,
+      significance: event.kind === "relevant" ? "Included in the current synthetic analysis" : "Retained for chronology",
+      entityIds: [],
+      evidenceIds: event.evidenceId ? [event.evidenceId] : [],
+      source: "synthetic_fixture",
+      rawDetail: event.label,
+    }));
+    const reportActions = actions.map((action) => {
+      const result = executed.find((item) => item.actionId === action.actionId);
+      const decision = demo.decisionNote[action.actionId];
+      const actionState = demo.actionState[action.actionId] ?? action.state;
+      return {
+        id: action.actionId,
+        type: action.tool,
+        target: action.target,
+        recommendation: action.rationale,
+        proposedStatus: actionState,
+        approvalStatus: decision?.decision ?? "not_recorded",
+        executionStatus: result?.executionStatus ?? "not_executed",
+        validationStatus: result?.validationStatus ?? "not_validated",
+        effectiveness: result?.validationStatus ?? "not_assessed",
+        outcome: result?.observedEffect ?? "No outcome recorded",
+        stateVersion: action.basedOnStateVersion,
+        timestamp: result?.createdAt ?? null,
+        planId: "PLAN-FIXTURE-02",
+        phase: action.stage,
+        decidedBy: decision ? "Synthetic analyst" : null,
+        approverRole: action.requiredApprover,
+        resultSource: result?.resultSource ?? null,
+        evidenceIds: action.evidenceIds,
+      };
+    });
     const sections = [
       { key: "executive_summary", title: "Executive summary", present: true, lines: ["Infostealer compromise escalated to session hijack and CRM data export; containment and eradication actions proposed across two plan versions."] },
       { key: "classification", title: "Incident classification", present: true, lines: ["Type: credential theft / session hijack", "Severity: high", "Phase: containment"] },
@@ -480,8 +517,73 @@ export class FixtureProvider implements DataProvider {
         planId: "PLAN-FIXTURE-02",
         planStateVersion: 2,
         planIsStale: false,
+        schemaVersion: "2.0-fixture",
+        overview: {
+          caseStatus: "active",
+          incidentStatus: "confirmed",
+          severity: "high",
+          incidentType: infostealerAnalysisBatch2.classification ?? "unknown",
+          phase: "containment",
+          primaryAssets: infostealerAnalysisBatch2.affectedEntities.map((entity) => entity.id),
+          planStatus: "current",
+        },
+        executiveSummary: {
+          text: "Synthetic evidence supports credential theft, session replay, and a CRM data export. Response actions remain separated by approval, execution, and validation state.",
+          source: "current_state_analysis",
+        },
+        findings: [{
+          id: "FINDING-FIXTURE-01",
+          title: "Credential theft followed by session replay",
+          summary: "Synthetic endpoint and identity evidence supports credential access followed by reuse of the affected account session.",
+          severity: "high",
+          confidence: infostealerAnalysisBatch2.confidence.value,
+          status: "supported",
+          affectedEntityIds: infostealerAnalysisBatch2.affectedEntities.map((entity) => entity.id),
+          evidenceIds: ["EV-IS-003", "EV-IS-010"],
+        }],
+        timeline: reportTimeline,
+        entities: infostealerAnalysisBatch2.affectedEntities.map((entity) => ({
+          id: entity.id,
+          type: entity.type,
+          displayName: entity.name,
+          role: "affected entity",
+          condition: "compromised",
+          relevance: "confirmed_affected" as const,
+          relevanceReason: "Included in the current synthetic analysis",
+          evidenceCount: reportEvidence.filter((item) => item.relatedEntities.includes(entity.id)).length,
+          evidenceIds: reportEvidence.filter((item) => item.relatedEntities.includes(entity.id)).map((item) => item.evidenceId),
+        })),
+        actions: reportActions,
+        impact: {
+          confirmed: ["Synthetic CRM export activity was observed for the affected account."],
+          potential: ["Data-protection notification obligations require assessment."],
+          remainingRisk: ["Confirm that session revocation and credential rotation are effective."],
+        },
+        nextSteps: [{
+          priority: "High",
+          text: "Validate that active sessions are revoked and the old password is rejected.",
+          owner: "Incident response team",
+          status: "open",
+          relatedIds: ["ACCOUNT::farah"],
+        }],
+        appendices: {
+          evidence: reportEvidence.map((item) => ({
+            evidenceId: item.evidenceId,
+            sourceFile: item.sourceFile,
+            sourceLocation: item.sourceLocation,
+            timestamp: item.eventTime,
+            eventType: item.category,
+            source: "synthetic_fixture",
+            sha256: item.sha256,
+            untrusted: true,
+          })),
+          chronology: reportTimeline,
+          findings: [],
+          attackMapping: infostealerAnalysisBatch2.attackTechniques,
+          provenance: ["Synthetic fixture", "State version: 2", "Plan: PLAN-FIXTURE-02"],
+        },
         sections,
-        completeness: { present: sections.filter((s) => s.present).length, total: sections.length },
+        completeness: { present: 8, total: 8 },
         pdfAvailable: false,
       },
       "synthetic",

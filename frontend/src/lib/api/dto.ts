@@ -467,7 +467,143 @@ export interface ReportEvidenceIndexRowDTO {
   untrusted: boolean;
 }
 
+export type AnalystTimelineCategoryDTO = "attack" | "defensive" | "analyst" | "context" | "observed";
+export type AnalystEntityRelevanceDTO = "confirmed_affected" | "suspected_affected" | "malicious_indicator" | "contextual";
+
+export interface AnalystReportOverviewDTO {
+  case_id: string;
+  case_status: string;
+  incident_status: string;
+  severity: string;
+  incident_type: string;
+  current_phase: string;
+  primary_assets: string[];
+  state_version?: number | null;
+  plan_id?: string | null;
+  plan_state_version?: number | null;
+  plan_status: "current" | "stale" | "not_available";
+  planner_model?: string | null;
+}
+
+export interface AnalystReportFindingDTO {
+  id: string;
+  title: string;
+  summary: string;
+  severity: string;
+  confidence?: number | null;
+  status: string;
+  affected_entity_ids: string[];
+  evidence_ids: string[];
+  attack_techniques: string[];
+  first_seen?: string | null;
+  last_seen?: string | null;
+  source: string;
+  plan_id?: string | null;
+  state_version?: number | null;
+}
+
+export interface AnalystReportTimelineEventDTO {
+  timestamp?: string | null;
+  category: AnalystTimelineCategoryDTO;
+  event_type: string;
+  summary: string;
+  significance: string;
+  entity_ids: string[];
+  evidence_ids: string[];
+  source: string;
+  material: boolean;
+  raw_detail: string;
+}
+
+export interface AnalystReportEntityDTO {
+  id: string;
+  type: string;
+  display_name: string;
+  role: string;
+  condition: string;
+  relevance: AnalystEntityRelevanceDTO;
+  relevance_reason: string;
+  first_seen?: string | null;
+  last_seen?: string | null;
+  evidence_count: number;
+  evidence_ids: string[];
+}
+
+export interface AnalystReportActionDTO {
+  action_id: string;
+  action_type: string;
+  target: string;
+  recommendation: string;
+  proposed_status: string;
+  approval_status: string;
+  execution_status: string;
+  validation_status: string;
+  effectiveness: string;
+  outcome: string;
+  state_version?: number | null;
+  timestamp?: string | null;
+  plan_id?: string | null;
+  phase: string;
+  approval_id?: string | null;
+  decided_by?: string | null;
+  approver_role?: string | null;
+  decision_reason?: string | null;
+  execution_id?: string | null;
+  result_source?: string | null;
+  evidence_ids: string[];
+  policy_refs: string[];
+}
+
+export interface AnalystReportNextStepDTO {
+  priority: "High" | "Medium" | "Low";
+  text: string;
+  owner: string;
+  status: string;
+  related_ids: string[];
+}
+
+export interface AnalystEvidenceReferenceDTO {
+  evidence_id: string;
+  source_file: string;
+  source_location: string;
+  timestamp?: string | null;
+  event_type: string;
+  source: string;
+  sha256: string;
+  untrusted: boolean;
+}
+
+export interface AnalystReportDTO {
+  overview: AnalystReportOverviewDTO;
+  executive_summary: string;
+  executive_summary_source: "current_state_analysis" | "record_derived";
+  key_findings: AnalystReportFindingDTO[];
+  key_timeline: AnalystReportTimelineEventDTO[];
+  entities: AnalystReportEntityDTO[];
+  response_actions: AnalystReportActionDTO[];
+  impact: { confirmed: string[]; potential: string[]; remaining_risk: string[] };
+  next_steps: AnalystReportNextStepDTO[];
+  appendices: {
+    evidence_index: AnalystEvidenceReferenceDTO[];
+    raw_chronology: AnalystReportTimelineEventDTO[];
+    technical_findings: AnalystReportFindingDTO[];
+    attack_mapping: string[];
+    provenance: {
+      state_version?: number | null;
+      state_parent_version?: number | null;
+      state_created_from?: string | null;
+      state_change_reason?: string | null;
+      plan_id?: string | null;
+      plan_state_version?: number | null;
+      plan_is_stale: boolean;
+      action_ids: string[];
+      execution_ids: string[];
+    };
+  };
+}
+
 export interface StructuredReportDTO {
+  template_schema_version?: string;
   report_id: string;
   incident_id: string;
   version: number;
@@ -501,6 +637,7 @@ export interface StructuredReportDTO {
   policy_conformance: ReportPolicyConformanceDTO[];
   sign_off: ReportSignOffDTO | null;
   evidence_index: ReportEvidenceIndexRowDTO[];
+  analyst_report?: AnalystReportDTO;
   /** Server-local filesystem path. NOT a downloadable URL — never expose as a link. */
   pdf_path?: string;
 }

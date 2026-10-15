@@ -37,7 +37,8 @@ ir-planner/
 │   │   │   ├── approval_service.py
 │   │   │   ├── execution_service.py
 │   │   │   ├── audit_service.py
-│   │   │   └── reporting.py
+│   │   │   ├── reporting.py        # deterministic report assembly
+│   │   │   └── report_document.py  # typed analyst-report PDF renderer
 │   │
 │   │   ├── ai/
 │   │   │   └── planner_adapter.py
@@ -131,3 +132,6 @@ policies/{policy_id}
   `IncidentState.entities` and `.relationships` created by pure `gas_lite.py`.
 - API mode resolves stored plan actions through the read-only `/actions`
   endpoint and reads persistent simulator outcomes from `/action-results`.
+- Reports retain the v1.3 top-level contract and add a typed `analyst_report`
+  view (`template_schema_version: 2.0`) shared by the React Report tab and the
+  ReportLab renderer. Renderers consume typed fields rather than parsing prose.

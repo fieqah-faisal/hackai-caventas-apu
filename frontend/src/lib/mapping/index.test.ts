@@ -291,7 +291,86 @@ describe("report action wording keeps proposed / approved / executed / effective
     }
     expect(section("action_policy")?.lines[0]).toContain("isolate_host → HOST::SYNTH-LT-01");
     expect(section("findings")?.lines[0]).toContain("EV-1");
-    expect(vm.completeness.total).toBe(vm.sections.length);
+    expect(vm.completeness).toEqual({ present: 6, total: 8 });
+    expect(vm.schemaVersion).toBe("legacy");
+    expect(vm.entities.every((entity) => entity.relevance === "suspected_affected")).toBe(true);
+  });
+
+  it("prefers the typed v2 analyst report over legacy flattened sections", () => {
+    const dto = reportBody("RPT-000000000002");
+    dto.template_schema_version = "2.0";
+    dto.analyst_report = {
+      overview: {
+        case_id: dto.incident_id,
+        case_status: "active",
+        incident_status: "not_an_incident",
+        severity: "low",
+        incident_type: "not_an_incident",
+        current_phase: "assessment",
+        primary_assets: [],
+        state_version: 3,
+        plan_id: dto.plan_id,
+        plan_state_version: 3,
+        plan_status: "current",
+        planner_model: "fake-planner",
+      },
+      executive_summary: "Current records support authorized backup activity, not an incident.",
+      executive_summary_source: "current_state_analysis",
+      key_findings: [{
+        id: "FND-01",
+        title: "Authorized backup activity",
+        summary: "The transfer matches an approved change record.",
+        severity: "low",
+        confidence: 0.9,
+        status: "supported",
+        affected_entity_ids: [],
+        evidence_ids: ["EV-1"],
+        attack_techniques: [],
+        source: "planner_current_state",
+      }],
+      key_timeline: [{
+        timestamp: dto.created_at,
+        category: "context",
+        event_type: "change_record",
+        summary: "Approved backup window",
+        significance: "Explains the observed transfer",
+        entity_ids: ["HOST::FS-01"],
+        evidence_ids: ["EV-1"],
+        source: "itsm",
+        material: true,
+        raw_detail: "Approved backup window",
+      }],
+      entities: [{
+        id: "HOST::FS-01",
+        type: "host",
+        display_name: "FS-01",
+        role: "Observed endpoint",
+        condition: "unknown",
+        relevance: "contextual",
+        relevance_reason: "Observed without an affected-state determination",
+        evidence_count: 1,
+        evidence_ids: ["EV-1"],
+      }],
+      response_actions: [],
+      impact: { confirmed: [], potential: [], remaining_risk: [] },
+      next_steps: [{ priority: "Low", text: "Close after analyst review.", owner: "SOC analyst", status: "open", related_ids: ["EV-1"] }],
+      appendices: {
+        evidence_index: [{ evidence_id: "EV-1", source_file: "batch.json", source_location: "row 1", timestamp: dto.created_at, event_type: "change_record", source: "itsm", sha256: "abc", untrusted: true }],
+        raw_chronology: [],
+        technical_findings: [],
+        attack_mapping: [],
+        provenance: { state_version: 3, plan_id: dto.plan_id, plan_state_version: 3, plan_is_stale: false, action_ids: [], execution_ids: [] },
+      },
+    };
+
+    const vm = toReportVM(dto);
+    expect(vm.schemaVersion).toBe("2.0");
+    expect(vm.overview.incidentStatus).toBe("not_an_incident");
+    expect(vm.findings[0].title).toBe("Authorized backup activity");
+    expect(vm.timeline[0].category).toBe("context");
+    expect(vm.entities[0].relevance).toBe("contextual");
+    expect(vm.executiveSummary.source).toBe("current_state_analysis");
+    expect(vm.appendices.evidence[0].untrusted).toBe(true);
   });
 });
 

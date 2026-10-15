@@ -5,8 +5,11 @@ GET  /cases/{case_id}/reports/{report_id} -> retrieve a stored report
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
+
+import pytest
 
 from app.ai.planner_adapter import FakePlannerAdapter
 from app.database import repositories
@@ -53,6 +56,10 @@ def test_generate_report_from_stored_records(client, monkeypatch, tmp_path):
     assert report["current_state_version"] == 2
     assert report["plan_based_on_state_version"] == 1
     assert report["plan_is_stale"] is True
+    assert report["template_schema_version"] == "2.0"
+    assert report["analyst_report"]["overview"]["plan_status"] == "stale"
+    assert report["analyst_report"]["key_findings"] == []
+    assert report["analyst_report"]["appendices"]["technical_findings"]
     assert report["classification"]["current_phase"] == "containment"
     assert report["evidence_index"], "evidence index must list stored evidence"
     assert any(row["evidence_ids"] for row in report["affected"])
@@ -126,6 +133,30 @@ def test_latest_report_and_pdf_missing_404(client, monkeypatch, tmp_path):
     assert client.get(
         f"/cases/{case_id}/reports/{generated['report_id']}/pdf"
     ).status_code == 404
+
+
+def test_report_pdf_bounds_long_untrusted_record_fields(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "long evidence"}).json()["case_id"]
+    payload = [{
+        "event_time": "2026-10-07T10:12:00+08:00",
+        "event_type": "analyst_note",
+        "source": "analyst_note",
+        "host": "SYNTH-LT-01",
+        "note": "x" * 10_000,
+    }]
+    upload = client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("long.json", json.dumps(payload).encode(), "application/json")},
+    )
+    assert upload.status_code == 200, upload.text
+
+    response = client.post(f"/cases/{case_id}/reports")
+    assert response.status_code == 200, response.text
+    report = response.json()
+    chronology = report["analyst_report"]["appendices"]["raw_chronology"]
+    assert len(chronology[0]["raw_detail"]) <= 800
+    assert Path(report["pdf_path"]).read_bytes().startswith(b"%PDF-")
 
 
 def test_report_uses_newest_plan_not_stream_order(client, monkeypatch, tmp_path):
@@ -284,7 +315,179 @@ def test_report_fills_classification_findings_and_attack(client, monkeypatch, tm
     assert report["findings"][0]["status"] == "hypothesis"
     assert report["findings"][0]["evidence_ids"] == [evidence_id]
     assert report["findings"][0]["confidence"] == 0.8
+    assert report["analyst_report"]["key_findings"][0]["evidence_ids"] == [
+        evidence_id
+    ]
+    assert any(
+        row["category"] == "observed"
+        for row in report["analyst_report"]["key_timeline"]
+        if evidence_id in row["evidence_ids"]
+    )
     assert Path(report["pdf_path"]).exists()
+
+
+def test_report_does_not_apply_global_attack_mapping_to_unrelated_findings(
+    client, monkeypatch, tmp_path
+):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    case_id = client.post("/cases", json={"title": "mixed findings"}).json()["case_id"]
+    upload = client.post(
+        f"/cases/{case_id}/evidence",
+        files={"file": ("batch1.json", FIXTURE.read_bytes(), "application/json")},
+    )
+    assert upload.status_code == 200, upload.text
+    stored = client.get(f"/cases/{case_id}/evidence").json()
+    contextual_id = next(
+        item["evidence_id"]
+        for item in stored
+        if item["fields"].get("event_type") == "dns_query"
+    )
+    attack_id = next(
+        item["evidence_id"]
+        for item in stored
+        if item["fields"].get("technique") == "T1555.003"
+    )
+
+    class MixedPlanner:
+        def generate_plan(self, incident_state, approved_guidance=None):
+            return PlanProposal(
+                based_on_state_version=incident_state.version,
+                stage=Stage.ASSESSMENT,
+                actions=[],
+                analysis=PlanAnalysis(
+                    incident_type="other",
+                    severity="medium",
+                    confidence=0.8,
+                    findings=[
+                        ProposedFinding(
+                            summary="A DNS record requires contextual review.",
+                            evidence_ids=[contextual_id],
+                            confidence=0.7,
+                        ),
+                        ProposedFinding(
+                            summary="Credential-store access is security relevant.",
+                            evidence_ids=[attack_id],
+                            confidence=0.9,
+                        ),
+                    ],
+                    attack_techniques=["T1555.003"],
+                ),
+            )
+
+    monkeypatch.setattr(PLANNER_PATH, lambda: MixedPlanner())
+    assert client.post(f"/cases/{case_id}/runs").status_code == 200
+    timeline = client.post(f"/cases/{case_id}/reports").json()["analyst_report"][
+        "key_timeline"
+    ]
+    categories = {
+        row["evidence_ids"][0]: row["category"]
+        for row in timeline
+        if row["evidence_ids"]
+    }
+
+    assert categories[contextual_id] == "observed"
+    assert categories[attack_id] == "attack"
+
+
+@pytest.mark.parametrize(
+    ("scenario", "batches", "incident_type", "severity", "finding_summary"),
+    [
+        (
+            "sc01_infostealer",
+            ["batch_01.json"],
+            "infostealer_session_hijack",
+            "high",
+            "Endpoint activity supports an infostealer finding.",
+        ),
+        (
+            "sc03_false_alarm",
+            ["batch_01.json", "batch_02.json"],
+            "not_an_incident",
+            "low",
+            "Stored change and analyst records support authorized backup activity.",
+        ),
+    ],
+)
+def test_analyst_template_reuses_one_schema_across_distinct_scenarios(
+    client,
+    monkeypatch,
+    tmp_path,
+    scenario,
+    batches,
+    incident_type,
+    severity,
+    finding_summary,
+):
+    monkeypatch.setattr(SETTINGS_PATH, lambda: SimpleNamespace(report_path=tmp_path))
+    scenario_dir = Path(__file__).resolve().parent.parent / "scenarios" / scenario / "agent_inputs"
+    case_body = json.loads((scenario_dir / "case.json").read_text())
+    case_id = client.post("/cases", json=case_body).json()["case_id"]
+    for batch in batches:
+        response = client.post(
+            f"/cases/{case_id}/evidence",
+            files={"file": (batch, (scenario_dir / batch).read_bytes(), "application/json")},
+        )
+        assert response.status_code == 200, response.text
+
+    evidence_ids = [
+        item["evidence_id"] for item in client.get(f"/cases/{case_id}/evidence").json()
+    ]
+
+    class ScenarioPlanner:
+        def generate_plan(self, incident_state, approved_guidance=None):
+            return PlanProposal(
+                based_on_state_version=incident_state.version,
+                stage=Stage.ASSESSMENT,
+                actions=[],
+                analysis=PlanAnalysis(
+                    incident_type=incident_type,
+                    scope="scenario evidence",
+                    severity=severity,
+                    confidence=0.9,
+                    findings=[
+                        ProposedFinding(
+                            summary=finding_summary,
+                            evidence_ids=[evidence_ids[-1]],
+                            confidence=0.9,
+                        )
+                    ],
+                    attack_techniques=(
+                        ["T1555.003"]
+                        if incident_type == "infostealer_session_hijack"
+                        else []
+                    ),
+                ),
+            )
+
+    monkeypatch.setattr(PLANNER_PATH, lambda: ScenarioPlanner())
+    run = client.post(f"/cases/{case_id}/runs")
+    assert run.status_code == 200, run.text
+    report = client.post(f"/cases/{case_id}/reports").json()
+    analyst = report["analyst_report"]
+
+    assert report["template_schema_version"] == "2.0"
+    assert set(analyst) == {
+        "overview",
+        "executive_summary",
+        "executive_summary_source",
+        "key_findings",
+        "key_timeline",
+        "entities",
+        "response_actions",
+        "impact",
+        "next_steps",
+        "appendices",
+    }
+    assert analyst["appendices"]["evidence_index"]
+    assert Path(report["pdf_path"]).exists()
+    assert Path(report["pdf_path"]).read_bytes().startswith(b"%PDF-")
+
+    if incident_type == "not_an_incident":
+        assert analyst["overview"]["incident_status"] == "not_an_incident"
+        assert "not an incident" in analyst["executive_summary"].lower()
+        assert "compromise" not in analyst["executive_summary"].lower()
+        assert all(row["category"] != "attack" for row in analyst["key_timeline"])
+        assert all(row["relevance"] == "contextual" for row in analyst["entities"])
 
 
 def test_report_survives_malformed_analysis(client, monkeypatch, tmp_path):

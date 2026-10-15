@@ -1,7 +1,7 @@
 # Session Context
 
 > Living snapshot. History goes in `SessionLog.md`. Decisions in
-> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-14 (global analysis recovery and directed graph repair).
+> `Decisions.md`. Open work in `Backlog.md`. Last reviewed: 2026-10-15 (typed analyst reporting and PDF presentation).
 
 ## Project
 
@@ -82,6 +82,15 @@ Firestore; no credentials needed).
   and carry planner model, finding status and affected-entity evidence IDs.
   The typed frontend renders every v1.3 section and does not count unknown or
   not-assessed placeholders as populated. Remaining fill-ins are BL-033.
+- The additive analyst-report view is implemented as template schema 2.0 while
+  preserving every v1.3 top-level field. Backend assembly derives overview,
+  prioritized current-state findings, material chronology, entity relevance,
+  action lifecycle, risk and appendices from authoritative stored records. A
+  shared typed contract drives the responsive Report tab and professional A4
+  ReportLab renderer; old stored reports receive conservative frontend defaults.
+  Full infostealer and false-alarm tests enforce generic reuse and prevent false
+  compromise claims. Oversized untrusted fields are bounded in report summaries
+  and PDF cells so malformed evidence cannot break document generation.
 - Firestore emulator smoke passed (BL-004): full API flow against the real
   emulator; emulator credential bug fixed (anonymous credential path).
   Re-confirmed by the `link` UI runs (S2/S5/S6).

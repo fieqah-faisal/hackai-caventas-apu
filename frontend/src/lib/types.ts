@@ -388,6 +388,94 @@ export interface ReportSectionVM {
   lines: string[];
 }
 
+export type ReportTimelineCategory = "attack" | "defensive" | "analyst" | "context" | "observed";
+export type ReportEntityRelevance = "confirmed_affected" | "suspected_affected" | "malicious_indicator" | "contextual";
+
+export interface ReportOverviewVM {
+  caseStatus: string;
+  incidentStatus: string;
+  severity: string;
+  incidentType: string;
+  phase: string;
+  primaryAssets: string[];
+  planStatus: "current" | "stale" | "not_available";
+}
+
+export interface ReportFindingVM {
+  id: string;
+  title: string;
+  summary: string;
+  severity: string;
+  confidence: number | null;
+  status: string;
+  affectedEntityIds: string[];
+  evidenceIds: string[];
+}
+
+export interface ReportTimelineEventVM {
+  timestamp: string | null;
+  category: ReportTimelineCategory;
+  eventType: string;
+  summary: string;
+  significance: string;
+  entityIds: string[];
+  evidenceIds: string[];
+  source: string;
+  rawDetail: string;
+}
+
+export interface ReportEntityVM {
+  id: string;
+  type: string;
+  displayName: string;
+  role: string;
+  condition: string;
+  relevance: ReportEntityRelevance;
+  relevanceReason: string;
+  evidenceCount: number;
+  evidenceIds: string[];
+}
+
+export interface ReportActionVM {
+  id: string;
+  type: string;
+  target: string;
+  recommendation: string;
+  proposedStatus: string;
+  approvalStatus: string;
+  executionStatus: string;
+  validationStatus: string;
+  effectiveness: string;
+  outcome: string;
+  stateVersion: number | null;
+  timestamp: string | null;
+  planId: string | null;
+  phase: string;
+  decidedBy: string | null;
+  approverRole: string | null;
+  resultSource: string | null;
+  evidenceIds: string[];
+}
+
+export interface ReportNextStepVM {
+  priority: "High" | "Medium" | "Low";
+  text: string;
+  owner: string;
+  status: string;
+  relatedIds: string[];
+}
+
+export interface ReportEvidenceReferenceVM {
+  evidenceId: string;
+  sourceFile: string;
+  sourceLocation: string;
+  timestamp: string | null;
+  eventType: string;
+  source: string;
+  sha256: string;
+  untrusted: boolean;
+}
+
 export interface ReportVM {
   reportId: string;
   caseId: string;
@@ -402,6 +490,22 @@ export interface ReportVM {
   planId: string | null;
   planStateVersion: number | null;
   planIsStale: boolean;
+  schemaVersion: string;
+  overview: ReportOverviewVM;
+  executiveSummary: { text: string; source: "current_state_analysis" | "record_derived" };
+  findings: ReportFindingVM[];
+  timeline: ReportTimelineEventVM[];
+  entities: ReportEntityVM[];
+  actions: ReportActionVM[];
+  impact: { confirmed: string[]; potential: string[]; remainingRisk: string[] };
+  nextSteps: ReportNextStepVM[];
+  appendices: {
+    evidence: ReportEvidenceReferenceVM[];
+    chronology: ReportTimelineEventVM[];
+    findings: ReportFindingVM[];
+    attackMapping: string[];
+    provenance: string[];
+  };
   sections: ReportSectionVM[];
   completeness: { present: number; total: number };
   /** True when the backend exposes the generated PDF through its download API. */

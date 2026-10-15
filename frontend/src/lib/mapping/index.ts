@@ -35,7 +35,12 @@ import type {
   PlanVM,
   RecentCaseRow,
   RecoveryStatus,
+  ReportActionVM,
+  ReportEntityVM,
+  ReportEvidenceReferenceVM,
+  ReportFindingVM,
   ReportSectionVM,
+  ReportTimelineEventVM,
   ReportVM,
   ResponsePlanActionVM,
   Risk,
@@ -606,6 +611,188 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
     return { key, title, present: lines.length > 0, lines };
   });
 
+  const analyst = dto.analyst_report;
+  const findings: ReportFindingVM[] = analyst
+    ? analyst.key_findings.map((finding) => ({
+        id: finding.id,
+        title: finding.title,
+        summary: finding.summary,
+        severity: finding.severity,
+        confidence: finding.confidence ?? null,
+        status: finding.status,
+        affectedEntityIds: finding.affected_entity_ids,
+        evidenceIds: finding.evidence_ids,
+      }))
+    : dto.findings.map((finding) => ({
+        id: finding.finding_id,
+        title: finding.summary,
+        summary: finding.summary,
+        severity: dto.classification.severity,
+        confidence: finding.confidence,
+        status: finding.status || "hypothesis",
+        affectedEntityIds: [],
+        evidenceIds: finding.evidence_ids,
+      }));
+  const mapTimeline = (event: NonNullable<typeof analyst>["key_timeline"][number]): ReportTimelineEventVM => ({
+    timestamp: event.timestamp ?? null,
+    category: event.category,
+    eventType: event.event_type,
+    summary: event.summary,
+    significance: event.significance,
+    entityIds: event.entity_ids,
+    evidenceIds: event.evidence_ids,
+    source: event.source,
+    rawDetail: event.raw_detail,
+  });
+  const timeline: ReportTimelineEventVM[] = analyst
+    ? analyst.key_timeline.map(mapTimeline)
+    : dto.timeline.map((event) => ({
+        timestamp: event.time ?? null,
+        category: event.side === "defender" ? "defensive" : event.source === "analyst_note" ? "analyst" : "observed",
+        eventType: event.source,
+        summary: event.event,
+        significance: "Retained from a legacy report",
+        entityIds: [],
+        evidenceIds: event.evidence_ids,
+        source: event.source,
+        rawDetail: event.event,
+      }));
+  const entities: ReportEntityVM[] = analyst
+    ? analyst.entities.map((entity) => ({
+        id: entity.id,
+        type: entity.type,
+        displayName: entity.display_name,
+        role: entity.role,
+        condition: entity.condition,
+        relevance: entity.relevance,
+        relevanceReason: entity.relevance_reason,
+        evidenceCount: entity.evidence_count,
+        evidenceIds: entity.evidence_ids,
+      }))
+    : dto.affected.map((entity) => ({
+        id: entity.asset_id,
+        type: entity.type,
+        displayName: entity.asset_id,
+        role: entity.owner || "not recorded",
+        condition: "unknown",
+        relevance: "suspected_affected",
+        relevanceReason: entity.how_affected || "Classified as affected in a legacy report",
+        evidenceCount: entity.evidence_ids.length,
+        evidenceIds: entity.evidence_ids,
+      }));
+  const actions: ReportActionVM[] = analyst
+    ? analyst.response_actions.map((action) => ({
+        id: action.action_id,
+        type: action.action_type,
+        target: action.target,
+        recommendation: action.recommendation,
+        proposedStatus: action.proposed_status,
+        approvalStatus: action.approval_status,
+        executionStatus: action.execution_status,
+        validationStatus: action.validation_status,
+        effectiveness: action.effectiveness,
+        outcome: action.outcome,
+        stateVersion: action.state_version ?? null,
+        timestamp: action.timestamp ?? null,
+        planId: action.plan_id ?? null,
+        phase: action.phase,
+        decidedBy: action.decided_by ?? null,
+        approverRole: action.approver_role ?? null,
+        resultSource: action.result_source ?? null,
+        evidenceIds: action.evidence_ids ?? [],
+      }))
+    : dto.actions.map((action) => ({
+        id: action.action_id,
+        type: action.tool_name || "not recorded",
+        target: action.target_id || "not recorded",
+        recommendation: action.recommendation,
+        proposedStatus: action.status,
+        approvalStatus: reportDecision(action.status) || "not_recorded",
+        executionStatus: ["verified", "failed"].includes(action.status) ? "completed" : "not_executed",
+        validationStatus: action.status === "verified" ? "effective" : action.status === "failed" ? "ineffective" : "not_validated",
+        effectiveness: reportValidationVerdict(action.status),
+        outcome: action.result || "No outcome recorded",
+        stateVersion: action.based_on_state_version ?? null,
+        timestamp: null,
+        planId: action.plan_id ?? null,
+        phase: action.status,
+        decidedBy: action.decided_by ?? null,
+        approverRole: action.approver_role ?? null,
+        resultSource: action.result_source ?? null,
+        evidenceIds: action.evidence_ids ?? [],
+      }));
+  const evidence: ReportEvidenceReferenceVM[] = analyst
+    ? analyst.appendices.evidence_index.map((item) => ({
+        evidenceId: item.evidence_id,
+        sourceFile: item.source_file,
+        sourceLocation: item.source_location,
+        timestamp: item.timestamp ?? null,
+        eventType: item.event_type,
+        source: item.source,
+        sha256: item.sha256,
+        untrusted: item.untrusted,
+      }))
+    : dto.evidence_index.map((item) => ({
+        evidenceId: item.evidence_id,
+        sourceFile: item.source_file,
+        sourceLocation: item.line == null ? "" : `line ${item.line}`,
+        timestamp: item.time ?? null,
+        eventType: "legacy_record",
+        source: "legacy_report",
+        sha256: item.sha256,
+        untrusted: item.untrusted,
+      }));
+  const impact = analyst
+    ? { confirmed: analyst.impact.confirmed, potential: analyst.impact.potential, remainingRisk: analyst.impact.remaining_risk }
+    : { confirmed: [], potential: reportRecordLines(dto.impact), remainingRisk: [] };
+  const nextSteps = analyst
+    ? analyst.next_steps.map((step) => ({ priority: step.priority, text: step.text, owner: step.owner, status: step.status, relatedIds: step.related_ids }))
+    : [
+        ...dto.open_questions.map((item) => ({ priority: "High" as const, text: item.question, owner: "Incident response team", status: item.answer ? "answered" : "open", relatedIds: item.related_ids })),
+        ...dto.recommendations.map((item) => ({ priority: "Medium" as const, text: typeof item === "string" ? item : item.text, owner: "Incident response team", status: "recommended", relatedIds: typeof item === "string" ? [] : item.finding_ids })),
+      ];
+  const overview = analyst
+    ? {
+        caseStatus: analyst.overview.case_status,
+        incidentStatus: analyst.overview.incident_status,
+        severity: analyst.overview.severity,
+        incidentType: analyst.overview.incident_type,
+        phase: analyst.overview.current_phase,
+        primaryAssets: analyst.overview.primary_assets,
+        planStatus: analyst.overview.plan_status,
+      }
+    : {
+        caseStatus: dto.status,
+        incidentStatus: dto.classification.status,
+        severity: dto.classification.severity,
+        incidentType: dto.classification.incident_type,
+        phase: dto.classification.current_phase,
+        primaryAssets: dto.affected.slice(0, 4).map((item) => item.asset_id),
+        planStatus: dto.plan_is_stale ? "stale" as const : dto.plan_id ? "current" as const : "not_available" as const,
+      };
+  const appendixFindings: ReportFindingVM[] = analyst
+    ? analyst.appendices.technical_findings.map((finding) => ({
+        id: finding.id,
+        title: finding.title,
+        summary: finding.summary,
+        severity: finding.severity,
+        confidence: finding.confidence ?? null,
+        status: finding.status,
+        affectedEntityIds: finding.affected_entity_ids,
+        evidenceIds: finding.evidence_ids,
+      }))
+    : findings;
+  const completenessValues = [
+    true,
+    Boolean(analyst?.executive_summary || dto.executive_summary.text),
+    findings.length > 0,
+    timeline.length > 0,
+    entities.length > 0,
+    actions.length > 0,
+    impact.confirmed.length + impact.potential.length + impact.remainingRisk.length > 0,
+    nextSteps.length > 0,
+  ];
+
   return {
     reportId: dto.report_id,
     caseId: dto.incident_id,
@@ -620,10 +807,36 @@ export function toReportVM(dto: StructuredReportDTO): ReportVM {
     planId: dto.plan_id ?? null,
     planStateVersion: dto.plan_based_on_state_version ?? null,
     planIsStale: dto.plan_is_stale ?? false,
+    schemaVersion: dto.template_schema_version || "legacy",
+    overview,
+    executiveSummary: {
+      text: analyst?.executive_summary || dto.executive_summary.text,
+      source: analyst?.executive_summary_source || "record_derived",
+    },
+    findings,
+    timeline,
+    entities,
+    actions,
+    impact,
+    nextSteps,
+    appendices: {
+      evidence,
+      chronology: analyst ? analyst.appendices.raw_chronology.map(mapTimeline) : timeline,
+      findings: appendixFindings,
+      attackMapping: analyst?.appendices.attack_mapping || dto.classification.attack_techniques,
+      provenance: analyst
+        ? [
+            `State version: ${analyst.appendices.provenance.state_version ?? "not recorded"}`,
+            `Parent state: ${analyst.appendices.provenance.state_parent_version ?? "not recorded"}`,
+            `Created from: ${analyst.appendices.provenance.state_created_from || "not recorded"}`,
+            `Plan: ${analyst.appendices.provenance.plan_id || "not available"}`,
+          ]
+        : [`Legacy report schema`, `State version: ${dto.current_state_version ?? "not recorded"}`, `Plan: ${dto.plan_id || "not available"}`],
+    },
     sections,
     completeness: {
-      present: sections.filter((s) => s.present).length,
-      total: sections.length,
+      present: completenessValues.filter(Boolean).length,
+      total: completenessValues.length,
     },
     pdfAvailable: true,
   };

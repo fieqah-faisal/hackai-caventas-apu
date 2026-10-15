@@ -99,4 +99,19 @@ describe("ReportTab (H4: generate only on explicit action)", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("latest plan is stale");
     expect(screen.getByText(/plan PLAN-4e0000000003 on state v2/)).toBeInTheDocument();
   });
+
+  it("renders decision-oriented sections and keeps technical detail collapsed", async () => {
+    provider.getReport.mockResolvedValue({ kind: "ok", value: { data: REPORT, source: "real" } });
+    renderTab();
+
+    expect(await screen.findByRole("heading", { name: "Incident overview" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Executive summary" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Key findings" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Actions and outcomes" })).toBeInTheDocument();
+    expect(screen.queryByText("Raw chronology")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /technical appendices/i }));
+    expect(screen.getByText("Raw chronology")).toBeInTheDocument();
+    expect(screen.getByText("Evidence index")).toBeInTheDocument();
+  });
 });
