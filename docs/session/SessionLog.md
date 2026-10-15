@@ -3,6 +3,18 @@
 > Newest first. Append-only. Protocol: [README.md](README.md).
 > Archived entries: none yet.
 
+### 2026-10-15 Frontend Caventas branding acceptance (DONE, UNCOMMITTED)
+
+- Final checks: focused About suite **2 passed**; full frontend **111 passed in 21 files**; `npm run typecheck`, `npm run build`, and `git diff --check` passed. Final worktree is on `feat/investigation-audit-ui-fieqah`; no files are staged and no credential/service-account paths are tracked.
+- Responsive breakpoints, min-width guards, logo sizing/containment, accessible image names, keyboard-operated About navigation and credits disclosure are covered by component assertions/code review. The exact supplied 88,107-byte transparent PNG is retained; no extra export was created. No device screenshot/browser viewport test was run. The existing favicon was left because no standalone square symbol asset was supplied.
+- No backend behavior/tests, incident data or report contracts were changed. No commit, merge or push.
+
+### 2026-10-15 Frontend Caventas branding and About content (IN PROGRESS)
+
+- Used the pre-existing supplied transparent full-lockup logo at `frontend/src/assets/Caventas-logo.png` without redrawing/cropping it. Applied it to the top bar, organization label and About hero; kept the existing favicon because the supplied file has no icon-only variant.
+- Updated frontend organization and analyst presentation defaults to Caventas SOC / Caventas SOC Analyst, retained historical record data, refreshed page description metadata, and rebuilt About with the requested product summary, implemented capabilities, safety statement, authoritative APU team list, and preserved accessible licensing/typography credits.
+- Focused About/logo/identity/navigation tests pass (**2 passed**); full frontend and final hygiene checks are in progress. No backend behavior, case data, report contracts or investigation functionality changed. No commit, merge or push.
+
 ### 2026-10-15 Structured investigation timeline and auditable decision trace (DONE, UNCOMMITTED)
 
 - Created `feat/investigation-audit-ui-fieqah` from committed integration base `6a754ce` without merging `main`. Added a pure typed current-state timeline projection/API and responsive shared table/cards with stored-time sorting, explicit filters, evidence links and collapsed technical detail. Existing GAS-lite `IncidentState.timeline` and planner behavior remain compatible.

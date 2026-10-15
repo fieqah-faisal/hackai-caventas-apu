@@ -223,7 +223,7 @@ export function reportBody(reportId: string, actions: ReportActionRowDTO[] = REP
     version: 1,
     status: "draft",
     title: "Synthetic login anomaly",
-    organisation: "Caventas Demo Organisation",
+    organisation: "Caventas SOC",
     playbook: { id: "PB-IR-001", version: "0.1" },
     policy_pack_version: "0.1-draft",
     planner_model: "fake-planner",

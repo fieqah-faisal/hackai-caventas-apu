@@ -119,7 +119,11 @@ Firestore; no credentials needed).
   (BL-027, DEC-011); follow-ups are BL-025, BL-026 and BL-027 (a)–(c).
   Main's pre-integration verification was backend **212**, frontend **75**,
   with a green production build. Product record + palette are in root
-  `PRODUCT.md`.
+   `PRODUCT.md`.
+- Frontend branding uses the supplied complete Caventas lockup in header,
+  sidebar organization branding and About page; organization/profile display
+  defaults are Caventas SOC / Caventas SOC Analyst. The supplied asset has no
+  separate compact icon variant, so the favicon remains unchanged.
 - Frontend↔backend integration: API mode loads all 7 case tabs; stored actions
   populate Response Plan and Approvals, and stored execution/validation results
   remain visible after execution. `not_applicable` is explicit, the analyst-note

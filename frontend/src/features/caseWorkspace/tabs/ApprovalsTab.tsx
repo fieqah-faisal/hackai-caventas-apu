@@ -89,7 +89,7 @@ function ApprovalCard({ item, caseId, onChanged }: { item: ApprovalItemVM; caseI
       return;
     }
     setBusy(true);
-    const out = await p.submitDecision(caseId, item.actionId, decision, "Fieqah A.", comment.trim(), actingRole);
+    const out = await p.submitDecision(caseId, item.actionId, decision, "Caventas SOC Analyst", comment.trim(), actingRole);
     setBusy(false);
     if (out.kind === "ok") {
       setLocalState(out.value.data.state as typeof item.state);

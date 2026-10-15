@@ -1,8 +1,7 @@
 /**
- * Scenario configuration. The fictional organisation label lives here in
- * exactly one place so the team can rename it later.
+ * Scenario presentation defaults use the product's organization identity.
  */
-export const DEMO_ORGANISATION = "Caventas Demo Organisation";
+export const DEMO_ORGANISATION = "Caventas SOC";
 
 /** Exact UI copy required by the spec for the Infostealer re-plan. */
 export const NEW_EVIDENCE_ANNOUNCEMENT = "New evidence received";
